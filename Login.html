@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Log in | Iron Core Fitness</title>
+    <link rel="stylesheet" href="act3des.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.21.0/dist/jquery.validate.min.js"></script>
+  </head>
+
+  <body class="account-page">
+    <main class="account-layout">
+      <section class="account-intro" aria-labelledby="login-welcome">
+        <a class="brand" href="Home.html">IRON<span>CORE</span></a>
+        <div>
+          <p class="eyebrow">Welcome back</p>
+          <h1 id="login-welcome">Your next session is waiting.</h1>
+          <p>Log in to check your workouts, track your progress, and stay on schedule.</p>
+        </div>
+        <a class="back-link" href="Home.html">â† Back to home</a>
+      </section>
+      <section class="form-panel" aria-labelledby="login-title">
+        <form id="myForm" class="account-form" action="#" method="post" novalidate>
+          <header>
+            <h2 id="login-title">Log in</h2>
+            <p>Enter your details to continue.</p>
+          </header>
+          <div class="field">
+            <label for="login-email">Email address</label>
+            <input id="login-email" name="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+          </div>
+          <div class="field">
+            <label for="login-password">Password</label>
+            <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required>
+          </div>
+          <div class="form-options">
+            <label class="checkbox"><input type="checkbox" name="remember"> Remember me</label>
+            <a href="#">Forgot password?</a>
+          </div>
+          <button class="button" type="submit">Log in <span aria-hidden="true">â†’</span></button>
+          <p class="form-switch">New to Iron Core? <a href="Register.html">Create an account</a></p>
+        </form>
+      </section>
+    </main>
+    
+    <script>
+      $(document).ready(function () {
+        $("#myForm").validate({
+          rules: {
+            email: { required: true, email: true },
+            password: { required: true, minlength: 8 }
+          },
+          messages: {
+            email: { required: "Please enter your email address.", email: "Please enter a valid email address." },
+            password: { required: "Please enter your password.", minlength: "Your password must be at least 8 characters." }
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
