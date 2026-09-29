@@ -1,0 +1,374 @@
+.navbar {
+  height: 78px;
+  padding: 0 clamp(20px, 6vw, 90px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: absolute;
+  z-index: 2;
+  width: 100%;
+  border-bottom: 1px solid #ffffff21;
+}
+.logo-button,
+.logo-button img {
+  border: 0;
+  background: transparent;
+  width: 122px;
+  height: 42px;
+  object-fit: contain;
+}
+.nav-links {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+}
+.nav-links button,
+.nav-links a,
+.footer button,
+.account-intro > button {
+  color: var(--white);
+  border: 0;
+  background: none;
+  font-size: 14px;
+}
+.nav-links .active {
+  color: var(--pulse);
+}
+.button {
+  border: 1px solid var(--pulse);
+  background: var(--pulse);
+  color: #fff;
+  padding: 13px 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: 0 8px 23px #ff3b2f35;
+  transition: 0.2s;
+}
+.button:hover {
+  background: var(--pulse-light);
+  transform: scale(1.03);
+  box-shadow: 0 10px 28px #ff3b2f55;
+}
+.button.small {
+  padding: 9px 15px;
+}
+.menu-toggle {
+  display: none;
+  background: none;
+  border: 0;
+  color: #fff;
+  font-size: 22px;
+}
+.hero {
+  min-height: 760px;
+  display: grid;
+  align-items: end;
+  padding: 140px clamp(24px, 10vw, 150px) 100px;
+  background:
+    linear-gradient(90deg, #0d0e10f5 10%, #0d0e1088 57%, #0d0e1022),
+    url('/images/arnold.jpg') center/cover;
+}
+.hero > div {
+  max-width: 700px;
+}
+.hero h1 {
+  font-size: clamp(64px, 9vw, 135px);
+  line-height: 0.85;
+  margin: 15px 0 28px;
+}
+.hero h1 em,
+.statement em {
+  color: var(--pulse);
+  font-style: normal;
+}
+.hero p:not(.eyebrow) {
+  max-width: 500px;
+  color: var(--muted-light);
+  font-size: 18px;
+  line-height: 1.65;
+  margin-bottom: 30px;
+}
+.section {
+  padding: 100px clamp(24px, 10vw, 150px);
+}
+.section h2 {
+  font-size: clamp(40px, 5vw, 70px);
+  line-height: 0.95;
+  margin-bottom: 48px;
+}
+.programs {
+  background: var(--bg-raised);
+}
+.program-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+.program-card {
+  min-height: 370px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  background-position: center;
+  background-size: cover;
+  border: 1px solid var(--border);
+}
+.program-card h3 {
+  font-size: 32px;
+  margin-top: auto;
+  margin-bottom: 8px;
+}
+.program-card p {
+  color: var(--muted-light);
+  line-height: 1.55;
+  max-width: 280px;
+}
+.program-card button,
+.card-title > button,
+.equipment-card > .card-title > button {
+  background: none;
+  color: var(--white);
+  border: 0;
+  text-align: left;
+  padding: 8px 0;
+  font-weight: 700;
+}
+.statement {
+  background: var(--surface);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 80px;
+  align-items: end;
+}
+.statement h2 {
+  margin: 0;
+}
+.statement > p {
+  font-size: 19px;
+  line-height: 1.7;
+  color: var(--muted-light);
+  max-width: 480px;
+}
+.footer {
+  background: #090a0c;
+  border-top: 1px solid var(--border);
+  padding: 30px clamp(24px, 6vw, 90px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.footer img,
+.account-intro > img {
+  width: 130px;
+  height: 45px;
+  object-fit: contain;
+}
+.footer p {
+  color: var(--muted);
+  margin: 0;
+  font-size: 13px;
+}
+.footer button {
+  color: var(--pulse);
+  font-weight: 700;
+}
+.account-layout {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+}
+.account-intro {
+  min-height: 100%;
+  padding: 40px clamp(28px, 8vw, 120px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background:
+    linear-gradient(#0d0e10b8, #0d0e10e8),
+    url('/images/barbell.jpg') center/cover;
+}
+.register-intro {
+  background-image: linear-gradient(#0d0e10b8, #0d0e10e8), url('/images/gym.jpg');
+}
+.account-intro h1 {
+  font-size: clamp(48px, 6vw, 84px);
+  line-height: 0.92;
+  margin: 12px 0 20px;
+}
+.account-intro div > p:last-child {
+  color: var(--muted-light);
+  max-width: 400px;
+  line-height: 1.65;
+}
+.account-intro > button {
+  text-align: left;
+  color: var(--muted-light);
+  padding: 0;
+}
+.form-panel {
+  display: grid;
+  place-items: center;
+  padding: 50px 28px;
+  background: var(--bg-raised);
+}
+.account-form {
+  width: min(100%, 410px);
+}
+.account-form h2 {
+  font-size: 50px;
+  margin: 0 0 8px;
+}
+.form-lead {
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+.account-form > label:not(.check) {
+  display: block;
+  font-weight: 600;
+  font-size: 14px;
+  margin: 18px 0;
+}
+.account-form input,
+.account-form select {
+  display: block;
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: #fff;
+  border-radius: 4px;
+  padding: 13px;
+  margin-top: 8px;
+  outline-color: var(--pulse);
+}
+.form-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 22px 0;
+  font-size: 13px;
+}
+.form-row a,
+.form-switch button,
+.success-message button {
+  color: var(--pulse);
+  border: 0;
+  background: none;
+  padding: 0;
+  font-weight: 700;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted-light);
+  font-size: 13px;
+  margin: 22px 0;
+}
+.check input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--pulse);
+}
+.account-form > .button {
+  width: 100%;
+}
+.form-switch {
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  margin-top: 22px;
+}
+.success-message {
+  color: var(--green);
+  font-size: 14px;
+  margin: 18px 0;
+}
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #0d0e10f2;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.loader-overlay p {
+  font: 12px 'DM Mono';
+  letter-spacing: 0.15em;
+  color: var(--pulse);
+}
+.loader-overlay span {
+  color: var(--muted-light);
+  font-size: 14px;
+}
+.ecg {
+  display: block;
+  width: min(80vw, 360px);
+  margin: 12px auto;
+}
+.ecg path {
+  fill: none;
+  stroke: var(--pulse);
+  stroke-width: 4;
+  stroke-linejoin: round;
+  stroke-dasharray: 460;
+  stroke-dashoffset: 460;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+@keyframes pulse {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (max-width: 700px) {
+  .navbar {
+    height: 64px;
+  }
+  .menu-toggle {
+    display: block;
+  }
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    padding: 20px;
+    background: #121316;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .nav-links.open {
+    display: flex;
+  }
+  .nav-links button,
+  .nav-links a {
+    text-align: left;
+  }
+  .hero {
+    min-height: 680px;
+    padding-bottom: 70px;
+  }
+  .program-grid,
+  .statement,
+  .account-layout {
+    grid-template-columns: 1fr;
+  }
+  .statement {
+    gap: 25px;
+  }
+  .footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .account-intro {
+    min-height: 420px;
+  }
+  .account-intro > img {
+    margin-bottom: 30px;
+  }
+  .form-panel {
+    padding: 55px 24px;
+  }
+}

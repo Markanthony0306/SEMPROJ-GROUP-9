@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono&family=DM+Sans:wght@400;500;600;700&family=Oswald:wght@500;600;700&display=swap');
+:root {
+  --pulse: #ff3b2f;
+  --pulse-light: #ff4528;
+  --bg: #0d0e10;
+  --bg-raised: #121316;
+  --surface: #18191d;
+  --border: #2a2c32;
+  --white: #fff;
+  --muted: #8e929b;
+  --muted-light: #a0a5b1;
+  --green: #65d690;
+  --amber: #f0b75e;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--white);
+  background: var(--bg);
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+}
+button,
+input,
+select {
+  font: inherit;
+}
+button {
+  cursor: pointer;
+}
+a {
+  color: inherit;
+  text-decoration: none;
+}
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+h1,
+h2,
+h3 {
+  font-family: Oswald, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+.eyebrow {
+  color: var(--pulse);
+  font:
+    12px 'DM Mono',
+    monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
