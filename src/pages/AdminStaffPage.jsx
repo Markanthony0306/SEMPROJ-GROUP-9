@@ -25,7 +25,9 @@ export default function AdminStaffPage({ onSignOut }) {
         <div>
           <span className="online-dot" /> Staff console
         </div>
-        <button className="sign-out" onClick={onSignOut}>Sign out</button>
+        <button className="sign-out" onClick={onSignOut}>
+          Sign out
+        </button>
       </header>
       <section className="admin-heading">
         <div>
@@ -71,7 +73,21 @@ export default function AdminStaffPage({ onSignOut }) {
             <span>{scan ? '✓' : '⌗'}</span>
             <p>{scan ? 'Mia Cruz checked in' : 'Ready to scan'}</p>
           </div>
-          <button className="button" onClick={() => { setScan('Mia Cruz'); const next = { ...records, attendance: [...records.attendance, { memberId: 'FP-20483', date: new Date().toLocaleString('en-PH') }] }; saveData(next); setRecords(next) }}>
+          <button
+            className="button"
+            onClick={() => {
+              setScan('Mia Cruz')
+              const next = {
+                ...records,
+                attendance: [
+                  ...records.attendance,
+                  { memberId: 'FP-20483', date: new Date().toLocaleString('en-PH') }
+                ]
+              }
+              saveData(next)
+              setRecords(next)
+            }}
+          >
             {scan ? 'Scan another code' : 'Simulate QR scan'}
           </button>
         </article>
@@ -82,7 +98,19 @@ export default function AdminStaffPage({ onSignOut }) {
             onSubmit={(e) => {
               e.preventDefault()
               const form = new FormData(e.currentTarget)
-              const next = { ...records, payments: [...records.payments, { memberId: 'FP-20483', date: new Date().toLocaleDateString('en-PH'), method: form.get('method') || 'Online Payment', amount: Number(form.get('amount') || 0), plan: form.get('plan') || 'Unlimited Monthly' }] }
+              const next = {
+                ...records,
+                payments: [
+                  ...records.payments,
+                  {
+                    memberId: 'FP-20483',
+                    date: new Date().toLocaleDateString('en-PH'),
+                    method: form.get('method') || 'Online Payment',
+                    amount: Number(form.get('amount') || 0),
+                    plan: form.get('plan') || 'Unlimited Monthly'
+                  }
+                ]
+              }
               saveData(next)
               setRecords(next)
               setPaid(true)

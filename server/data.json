@@ -1,0 +1,18 @@
+{
+  "accounts": [
+    {
+      "id": "8e6db159-6c9b-4917-aac5-5d759103a4bc",
+      "name": "FitPulse Staff",
+      "email": "admin@fitpulse.com",
+      "passwordHash": "$2b$12$9OLQcERoGkAHniBaeQC.he9k2xA/371vg1EZu/DJ0K3GG1QvdQFcm",
+      "role": "admin"
+    },
+    {
+      "id": "b2b00336-99f0-46c3-98bc-cd74770c67e2",
+      "name": "John Doe",
+      "email": "markanthonyberte52@gmail.com",
+      "passwordHash": "$2b$12$4AMO/EzqnDdqpj8nP10nEexIhUOdK16rZyAuCkHvIETQFVM8043/.",
+      "role": "user"
+    }
+  ]
+}

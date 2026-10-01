@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react'
-import Navbar from './components/Navbar'
+import { useAuth } from './auth/AuthContext'
 import Footer from './components/Footer'
+import HeartRateLoader from './components/HeartRateLoader'
+import Navbar from './components/Navbar'
+import ProtectedRoute from './components/ProtectedRoute'
+import AdminStaffPage from './pages/AdminStaffPage'
 import Home from './pages/Home'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import UserPage from './pages/UserPage'
-import AdminStaffPage from './pages/AdminStaffPage'
-import HeartRateLoader from './components/HeartRateLoader'
 import './styles/landing_and_forms.css'
 import './styles/user_page.css'
 import './styles/admin_staff_page.css'
 
 export default function App() {
+  const { login, logout, user } = useAuth()
   const [route, setRoute] = useState(() => sessionStorage.getItem('fitpulse-route') || 'home')
-  const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('fitpulse-session') || 'null'))
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -21,47 +23,55 @@ export default function App() {
     return () => clearTimeout(timer)
   }, [])
 
-  const navigate = (page) => {
-    if (page === 'user' && currentUser?.role !== 'user') page = 'login'
-    if (page === 'admin' && currentUser?.role !== 'admin') page = 'login'
+  const navigate = (nextRoute) => {
     window.scrollTo(0, 0)
-    sessionStorage.setItem('fitpulse-route', page)
-    setRoute(page)
+    sessionStorage.setItem('fitpulse-route', nextRoute)
+    setRoute(nextRoute)
   }
 
-  const login = (user) => {
-    localStorage.setItem('fitpulse-session', JSON.stringify(user))
-    setCurrentUser(user)
+  const handleLogin = (sessionOrAccount) => {
+    const account = sessionOrAccount.user || sessionOrAccount
+    login(
+      sessionOrAccount.user
+        ? sessionOrAccount
+        : { user: account, role: account.role, token: 'local-development-session' }
+    )
     setLoading(true)
     setTimeout(() => {
       setLoading(false)
-      const dashboard = user.role === 'admin' ? 'admin' : 'user'
-      window.scrollTo(0, 0)
-      sessionStorage.setItem('fitpulse-route', dashboard)
-      setRoute(dashboard)
+      navigate(['admin', 'staff'].includes(account.role) ? 'admin' : 'user')
     }, 1500)
   }
 
-  const signOut = () => {
-    localStorage.removeItem('fitpulse-session')
-    setCurrentUser(null)
+  const handleLogout = () => {
+    logout()
     navigate('home')
   }
 
   const pages = {
     home: <Home navigate={navigate} />,
-    login: <Login navigate={navigate} onLogin={login} />,
+    login: <Login navigate={navigate} onLogin={handleLogin} />,
     register: <Register navigate={navigate} />,
-    user: <UserPage user={currentUser} onSignOut={signOut} />,
-    admin: <AdminStaffPage user={currentUser} onSignOut={signOut} />
+    user: (
+      <ProtectedRoute navigate={navigate} roles={['user']}>
+        <UserPage user={user} onSignOut={handleLogout} />
+      </ProtectedRoute>
+    ),
+    admin: (
+      <ProtectedRoute navigate={navigate} roles={['admin', 'staff']}>
+        <AdminStaffPage user={user} onSignOut={handleLogout} />
+      </ProtectedRoute>
+    )
   }
 
   return (
     <>
       {route === 'home' && <Navbar route={route} navigate={navigate} />}
-      {pages[route]}
+      {pages[route] || pages.home}
       {route === 'home' && <Footer navigate={navigate} />}
-      {loading && <HeartRateLoader message={currentUser ? 'Opening your dashboard' : 'Finding your rhythm'} />}
+      {loading && (
+        <HeartRateLoader message={user ? 'Opening your dashboard' : 'Finding your rhythm'} />
+      )}
     </>
   )
 }

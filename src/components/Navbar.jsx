@@ -25,9 +25,7 @@ export default function Navbar({ route, navigate }) {
         <button className={route === 'home' ? 'active' : ''} onClick={() => go('home')}>
           Home
         </button>
-        <button onClick={() => scrollTo('programs')}>
-          Programs
-        </button>
+        <button onClick={() => scrollTo('programs')}>Programs</button>
         <button onClick={() => scrollTo('coaching')}>Coaching</button>
         <button onClick={() => go('login')}>Log in</button>
         <button className="button small" onClick={() => go('register')}>
