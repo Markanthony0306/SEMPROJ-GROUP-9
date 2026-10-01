@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { getData, saveData } from '../utils/storage'
+import { assetUrl } from '../utils/assets'
 const members = [
   ['Mia Cruz', 'FP-20483', '0917 555 0123', 'Active'],
   ['Carlos Reyes', 'FP-20451', '0917 555 0198', 'Active'],
@@ -21,7 +22,7 @@ export default function AdminStaffPage({ onSignOut }) {
   return (
     <main className="admin portal">
       <header className="portal-header">
-        <img src="/images/fitpulse.jpg" alt="FitPulse" />
+        <img src={assetUrl('/images/fitpulse.jpg')} alt="FitPulse" />
         <div>
           <span className="online-dot" /> Staff console
         </div>

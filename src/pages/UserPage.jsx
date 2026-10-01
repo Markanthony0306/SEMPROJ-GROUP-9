@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { formatCurrency, getData, saveData } from '../utils/storage'
+import { assetUrl } from '../utils/assets'
 
 export default function UserPage({ user, onSignOut }) {
   const [profile, setProfile] = useState(user)
@@ -51,7 +52,7 @@ export default function UserPage({ user, onSignOut }) {
   return (
     <main className="portal">
       <header className="portal-header">
-        <img src="/images/fitpulse.jpg" alt="FitPulse" />
+        <img src={assetUrl('/images/fitpulse.jpg')} alt="FitPulse" />
         <div>
           <span className="online-dot" /> Member portal
         </div>

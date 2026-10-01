@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { assetUrl } from '../utils/assets'
 
 export default function Navbar({ route, navigate }) {
   const [open, setOpen] = useState(false)
@@ -16,7 +17,7 @@ export default function Navbar({ route, navigate }) {
   return (
     <header className="navbar">
       <button className="logo-button" onClick={() => go('home')} aria-label="FitPulse home">
-        <img src="/images/fitpulse.jpg" alt="FitPulse" />
+          <img src={assetUrl('/images/fitpulse.jpg')} alt="FitPulse" />
       </button>
       <button className="menu-toggle" onClick={() => setOpen(!open)} aria-label="Toggle menu">
         ☰

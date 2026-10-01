@@ -1,4 +1,5 @@
 import Reveal from '../components/Reveal'
+import { assetUrl } from '../utils/assets'
 
 const programs = [
   [
@@ -57,7 +58,7 @@ export default function Home({ navigate }) {
           {programs.map(([title, copy, image], index) => (
             <Reveal key={title} delay={index * 90}>
               <article className="program-card glass-card">
-                <img src={image} alt="" />
+              <img src={assetUrl(image)} alt="" />
                 <div>
                   <h3>{title}</h3>
                   <p>{copy}</p>
@@ -88,7 +89,7 @@ export default function Home({ navigate }) {
           {coaches.map(([name, specialty, bio, image], index) => (
             <Reveal key={name} delay={index * 110}>
               <article className="coach-card glass-card">
-                <img src={image} alt={`${name}, FitPulse coach`} />
+              <img src={assetUrl(image)} alt={`${name}, FitPulse coach`} />
                 <div>
                   <p className="eyebrow">{specialty}</p>
                   <h3>{name}</h3>
