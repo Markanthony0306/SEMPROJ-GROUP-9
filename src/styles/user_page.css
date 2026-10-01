@@ -107,9 +107,11 @@
   gap: 18px;
 }
 .card {
-  background: var(--surface);
+  background: var(--glass);
   border: 1px solid var(--border);
   padding: 24px;
+  border-radius: 16px;
+  backdrop-filter: blur(14px);
 }
 .card h2 {
   font-size: 26px;
@@ -131,6 +133,20 @@
   background: var(--pulse);
   font-weight: 700;
 }
+.profile-name > img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+.time-card { min-width: 200px; border: 1px solid var(--border); background: var(--glass); backdrop-filter: blur(14px); padding: 17px 20px; border-radius: 14px; display: grid; gap: 4px; }
+.time-card strong { font: 30px Oswald; color: var(--pulse); }
+.time-card span { font-size: 12px; color: var(--muted); }
+.profile-form { display: grid; gap: 12px; margin-top: 20px; }
+.profile-form label { font-size: 12px; color: var(--muted-light); display: grid; gap: 6px; }
+.profile-form input { background: #0d0e10; border: 1px solid var(--border); color: white; padding: 10px; }
+.calendar-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 7px; text-align: center; margin-top: 17px; }
+.calendar-days span { color: var(--muted); font-size: 10px; }
+.calendar-days b { padding: 6px 0; font-size: 12px; font-weight: 500; }
+.calendar-days .today { background: var(--pulse); border-radius: 50%; }
+.icon-button { font-size: 19px !important; }
+.sign-out { border-radius: 10px !important; transition: border-color .2s, color .2s; }
+.sign-out:hover { color: var(--pulse); border-color: var(--pulse); }
 .profile-name p {
   color: var(--muted);
   font-size: 13px;

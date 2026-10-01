@@ -8,6 +8,11 @@ export default function Navbar({ route, navigate }) {
     navigate(page)
   }
 
+  const scrollTo = (id) => {
+    setOpen(false)
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+  }
+
   return (
     <header className="navbar">
       <button className="logo-button" onClick={() => go('home')} aria-label="FitPulse home">
@@ -20,9 +25,10 @@ export default function Navbar({ route, navigate }) {
         <button className={route === 'home' ? 'active' : ''} onClick={() => go('home')}>
           Home
         </button>
-        <a href="#programs" onClick={() => setOpen(false)}>
+        <button onClick={() => scrollTo('programs')}>
           Programs
-        </a>
+        </button>
+        <button onClick={() => scrollTo('coaching')}>Coaching</button>
         <button onClick={() => go('login')}>Log in</button>
         <button className="button small" onClick={() => go('register')}>
           Join now

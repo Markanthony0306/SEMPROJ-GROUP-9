@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getData, saveData } from '../utils/storage'
 const members = [
   ['Mia Cruz', 'FP-20483', '0917 555 0123', 'Active'],
   ['Carlos Reyes', 'FP-20451', '0917 555 0198', 'Active'],
@@ -11,10 +12,11 @@ const equipment = [
   ['Dumbbell Rack', 'Free weights', 'Good', 'Sep 12, 2026'],
   ['Cable Machine', 'Strength', 'Out of Service', 'Sep 28, 2026']
 ]
-export default function AdminStaffPage({ navigate }) {
+export default function AdminStaffPage({ onSignOut }) {
   const [query, setQuery] = useState('')
   const [scan, setScan] = useState('')
   const [paid, setPaid] = useState(false)
+  const [records, setRecords] = useState(getData)
   const shown = members.filter((m) => m.join(' ').toLowerCase().includes(query.toLowerCase()))
   return (
     <main className="admin portal">
@@ -23,7 +25,7 @@ export default function AdminStaffPage({ navigate }) {
         <div>
           <span className="online-dot" /> Staff console
         </div>
-        <button onClick={() => navigate('home')}>Sign out</button>
+        <button className="sign-out" onClick={onSignOut}>Sign out</button>
       </header>
       <section className="admin-heading">
         <div>
@@ -69,7 +71,7 @@ export default function AdminStaffPage({ navigate }) {
             <span>{scan ? '✓' : '⌗'}</span>
             <p>{scan ? 'Mia Cruz checked in' : 'Ready to scan'}</p>
           </div>
-          <button className="button" onClick={() => setScan('Mia Cruz')}>
+          <button className="button" onClick={() => { setScan('Mia Cruz'); const next = { ...records, attendance: [...records.attendance, { memberId: 'FP-20483', date: new Date().toLocaleString('en-PH') }] }; saveData(next); setRecords(next) }}>
             {scan ? 'Scan another code' : 'Simulate QR scan'}
           </button>
         </article>
@@ -79,6 +81,10 @@ export default function AdminStaffPage({ navigate }) {
           <form
             onSubmit={(e) => {
               e.preventDefault()
+              const form = new FormData(e.currentTarget)
+              const next = { ...records, payments: [...records.payments, { memberId: 'FP-20483', date: new Date().toLocaleDateString('en-PH'), method: form.get('method') || 'Online Payment', amount: Number(form.get('amount') || 0), plan: form.get('plan') || 'Unlimited Monthly' }] }
+              saveData(next)
+              setRecords(next)
               setPaid(true)
             }}
           >
