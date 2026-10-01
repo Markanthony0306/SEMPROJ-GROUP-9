@@ -2,10 +2,10 @@ import { useState } from 'react'
 import { getData, saveData } from '../utils/storage'
 import { assetUrl } from '../utils/assets'
 const members = [
-  ['Mia Cruz', 'FP-20483', '0917 555 0123', 'Active'],
+  ['Jason Bazar', 'FP-20483', '0917 555 0123', 'Active'],
   ['Carlos Reyes', 'FP-20451', '0917 555 0198', 'Active'],
   ['Angela Santos', 'FP-20396', '0917 555 0147', 'Expiring'],
-  ['James Tan', 'FP-20318', '0917 555 0154', 'Expired']
+  ['James Regardo', 'FP-20318', '0917 555 0154', 'Expired']
 ]
 const equipment = [
   ['Treadmill 01', 'Cardio', 'Good', 'Sep 16, 2026'],
