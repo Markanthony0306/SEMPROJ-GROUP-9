@@ -13,6 +13,13 @@
       "email": "markanthonyberte52@gmail.com",
       "passwordHash": "$2b$12$4AMO/EzqnDdqpj8nP10nEexIhUOdK16rZyAuCkHvIETQFVM8043/.",
       "role": "user"
+    },
+    {
+      "id": "a50a09a9-4753-4552-aa88-27ab48f3c056",
+      "name": "Reiko Lat",
+      "email": "bertebea@gmail.com",
+      "passwordHash": "$2b$12$4FKbdSQVaP9UjY.Lz6DobuukVCAykVvoKhCsXZwJLefsRlD9c11eG",
+      "role": "user"
     }
   ]
 }

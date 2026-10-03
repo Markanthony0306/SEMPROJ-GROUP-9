@@ -23,7 +23,7 @@ export default function AdminStaffPage({ onSignOut }) {
     <main className="admin portal">
       <header className="portal-header">
         <img src={assetUrl('/images/fitpulse.jpg')} alt="FitPulse" />
-        <div>
+        <div> 
           <span className="online-dot" /> Staff console
         </div>
         <button className="sign-out" onClick={onSignOut}>
