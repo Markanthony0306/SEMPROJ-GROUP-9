@@ -1,79 +1,68 @@
 import { useState } from 'react'
+import InputField from '../components/InputField'
 import PasswordInput from '../components/PasswordInput'
 import { apiRequest } from '../utils/api'
-import { createMemberId, getData, saveData } from '../utils/storage'
 
+// Staff can create a member account; the member must log in separately afterward.
 export default function Register({ navigate }) {
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
+  const [pending, setPending] = useState(false)
+
   const submit = async (event) => {
     event.preventDefault()
+    setError('')
+    setSuccess('')
     const form = new FormData(event.currentTarget)
-    if (form.get('password') !== form.get('confirmPassword'))
-      return setError('Passwords do not match.')
+    const name = (form.get('name') || '').trim()
+    const email = (form.get('email') || '').trim().toLowerCase()
+    const password = form.get('password') || ''
+    const confirmPassword = form.get('confirmPassword') || ''
+    if (name.length < 2) return setError('Please enter the member’s full name.')
+    if (password.length < 8) return setError('The password must be at least 8 characters.')
+    if (password !== confirmPassword) return setError('Passwords do not match.')
+    setPending(true)
     try {
       await apiRequest('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({
-          name: form.get('name'),
-          email: form.get('email'),
-          password: form.get('password')
-        })
+        body: JSON.stringify({ name, email, password })
       })
+      setSuccess('Account created. The new member can now log in.')
+      event.currentTarget.reset()
     } catch (apiError) {
-      const data = getData()
-      if (
-        data.accounts.some(
-          (account) => account.email.toLowerCase() === form.get('email').toLowerCase()
-        )
-      )
-        return setError(apiError.message || 'An account with this email already exists.')
-      data.accounts.push({
-        id: createMemberId(),
-        name: form.get('name'),
-        email: form.get('email'),
-        password: form.get('password'),
-        phone: '',
-        plan: 'Unlimited Monthly',
-        role: 'user',
-        joined: new Date().toLocaleDateString('en-PH', {
-          month: 'long',
-          day: 'numeric',
-          year: 'numeric'
-        })
-      })
-      saveData(data)
+      setError(apiError.message || 'Account creation failed. Please try again.')
+    } finally {
+      setPending(false)
     }
-    navigate('login')
   }
+
   return (
     <main className="account-layout">
-      <section className="account-intro register-intro">
-        <div>
-          <p className="eyebrow">Start today</p>
-          <h1>Make your strongest move yet.</h1>
-          <p>Create your FitPulse membership and make your first check-in count.</p>
-        </div>
-        <button onClick={() => navigate('home')}>← Back to home</button>
-      </section>
-      <section className="form-panel">
-        <form onSubmit={submit} className="account-form glass-panel">
-          <p className="eyebrow">Join FitPulse</p>
-          <h2>Create account</h2>
-          <p className="form-lead">It only takes a minute to get started.</p>
-          <label>
-            Full name
-            <input name="name" required placeholder="John Doe" autoComplete="name" />
-          </label>
-          <label>
-            Email address
-            <input
-              name="email"
-              type="email"
-              required
-              placeholder="john@example.com"
-              autoComplete="email"
-            />
-          </label>
+      <section className="auth-card-wrap">
+        <form onSubmit={submit} className="account-form glass-panel auth-card">
+          <p className="brand-mark">
+            FIT<span>PULSE</span>
+          </p>
+          <p className="eyebrow">Owner & staff tool</p>
+          <h1>Create account</h1>
+          <p className="form-lead">Create a member account. They will log in afterward.</p>
+          <InputField
+            label="Full name"
+            name="name"
+            icon="user"
+            required
+            placeholder="John Doe"
+            autoComplete="name"
+          />
+          <InputField
+            label="Email address"
+            name="email"
+            type="email"
+            icon="mail"
+            required
+            placeholder="john@example.com"
+            autoComplete="email"
+          />
           <PasswordInput
             label="Create password"
             name="password"
@@ -95,16 +84,18 @@ export default function Register({ navigate }) {
               {error}
             </p>
           )}
-          <label className="check">
-            <input type="checkbox" required /> I agree to the terms and privacy policy.
-          </label>
-          <button className="button" type="submit">
+          {success && (
+            <p className="form-success" role="status">
+              {success}
+            </p>
+          )}
+          <button className="button" type="submit" disabled={pending}>
             Create account <span>→</span>
           </button>
           <p className="form-switch">
-            Already a member?{' '}
+            Back to{' '}
             <button type="button" onClick={() => navigate('login')}>
-              Log in
+              log in
             </button>
           </p>
         </form>

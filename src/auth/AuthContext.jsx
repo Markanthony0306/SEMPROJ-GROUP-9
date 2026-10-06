@@ -3,10 +3,17 @@ import { createContext, useContext, useMemo, useState } from 'react'
 const AuthContext = createContext(null)
 const SESSION_KEY = 'fitpulse-session'
 
+function readSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')
+    return session && typeof session === 'object' ? session : null
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(() =>
-    JSON.parse(localStorage.getItem(SESSION_KEY) || 'null')
-  )
+  const [session, setSession] = useState(readSession)
   const login = (nextSession) => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession))
     setSession(nextSession)

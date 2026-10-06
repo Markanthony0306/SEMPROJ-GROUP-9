@@ -1,242 +1,185 @@
 import { useEffect, useState } from 'react'
-import { formatCurrency, getData, saveData } from '../utils/storage'
-import { assetUrl } from '../utils/assets'
+import DashboardShell from '../components/DashboardShell'
+import { useAuth } from '../auth/AuthContext'
+import { apiRequest } from '../utils/api'
+import {
+  formatDate,
+  formatDateTime,
+  heightsFor,
+  monthIndexOf,
+  trailingBuckets
+} from '../utils/metrics'
+
+function MemberWorkspace({ section, user, attendance }) {
+  const content = {
+    'My Membership': [
+      'My membership',
+      [
+        `Plan: ${user?.plan || 'Unlimited Monthly'}`,
+        `Status: ${user?.status === 'active' ? 'Active' : user?.status || 'Active'}`,
+        user?.joined ? `Member since: ${formatDate(user.joined)}` : 'Member since: Not available'
+      ]
+    ],
+    'My Attendance': [
+      'My attendance',
+      attendance.length
+        ? attendance.map((item) => formatDateTime(item.date))
+        : ['No attendance records are available yet.']
+    ],
+    'My Profile': [
+      'My profile',
+      [
+        `Name: ${user?.name || 'FitPulse Member'}`,
+        `Email: ${user?.email || 'Not available'}`,
+        `Member ID: ${user?.id || 'Not available'}`
+      ]
+    ]
+  }[section]
+  if (!content) return null
+  return (
+    <section className="dashboard-card workspace-card">
+      <p className="eyebrow">Member portal</p>
+      <h2>{content[0]}</h2>
+      {content[1].map((item) => (
+        <p className="workspace-row" key={item}>
+          {item}
+        </p>
+      ))}
+    </section>
+  )
+}
 
 export default function UserPage({ user, onSignOut }) {
-  const [profile, setProfile] = useState(user)
-  const [editing, setEditing] = useState(false)
-  const [clock, setClock] = useState(new Date())
-  const [data, setData] = useState(getData)
+  const { token } = useAuth()
+  const [section, setSection] = useState('Dashboard')
+  const [showPass, setShowPass] = useState(false)
+  const [attendance, setAttendance] = useState([])
+  const [loadError, setLoadError] = useState('')
+
   useEffect(() => {
-    const timer = setInterval(() => setClock(new Date()), 1000)
-    return () => clearInterval(timer)
-  }, [])
-  if (!user) return null
-  const attendance = data.attendance.filter((item) => item.memberId === user.id)
-  const payments = data.payments.filter((item) => item.memberId === user.id)
-  const membershipExpiry = new Date(profile.membershipExpires || Date.now() + 28 * 86400000)
-  const daysRemaining = Math.max(0, Math.ceil((membershipExpiry - Date.now()) / 86400000))
-  const initials = profile.name
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-  const saveProfile = () => {
-    const next = {
-      ...data,
-      accounts: data.accounts.map((account) => (account.id === user.id ? profile : account))
+    if (!token) return
+    let cancelled = false
+    apiRequest('/attendance', { token })
+      .then((result) => {
+        if (!cancelled) setAttendance(result.attendance || [])
+      })
+      .catch((error) => {
+        if (!cancelled) setLoadError(error.message || 'Could not load your attendance.')
+      })
+    return () => {
+      cancelled = true
     }
-    saveData(next)
-    localStorage.setItem('fitpulse-session', JSON.stringify(profile))
-    setData(next)
-    setEditing(false)
-  }
-  const exportPayments = () => {
-    const rows = [
-      'Date,Method,Plan,Amount',
-      ...payments.map((item) => `${item.date},${item.method},${item.plan},${item.amount}`)
+  }, [token])
+
+  const today = new Date()
+  const visitsThisMonth = attendance.filter(
+    (item) => monthIndexOf(new Date(item.date)) === monthIndexOf(today)
+  ).length
+  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+  const daysRemaining = Math.max(0, lastDay.getDate() - today.getDate())
+  const stats = [
+    [
+      'Membership status',
+      user?.status === 'active' ? 'Active' : user?.status || 'Active',
+      user?.plan || 'Unlimited Monthly'
+    ],
+    [
+      'Days remaining',
+      String(daysRemaining),
+      `Renewal due ${lastDay.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}`
+    ],
+    [
+      'Visits this month',
+      String(visitsThisMonth),
+      visitsThisMonth > 0 ? `+${visitsThisMonth} this month` : 'No check-ins yet'
     ]
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(new Blob([rows.join('\n')], { type: 'text/csv' }))
-    link.download = 'fitpulse-payment-history.csv'
-    link.click()
-    URL.revokeObjectURL(link.href)
-  }
-  const uploadPhoto = (event) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setProfile({ ...profile, photo: reader.result })
-    reader.readAsDataURL(file)
-  }
+  ]
+  const chartHeights = heightsFor(trailingBuckets(attendance, 8, 'week'))
+
   return (
-    <main className="portal">
-      <header className="portal-header">
-        <img src={assetUrl('/images/fitpulse.jpg')} alt="FitPulse" />
-        <div>
-          <span className="online-dot" /> Member portal
-        </div>
-        <button className="sign-out" onClick={onSignOut}>
-          Sign out
-        </button>
-      </header>
-      <section className="portal-welcome">
-        <div>
-          <p className="eyebrow">
-            {clock.toLocaleDateString('en-PH', { weekday: 'long', month: 'long', day: 'numeric' })}
-          </p>
-          <h1>
-            Hey, {profile.name.split(' ')[0]}. <em>Let's move.</em>
-          </h1>
-          <p>Your consistency is your superpower. One more session closer.</p>
-        </div>
-        <div className="time-card">
-          <strong>
-            {clock.toLocaleTimeString('en-PH', {
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit'
-            })}
-          </strong>
-          <span>Local gym time</span>
-        </div>
-      </section>
-      <section className="expiry-alert glass-card" aria-label="Membership expiry">
-        <span aria-hidden="true">⚡</span>
-        <div>
-          <strong>
-            {daysRemaining === 0
-              ? 'Your membership expires today.'
-              : `Your membership expires in ${daysRemaining} days.`}
-          </strong>
-          <p>
-            Renewal date:{' '}
-            {membershipExpiry.toLocaleDateString('en-PH', {
-              month: 'long',
-              day: 'numeric',
-              year: 'numeric'
-            })}
-          </p>
-        </div>
-        <span className="expiry-date">
-          {membershipExpiry.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}
-        </span>
-      </section>
-      <section className="member-grid">
-        <article className="profile-card card">
-          <div className="card-title">
-            <p className="eyebrow">Your profile</p>
-            <button onClick={() => setEditing(!editing)}>
-              {editing ? 'Cancel' : 'Edit profile'}
-            </button>
-          </div>
-          <div className="profile-name">
-            {profile.photo ? <img src={profile.photo} alt="Profile" /> : <span>{initials}</span>}
+    <DashboardShell
+      role="member"
+      user={user}
+      onSignOut={onSignOut}
+      activeSection={section}
+      onSectionChange={setSection}
+    >
+      {loadError && (
+        <p className="load-error" role="alert">
+          {loadError}
+        </p>
+      )}
+      {section !== 'Dashboard' ? (
+        <MemberWorkspace section={section} user={user} attendance={attendance} />
+      ) : (
+        <>
+          <section className="dashboard-heading">
             <div>
-              <h2>{profile.name}</h2>
-              <p>Member ID · {profile.id}</p>
+              <p className="eyebrow">Your fitness dashboard</p>
+              <h1>Keep your pulse moving.</h1>
+              <p>Every check-in is progress. You are doing great.</p>
             </div>
-          </div>
-          {editing ? (
-            <div className="profile-form">
-              <label>
-                Name
-                <input
-                  value={profile.name}
-                  onChange={(event) => setProfile({ ...profile, name: event.target.value })}
-                />
-              </label>
-              <label>
-                Phone
-                <input
-                  value={profile.phone || ''}
-                  placeholder="0917 555 0123"
-                  onChange={(event) => setProfile({ ...profile, phone: event.target.value })}
-                />
-              </label>
-              <label>
-                Profile photo
-                <input type="file" accept="image/*" onChange={uploadPhoto} />
-              </label>
-              <button className="button small" onClick={saveProfile}>
-                Save changes
+          </section>
+          <section className="stat-grid member-stats">
+            {stats.map(([label, value, detail], index) => (
+              <article className="stat-card" key={label}>
+                <p>{label}</p>
+                <strong>{value}</strong>
+                <small className={index === 2 ? 'trend' : ''}>{detail}</small>
+              </article>
+            ))}
+          </section>
+          <section className="dashboard-grid member-dashboard">
+            <article className="dashboard-card chart-card">
+              <div className="card-heading">
+                <div>
+                  <p className="eyebrow">Your progress</p>
+                  <h2>Attendance over time</h2>
+                </div>
+              </div>
+              <p className="chart-description">Last 8 weeks</p>
+              <div className="bar-chart">
+                {chartHeights.map((height, index) => (
+                  <div key={index}>
+                    <i style={{ height: `${height}%` }} />
+                    <span>W{index + 1}</span>
+                  </div>
+                ))}
+              </div>
+            </article>
+            <article className="dashboard-card next-card">
+              <p className="eyebrow">Membership</p>
+              <h2>Ready for your next session?</h2>
+              <p>Your digital check-in pass is available at the front desk.</p>
+              <button className="button" onClick={() => setShowPass(true)}>
+                View check-in code
               </button>
-            </div>
-          ) : (
-            <dl>
-              <div>
-                <dt>Plan</dt>
-                <dd>{profile.plan}</dd>
-              </div>
-              <div>
-                <dt>Email</dt>
-                <dd>{profile.email}</dd>
-              </div>
-              <div>
-                <dt>Phone</dt>
-                <dd>{profile.phone || 'Add your phone'}</dd>
-              </div>
-              <div>
-                <dt>Status</dt>
-                <dd className="status good">Active</dd>
-              </div>
-            </dl>
-          )}
-        </article>
-        <article className="qr-card card">
-          <p className="eyebrow">Gym entry pass</p>
-          <h2>Your check-in code</h2>
-          <div className="qr">
-            <div className="qr-mark">
-              FP
-              <br />
-              <small>{user.id.replace('FP-', '')}</small>
-            </div>
-          </div>
-          <p>Present this code at the front desk.</p>
-        </article>
-        <article className="calendar-card card">
-          <p className="eyebrow">Training calendar</p>
-          <h2>{clock.toLocaleDateString('en-PH', { month: 'long', year: 'numeric' })}</h2>
-          <div className="calendar-days">
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, index) => (
-              <span key={index}>{day}</span>
-            ))}
-            {Array.from({ length: 30 }, (_, index) => (
-              <b className={index + 1 === clock.getDate() ? 'today' : ''} key={index}>
-                {index + 1}
-              </b>
-            ))}
-          </div>
-        </article>
-      </section>
-      <section className="history-grid">
-        <article className="card">
-          <div className="card-title">
-            <div>
-              <p className="eyebrow">Attendance</p>
-              <h2>Check-in history</h2>
-            </div>
-            <button
-              className="icon-button"
-              title="Full attendance history"
-              aria-label="Full attendance history"
+            </article>
+          </section>
+          {showPass && (
+            <div
+              className="modal-backdrop"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Member check-in code"
             >
-              ↗
-            </button>
-          </div>
-          {attendance.slice(0, 4).map((item) => (
-            <div className="list-row" key={item.date}>
-              <span className="timeline-dot" />
-              <div>
-                <strong>Gym check-in</strong>
-                <p>{item.date}</p>
-              </div>
-              <span className="status good">Complete</span>
+              <section className="checkin-modal">
+                <button
+                  className="modal-close"
+                  onClick={() => setShowPass(false)}
+                  aria-label="Close check-in code"
+                >
+                  Close
+                </button>
+                <p className="eyebrow">FitPulse check-in</p>
+                <h2>{user?.name || 'Member'}</h2>
+                <div className="member-code">{user?.id || 'FP-MEMBER'}</div>
+                <p>Show this member ID at the front desk to check in.</p>
+              </section>
             </div>
-          ))}
-        </article>
-        <article className="card">
-          <div className="card-title">
-            <div>
-              <p className="eyebrow">Payments</p>
-              <h2>Payment history</h2>
-            </div>
-            <button onClick={exportPayments}>Export CSV</button>
-          </div>
-          {payments.map((item) => (
-            <div className="list-row" key={item.date}>
-              <div>
-                <strong>{item.method} payment</strong>
-                <p>
-                  {item.date} · {item.plan}
-                </p>
-              </div>
-              <strong>{formatCurrency(item.amount)}</strong>
-            </div>
-          ))}
-        </article>
-      </section>
-    </main>
+          )}
+        </>
+      )}
+    </DashboardShell>
   )
 }

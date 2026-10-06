@@ -1,442 +1,627 @@
-.navbar {
-  height: 78px;
-  padding: 0 clamp(20px, 6vw, 90px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  width: 100%;
-  border-bottom: 1px solid #ffffff21;
-  background: #0d0e10c9;
-  backdrop-filter: blur(18px);
-}
-.logo-button,
-.logo-button img {
-  border: 0;
-  background: transparent;
-  width: 178px;
-  height: 60px;
-  object-fit: contain;
-}
-.nav-links {
-  display: flex;
-  gap: 28px;
-  align-items: center;
-}
-.nav-links button,
-.nav-links a,
-.footer button,
-.account-intro > button {
-  color: var(--white);
-  border: 0;
-  background: none;
-  font-size: 14px;
-}
-.nav-links > button:not(.button) {
-  position: relative;
-  padding: 8px 0;
-}
-.nav-links > button:not(.button)::after {
-  content: '';
-  position: absolute;
-  width: 0;
-  height: 2px;
-  background: var(--pulse);
-  bottom: 0;
-  left: 50%;
-  transition:
-    width 0.24s ease,
-    left 0.24s ease;
-}
-.nav-links > button:not(.button):hover::after,
-.nav-links > .active::after {
-  width: 100%;
-  left: 0;
-}
-.nav-links .active {
-  color: var(--pulse);
-}
-.button {
-  border: 1px solid var(--pulse);
-  background: var(--pulse);
-  color: #fff;
-  padding: 13px 20px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  box-shadow: 0 8px 23px #ff3b2f35;
-  transition: 0.2s;
-}
-.button:hover {
-  background: var(--pulse-light);
-  transform: scale(1.03);
-  box-shadow: 0 10px 28px #ff3b2f55;
-}
-.button.small {
-  padding: 9px 15px;
-}
-.menu-toggle {
-  display: none;
-  background: none;
-  border: 0;
-  color: #fff;
-  font-size: 22px;
-}
-.hero {
-  min-height: 760px;
-  display: grid;
-  align-items: end;
-  padding: 140px clamp(24px, 10vw, 150px) 100px;
-  background:
-    linear-gradient(90deg, #0d0e10f5 10%, #0d0e1088 57%, #0d0e1022),
-    url('/images/arnold.jpg') center/cover;
-}
-.hero > div {
-  max-width: 700px;
-}
-.hero h1 {
-  font-size: clamp(64px, 9vw, 135px);
-  line-height: 0.85;
-  margin: 15px 0 28px;
-}
-.hero h1 em,
-.statement em {
-  color: var(--pulse);
-  font-style: normal;
-}
-.hero p:not(.eyebrow) {
-  max-width: 500px;
-  color: var(--muted-light);
-  font-size: 18px;
-  line-height: 1.65;
-  margin-bottom: 30px;
-}
-.section {
-  padding: 100px clamp(24px, 10vw, 150px);
-}
-.section h2 {
-  font-size: clamp(40px, 5vw, 70px);
-  line-height: 0.95;
-  margin-bottom: 48px;
-}
-.programs {
-  background: var(--bg-raised);
-}
-.program-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-}
-.program-card {
-  min-height: 370px;
-  padding: 28px;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  position: relative;
-  border-radius: 18px;
-  background: var(--surface);
-  transition:
-    transform 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.25s ease;
-}
-.program-card:hover {
-  transform: translateY(-7px);
-  border-color: #ff3b2f88;
-  box-shadow: 0 22px 40px #0006;
-}
-.program-card img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  opacity: 0.5;
-  transition: transform 0.4s ease;
-}
-.program-card:hover img {
-  transform: scale(1.08);
-}
-.program-card > div {
-  position: relative;
-  z-index: 1;
-  margin-top: auto;
-}
-.program-card h3 {
-  font-size: 32px;
-  margin-top: auto;
-  margin-bottom: 8px;
-}
-.program-card p {
-  color: var(--muted-light);
-  line-height: 1.55;
-  max-width: 280px;
-}
-.program-card button,
-.card-title > button,
-.equipment-card > .card-title > button {
-  background: none;
-  color: var(--white);
-  border: 0;
-  text-align: left;
-  padding: 8px 0;
-  font-weight: 700;
-}
-.statement {
-  background: var(--surface);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 80px;
-  align-items: end;
-}
-.coaching {
-  background: radial-gradient(circle at 80% 10%, #ff3b2f18, transparent 30%), var(--bg);
-}
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  gap: 40px;
-  align-items: end;
-  margin-bottom: 42px;
-}
-.section-heading h2 {
-  margin-bottom: 0;
-}
-.section-heading > p {
-  max-width: 380px;
-  color: var(--muted-light);
-  line-height: 1.7;
-}
-.coach-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
-}
-.coach-card {
-  display: grid;
-  grid-template-columns: minmax(170px, 0.75fr) 1fr;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--glass);
-  backdrop-filter: blur(14px);
-}
-.coach-card img {
-  width: 100%;
-  height: 100%;
-  min-height: 280px;
-  object-fit: cover;
-}
-.coach-card > div {
-  padding: 28px;
-}
-.coach-card h3 {
-  font-size: 30px;
-  margin: 7px 0;
-}
-.coach-card p:not(.eyebrow) {
-  color: var(--muted-light);
-  line-height: 1.6;
-}
-.coach-card button {
-  padding: 4px 0;
-  border: 0;
-  background: none;
-  color: var(--pulse);
-  font-weight: 700;
-}
-.statement h2 {
-  margin: 0;
-}
-.statement > p {
-  font-size: 19px;
-  line-height: 1.7;
-  color: var(--muted-light);
-  max-width: 480px;
-}
-.footer {
-  background: #090a0c;
-  border-top: 1px solid var(--border);
-  padding: 30px clamp(24px, 6vw, 90px);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-}
-.footer img,
-.footer p {
-  color: var(--muted);
-  margin: 0;
-  font-size: 13px;
-}
-.footer button {
-  color: var(--pulse);
-  font-weight: 700;
-}
+/* ============================================================================
+   FitPulse · Auth pages (Login, Register, Forgot password, Reset password)
+   ----------------------------------------------------------------------------
+   A premium split layout: a dark photography showcase panel on the left and a
+   liquid-black glass form on the right. Every value comes from the palette in
+   ../index.css, so the page switches cleanly between the dark (default) and
+   light themes via `data-theme` on <html>.
+   ========================================================================== */
+
+/* --- Split layout ---------------------------------------------------------- */
 .account-layout {
+  position: relative;
   min-height: 100vh;
   display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  color: var(--text);
+  background: var(--bg);
 }
+
+/* Standalone card pages (forgot / reset / register) collapse to one centered
+   column instead of leaving an empty half behind the card. */
+.account-layout:has(.auth-card-wrap) {
+  grid-template-columns: 1fr;
+}
+
+/* --- Left: dark showcase panel --------------------------------------------- */
 .account-intro {
-  min-height: 100%;
-  padding: 40px clamp(28px, 8vw, 120px);
+  /* Force light text and brand accents on top of photography in BOTH themes. */
+  --text: #f6f3ef;
+  --text-muted: rgba(246, 243, 239, 0.74);
+  --accent: var(--pulse);
+
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 28px;
+  min-height: 100vh;
+  padding: clamp(28px, 5vw, 60px);
+}
+
+/* 1) Dimmed barbell photo — ~0.2 opacity so the floating graphic stays the hero */
+.account-intro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('../images/barbell.jpg') center / cover no-repeat;
+  opacity: 0.2;
+}
+
+/* 2) Dark gradient overlay blends both photos with the theme */
+.account-intro::after {
+  content: '';
+  position: absolute;
+  inset: 0;
   background:
-    linear-gradient(#0d0e10b8, #0d0e10e8),
-    url('/images/barbell.jpg') center/cover;
+    linear-gradient(180deg, rgba(7, 8, 10, 0.9), rgba(7, 8, 10, 0.45) 45%, rgba(7, 8, 10, 0.94)),
+    radial-gradient(circle at 18% 88%, rgba(255, 59, 47, 0.22), transparent 55%);
 }
-.register-intro {
-  background-image: linear-gradient(#0d0e10b8, #0d0e10e8), url('/images/gym.jpg');
+
+.account-intro > * {
+  position: relative;
+  z-index: 2;
 }
-.account-intro h1 {
-  font-size: clamp(48px, 6vw, 84px);
-  line-height: 0.92;
-  margin: 12px 0 20px;
+
+/* FitPulse logo — top-left (scales via clamp on small screens) */
+.intro-logo {
+  font-size: 26px;
 }
-.account-intro div > p:last-child {
-  color: var(--muted-light);
-  max-width: 400px;
-  line-height: 1.65;
+.intro-logo svg {
+  width: 56px;
+  height: 34px;
 }
-.account-intro > button {
-  text-align: left;
-  color: var(--muted-light);
-  padding: 0;
+
+/* One short tagline — bottom-left */
+.intro-tagline {
+  align-self: end;
+  max-width: 460px;
 }
+.intro-tagline h1 {
+  margin: 0;
+  font-size: clamp(38px, 5.2vw, 64px);
+  line-height: 0.98;
+}
+
+/* 3) Floating gym objects — slow vertical float, decorative, never interactive */
+.gym-objects {
+  position: absolute;
+  z-index: 3;
+  right: -3%;
+  bottom: 8%;
+  width: clamp(170px, 24vw, 300px);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  box-shadow: var(--shadow-lg);
+  opacity: 0.95;
+  pointer-events: none;
+  animation: float-y 7s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes float-y {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-16px);
+  }
+}
+
+/* --- Right: glass form panel ------------------------------------------------ */
 .form-panel {
   display: grid;
   place-items: center;
-  padding: 50px 28px;
-  background: var(--bg-raised);
+  padding: clamp(32px, 6vw, 72px) clamp(20px, 5vw, 64px);
+  background: radial-gradient(circle at 12% 6%, var(--accent-soft), transparent 42%), var(--bg);
 }
+
+.auth-card-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: clamp(28px, 6vw, 56px);
+  background:
+    radial-gradient(circle at 16% 8%, var(--accent-soft), transparent 46%),
+    linear-gradient(165deg, var(--bg-deep), var(--bg) 60%);
+}
+
+/* --- Liquid-black glass cards ------------------------------------------------ */
 .account-form {
-  width: min(100%, 410px);
+  width: min(100%, 420px);
 }
-.account-form.glass-panel {
-  padding: clamp(24px, 4vw, 38px);
-  background: rgba(24, 25, 29, 0.62);
+
+.auth-card,
+.neo-card {
+  width: min(100%, 460px);
 }
-.account-form h2 {
-  font-size: 50px;
-  margin: 0 0 8px;
+
+/* Standalone cards center their logo, headings and buttons */
+.neo-card,
+.auth-card {
+  text-align: center;
 }
+
+.glass-panel,
+.neo-card,
+.auth-dialog {
+  position: relative;
+  padding: clamp(28px, 5vw, 44px);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--glass);
+  box-shadow:
+    var(--shadow-lg),
+    inset 0 1px 0 var(--inner-highlight);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+}
+
+/* --- Headings ---------------------------------------------------------------- */
+.account-form h2,
+.auth-card h1,
+.neo-card h1 {
+  margin: 6px 0 10px;
+  font-size: clamp(34px, 4.5vw, 46px);
+  line-height: 1;
+}
+
+.auth-card h1,
+.neo-card h1 {
+  text-align: center;
+}
+
+.brand-mark {
+  margin: 0 auto 4px;
+  font:
+    700 22px Oswald,
+    sans-serif;
+  letter-spacing: 0.08em;
+  color: var(--text);
+  text-align: center;
+}
+.brand-mark span {
+  color: var(--accent);
+}
+
+.neo-card .fitpulse-logo,
+.auth-card .fitpulse-logo {
+  justify-content: center;
+}
+
 .form-lead {
-  color: var(--muted);
-  margin-bottom: 32px;
-}
-.account-form > label:not(.check) {
-  display: block;
-  font-weight: 600;
+  margin: 0 0 28px;
+  color: var(--text-muted);
   font-size: 14px;
-  margin: 18px 0;
+  line-height: 1.6;
 }
-.account-form input,
-.account-form select {
-  display: block;
-  width: 100%;
-  background: var(--surface);
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
-  color: #fff;
-  border-radius: 0;
-  padding: 13px;
-  margin-top: 8px;
-  outline-color: var(--pulse);
+
+/* --- FitPulse logo wordmark --------------------------------------------------- */
+.fitpulse-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 25px;
+  font-weight: 700;
 }
-.password-wrap {
+.fitpulse-logo svg {
+  width: 48px;
+  height: 32px;
+}
+.fitpulse-logo path:first-child {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+.fitpulse-logo .logo-weight {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 3;
+}
+.fitpulse-logo strong {
+  color: var(--accent);
+}
+
+/* --- Fields (labels + icon inputs) ------------------------------------------- */
+.field {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 18px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.field-wrap {
   position: relative;
   display: block;
 }
-.password-wrap input {
+
+.field-input {
+  width: 100%;
+  height: 50px;
+  padding: 0 16px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--input-fill);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+/* Room for the leading icon / trailing eye toggle */
+.field-wrap:has(.field-icon) .field-input {
+  padding-left: 44px;
+}
+.field-wrap:has(.password-toggle) .field-input {
   padding-right: 46px;
 }
-.password-wrap button {
+
+.field-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.55;
+}
+
+/* Accent-colored focus glow */
+.field-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: 0;
+}
+
+.field-icon {
   position: absolute;
-  right: 7px;
-  top: calc(50% + 4px);
+  top: 50%;
+  left: 15px;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: var(--text-muted);
   transform: translateY(-50%);
+  pointer-events: none;
+  transition: color 0.2s ease;
+}
+.field-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.field-wrap:focus-within .field-icon {
+  color: var(--accent);
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
   border: 0;
+  border-radius: 8px;
+  color: var(--text-muted);
   background: transparent;
-  color: var(--muted-light);
-  padding: 4px;
+  transform: translateY(-50%);
+  transition:
+    color 0.2s ease,
+    background 0.2s ease;
 }
-.password-wrap svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.8;
-  stroke-linecap: round;
-  stroke-linejoin: round;
+.password-toggle:hover {
+  color: var(--text);
+  background: var(--accent-soft);
 }
-.form-error {
-  color: #ff8b84;
-  font-size: 13px;
-  margin: 12px 0;
+.password-toggle svg {
+  width: 19px;
+  height: 19px;
 }
-.form-hint {
-  color: var(--muted);
-  font-size: 11px;
-  text-align: center;
-  margin: 20px 0 0;
-}
+
+/* --- Form helpers ------------------------------------------------------------- */
 .form-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin: 22px 0;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 4px 0 22px;
   font-size: 13px;
 }
-.form-row a,
-.form-switch button,
-.success-message button {
-  color: var(--pulse);
-  border: 0;
-  background: none;
-  padding: 0;
-  font-weight: 700;
-}
+
 .check {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--muted-light);
-  font-size: 13px;
-  margin: 22px 0;
+  margin: 0;
+  color: var(--text-muted);
+  cursor: pointer;
 }
 .check input {
-  width: auto;
+  width: 16px;
+  height: 16px;
   margin: 0;
-  accent-color: var(--pulse);
+  accent-color: var(--accent);
 }
-.account-form > .button {
+
+.link-button {
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+.link-button:hover {
+  color: var(--accent-hover);
+}
+
+.form-error,
+.form-success {
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.form-error {
+  border: 1px solid rgba(255, 115, 103, 0.35);
+  color: var(--danger);
+  background: rgba(255, 115, 103, 0.1);
+}
+.form-success {
+  border: 1px solid rgba(76, 209, 136, 0.35);
+  color: var(--success);
+  background: rgba(76, 209, 136, 0.1);
+}
+
+.form-switch {
+  margin: 20px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  text-align: center;
+}
+
+.form-hint {
+  margin: 20px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* --- Buttons (one accent button design) ---------------------------------------- */
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 26px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent) 60%, #c92a1e);
+  box-shadow: var(--shadow-md);
+  font:
+    700 15px/1 'DM Sans',
+    sans-serif;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.25s ease,
+    filter 0.2s ease;
+}
+.button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 22px var(--accent-soft);
+}
+.button:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: var(--shadow-md);
+}
+.button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.button:disabled {
+  opacity: 0.55;
+  box-shadow: var(--shadow-sm);
+  transform: none;
+}
+
+/* Uppercase label inside the auth cards/dialogs only (dashboard stays as-is) */
+.account-form .button,
+.auth-card .button,
+.neo-card .button,
+.auth-dialog .button {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Full-width inside the auth cards/dialogs only (dashboard stays inline) */
+.account-form > .button,
+.auth-card > .button,
+.neo-card > .button,
+.login-button,
+.auth-dialog .button {
   width: 100%;
 }
-.form-switch {
+
+/* --- Light / dark theme toggle ------------------------------------------------- */
+.theme-toggle {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--text-muted);
+  background: var(--glass-strong);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.2s ease,
+    box-shadow 0.25s ease;
+}
+.theme-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.theme-toggle:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.theme-toggle svg {
+  width: 19px;
+  height: 19px;
+}
+
+/* --- Auth dialogs (forgot password / create account) ----------------------------- */
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(3, 4, 6, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: backdrop-in 0.22s ease;
+}
+.auth-modal-backdrop.closing {
+  animation: backdrop-out 0.18s ease forwards;
+}
+
+.auth-dialog {
+  width: min(100%, 400px);
   text-align: center;
-  color: var(--muted);
-  font-size: 14px;
+  animation: dialog-in 0.3s cubic-bezier(0.17, 0.84, 0.44, 1);
+}
+.auth-dialog.closing {
+  animation: dialog-out 0.18s ease forwards;
+}
+
+.auth-dialog h2 {
+  margin: 6px 0 10px;
+}
+.auth-dialog .field {
   margin-top: 22px;
+  text-align: left;
 }
-.success-message {
-  color: var(--green);
-  font-size: 14px;
-  margin: 18px 0;
+
+.auth-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text-muted);
+  background: transparent;
+  transition:
+    color 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
 }
+.auth-modal-close:hover {
+  color: var(--text);
+  background: var(--accent-soft);
+  transform: rotate(90deg);
+}
+.auth-modal-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes backdrop-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+}
+@keyframes dialog-out {
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.94);
+  }
+}
+
+/* --- Login transition loader ------------------------------------------------------ */
 .loader-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10;
-  background: #0d0e10f2;
+  z-index: 90;
   display: grid;
   place-items: center;
+  color: var(--text);
+  background: var(--bg);
   text-align: center;
   animation: loader-fade 1.5s ease both;
+}
+.loader-overlay p {
+  color: var(--accent);
+  font:
+    12px 'DM Mono',
+    monospace;
+  letter-spacing: 0.14em;
+}
+.loader-overlay > div > span {
+  display: block;
+  margin-top: 12px;
+  color: var(--text-muted);
+  font-size: 14px;
+}
+.ecg {
+  display: block;
+  width: 220px;
+  margin: 14px auto 0;
+}
+.ecg path {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 4;
+  stroke-dasharray: 460;
+  animation: pulse-line 1.1s infinite;
+}
+
+@keyframes pulse-line {
+  to {
+    stroke-dashoffset: 500;
+  }
 }
 @keyframes loader-fade {
   0%,
@@ -447,97 +632,48 @@
     opacity: 0;
   }
 }
-.loader-overlay p {
-  font: 12px 'DM Mono';
-  letter-spacing: 0.15em;
-  color: var(--pulse);
-}
-.loader-overlay span {
-  color: var(--muted-light);
-  font-size: 14px;
-}
-.ecg {
-  display: block;
-  width: min(80vw, 360px);
-  margin: 12px auto;
-}
-.ecg path {
-  fill: none;
-  stroke: var(--pulse);
-  stroke-width: 4;
-  stroke-linejoin: round;
-  stroke-dasharray: 460;
-  stroke-dashoffset: 460;
-  animation: pulse 1.2s ease-in-out infinite;
-}
-@keyframes pulse {
-  to {
-    stroke-dashoffset: 0;
-  }
-}
-@media (max-width: 700px) {
-  .navbar {
-    height: 64px;
-  }
-  .menu-toggle {
-    display: block;
-  }
-  .nav-links {
-    display: none;
-    position: absolute;
-    top: 64px;
-    left: 0;
-    right: 0;
-    padding: 20px;
-    background: #121316;
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .nav-links.open {
-    display: flex;
-  }
-  .nav-links button,
-  .nav-links a {
-    text-align: left;
-  }
-  .hero {
-    min-height: 680px;
-    padding-bottom: 70px;
-  }
-  .program-grid,
-  .statement,
+
+/* --- Responsive ---------------------------------------------------------------------- */
+@media (max-width: 920px) {
   .account-layout {
     grid-template-columns: 1fr;
   }
-  .coach-grid {
-    grid-template-columns: 1fr;
-  }
-  .statement {
-    gap: 25px;
-  }
-  .footer {
-    align-items: flex-start;
-    flex-direction: column;
-  }
   .account-intro {
-    min-height: 420px;
+    min-height: auto;
+    justify-content: flex-start;
+    padding: 26px 24px 20px;
   }
-  .account-intro > img {
-    margin-bottom: 30px;
+  .intro-tagline h1 {
+    font-size: clamp(32px, 9vw, 44px);
+  }
+  .gym-objects {
+    right: 4%;
+    bottom: 12%;
+    width: clamp(120px, 28vw, 200px);
+    opacity: 0.9;
   }
   .form-panel {
-    padding: 55px 24px;
+    padding: clamp(28px, 7vw, 48px) 20px;
+  }
+  .auth-card-wrap {
+    min-height: auto;
   }
 }
+
 @media (max-width: 560px) {
-  .section-heading {
-    display: block;
+  .account-intro {
+    padding: 22px 20px 18px;
   }
-  .coach-card {
-    grid-template-columns: 1fr;
+  .gym-objects {
+    width: 118px;
   }
-  .coach-card img {
-    min-height: 220px;
-    max-height: 270px;
+  .form-panel {
+    padding: 24px 16px 44px;
+  }
+  .theme-toggle {
+    top: 12px;
+    right: 12px;
+    width: 38px;
+    height: 38px;
   }
 }

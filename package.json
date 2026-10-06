@@ -8,6 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "node server/server.js",
+    "test:server": "node scripts/smoke-server.mjs",
+    "admin:password": "node scripts/admin-password.mjs",
     "format": "prettier --write ."
   },
   "dependencies": {
@@ -15,6 +17,7 @@
     "cors": "^2.8.6",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.0.15",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

@@ -4,6 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="FitPulse gym membership and attendance management" />
+    <link rel="icon" type="image/svg+xml" href="./fitpulse-logo.svg" />
+    <script>
+      // Set the <html> data-theme before first paint so the auth screens never
+      // flash the wrong colors. Uses the saved choice or the system preference.
+      ;(function () {
+        try {
+          var theme = localStorage.getItem('fitpulse-theme')
+          if (theme !== 'light' && theme !== 'dark') {
+            theme = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+          }
+          document.documentElement.setAttribute('data-theme', theme)
+        } catch (error) {
+          // localStorage can be unavailable in some embedded browsers — ignore.
+        }
+      })()
+    </script>
     <title>FitPulse | Stronger every day</title>
   </head>
   <body>
