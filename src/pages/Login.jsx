@@ -1,270 +1,183 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import FitPulseLogo from '../components/FitPulseLogo'
-import InputField from '../components/InputField'
-import PasswordInput from '../components/PasswordInput'
-import { CloseIcon, MoonIcon, SunIcon } from '../components/icons'
+import { useRef, useState } from 'react'
+import BrandLogo from '../components/brand/Logo'
+import ThemeToggle from '../components/brand/ThemeToggle'
+import ForgotPasswordModal from '../components/ForgotPasswordModal'
+import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from '../components/icons'
 import { apiRequest } from '../utils/api'
-import gymObjects from '../images/gymobjects.png'
+import './Login.css'
 
-// Must match the theme key used by the boot script in index.html.
-const THEME_KEY = 'fitpulse-theme'
-
-// Saved choice wins; otherwise follow the OS preference. Falls back to dark.
-function initialTheme() {
-  try {
-    const saved = window.localStorage.getItem(THEME_KEY)
-    if (saved === 'light' || saved === 'dark') return saved
-    return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
-  } catch {
-    return 'dark'
-  }
-}
-
-// Dialog with a dimmed + blurred backdrop, fade/scale animation, and the same
-// close behavior everywhere: backdrop click, the X button, or the Esc key.
-function AuthDialog({ open, onClose, label, children }) {
-  const [closing, setClosing] = useState(false)
-  const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
-
-  const close = useCallback(() => {
-    setClosing(true)
-    window.setTimeout(() => {
-      onCloseRef.current()
-      setClosing(false)
-    }, 180)
-  }, [])
-
-  useEffect(() => {
-    if (!open) return
-    const handleKey = (event) => {
-      if (event.key === 'Escape') close()
-    }
-    window.addEventListener('keydown', handleKey)
-    return () => window.removeEventListener('keydown', handleKey)
-  }, [open, close])
-
-  if (!open) return null
-
-  const suffix = closing ? ' closing' : ''
+function SocialLinks() {
   return (
-    <div
-      className={`auth-modal-backdrop${suffix}`}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) close()
-      }}
-    >
-      <section
-        className={`auth-dialog${suffix}`}
-        role="dialog"
-        aria-modal="true"
-        aria-label={label}
+    <nav className="login-socials" aria-label="FitPulse social media">
+      <a
+        href="https://www.facebook.com"
+        aria-label="FitPulse on Facebook"
+        target="_blank"
+        rel="noreferrer"
       >
-        <button className="auth-modal-close" onClick={close} aria-label={`Close ${label}`}>
-          <CloseIcon />
-        </button>
-        {children}
-      </section>
-    </div>
-  )
-}
-
-// Forgot-password dialog — same endpoint and feedback as the standalone page.
-function ForgotPasswordDialog() {
-  const [email, setEmail] = useState('')
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-  const [pending, setPending] = useState(false)
-
-  const submit = async (event) => {
-    event.preventDefault()
-    setMessage('')
-    setError('')
-    setPending(true)
-    try {
-      const result = await apiRequest('/auth/forgot-password', {
-        method: 'POST',
-        body: JSON.stringify({ email: email.trim() })
-      })
-      setMessage(result.message)
-      setEmail('')
-    } catch (apiError) {
-      setError(apiError.message || 'Something went wrong. Please try again.')
-    } finally {
-      setPending(false)
-    }
-  }
-
-  return (
-    <form onSubmit={submit}>
-      <p className="eyebrow">FitPulse</p>
-      <h2>Forgot password</h2>
-      <p className="form-lead">Enter your email and we will send you a reset link.</p>
-      <InputField
-        label="Email address"
-        name="email"
-        type="email"
-        icon="mail"
-        required
-        autoComplete="email"
-        placeholder="john@example.com"
-        value={email}
-        onChange={(event) => setEmail(event.target.value)}
-      />
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
-      {message && (
-        <p className="form-success" role="status">
-          {message}
-        </p>
-      )}
-      <button className="button" type="submit" disabled={pending}>
-        Send reset link
-      </button>
-    </form>
-  )
-}
-
-// Create-account notice shown instead of the (staff-only) registration route.
-function CreateAccountDialog({ onClose }) {
-  return (
-    <>
-      <p className="eyebrow">FitPulse</p>
-      <h2>Create an account</h2>
-      <p className="form-lead">You must ask the admin for the creation of an account.</p>
-      <button className="button" onClick={onClose}>
-        Okay
-      </button>
-    </>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 8h3V4h-3c-3.1 0-5 1.9-5 5v3H6v4h3v4h4v-4h3l1-4h-4V9c0-.7.3-1 1-1Z" />
+        </svg>
+      </a>
+      <a
+        href="https://www.instagram.com"
+        aria-label="FitPulse on Instagram"
+        target="_blank"
+        rel="noreferrer"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="5" />
+          <circle cx="12" cy="12" r="4" />
+          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+        </svg>
+      </a>
+    </nav>
   )
 }
 
 export default function Login({ navigate, onLogin }) {
-  const [theme, setTheme] = useState(initialTheme)
-  const [error, setError] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [visiblePassword, setVisiblePassword] = useState(false)
   const [pending, setPending] = useState(false)
-  const [dialog, setDialog] = useState(null) // null | 'forgot' | 'create'
+  const [error, setError] = useState('')
+  const [credentialError, setCredentialError] = useState(false)
+  const [shaking, setShaking] = useState(false)
+  const [resetOpen, setResetOpen] = useState(false)
+  const passwordRef = useRef(null)
+  const forgotPasswordRef = useRef(null)
 
-  // Sync <html data-theme> and persist the choice. Runs on mount too, so state
-  // always matches the attribute set by the index.html boot script.
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
-    try {
-      window.localStorage.setItem(THEME_KEY, theme)
-    } catch {
-      // Ignore storage failures (private browsing, etc.).
-    }
-  }, [theme])
-
-  const toggleTheme = () => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
-
+  // A generic 401 keeps account information private while providing clear feedback.
   const submit = async (event) => {
     event.preventDefault()
     setError('')
-    const form = new FormData(event.currentTarget)
+    setCredentialError(false)
     setPending(true)
     try {
       const session = await apiRequest('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email: form.get('email'), password: form.get('password') })
+        body: JSON.stringify({ email, password })
       })
       onLogin(session)
     } catch (apiError) {
-      setError(apiError.message || 'We could not log you in. Please try again.')
+      const invalid = apiError.message === 'Invalid email or password.'
+      setError(
+        invalid
+          ? 'Incorrect email or password'
+          : apiError.message || 'We could not log you in. Please try again.'
+      )
+      if (invalid) {
+        setPassword('')
+        setCredentialError(true)
+        setShaking(true)
+        requestAnimationFrame(() => passwordRef.current?.focus())
+      }
     } finally {
       setPending(false)
     }
   }
 
   return (
-    <main className="account-layout">
-      <button
-        type="button"
-        className="theme-toggle"
-        onClick={toggleTheme}
-        aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-      >
-        {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
-      </button>
-
-      {/* Left showcase panel: logo + one short tagline over dimmed photos */}
-      <section className="account-intro">
-        <FitPulseLogo className="intro-logo" />
-        <div className="intro-tagline">
-          <h1>Stronger every day.</h1>
+    <main className="login-page">
+      {/* CSS-only animated mesh */}
+      <div className="login-mesh" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <ThemeToggle />
+      {/* Left video-led hero */}
+      <section className="login-hero">
+        <BrandLogo />
+        <div className="login-hero__content">
+          <div className="clay-dumbbell" aria-hidden="true">
+            <i className="clay-dumbbell__plate clay-dumbbell__plate--orange clay-dumbbell__plate--left-outer" />
+            <i className="clay-dumbbell__plate clay-dumbbell__plate--red clay-dumbbell__plate--left-inner" />
+            <b className="clay-dumbbell__bar" />
+            <i className="clay-dumbbell__plate clay-dumbbell__plate--red clay-dumbbell__plate--right-inner" />
+            <i className="clay-dumbbell__plate clay-dumbbell__plate--orange clay-dumbbell__plate--right-outer" />
+          </div>
+          <p className="login-hero__eyebrow">Train with purpose</p>
+          <h1>Your next session starts here.</h1>
+          <p>Everything you need to stay strong, focused, and on track.</p>
         </div>
-        <img className="gym-objects" src={gymObjects} alt="" draggable="false" />
+        <div className="login-hero__socials"><span>Follow FitPulse</span><SocialLinks /></div>
       </section>
-
-      {/* Right panel: liquid-glass login form */}
-      <section className="form-panel">
-        <form onSubmit={submit} className="account-form glass-panel">
-          <h2>Log in</h2>
-          <p className="form-lead">Enter your details to continue.</p>
-          <InputField
-            label="Email address"
-            name="email"
-            type="email"
-            icon="mail"
-            required
-            placeholder="john@example.com"
-            autoComplete="email"
-          />
-          <PasswordInput
-            label="Password"
-            name="password"
-            icon="lock"
-            required
-            minLength="8"
-            placeholder="Enter your password"
-            autoComplete="current-password"
-          />
+      {/* Split divider */}
+      <div className="login-divider" aria-hidden="true">
+        <span className="login-divider-node">
+          <svg viewBox="0 0 32 32">
+            <path d="M3 17h7l3-7 5 13 4-9 2 3h5" />
+          </svg>
+        </span>
+      </div>
+      {/* Glass login card */}
+      <section className="login-panel">
+        <form
+          className="login-card"
+          onSubmit={submit}
+          onAnimationEnd={(event) => event.animationName === 'login-shake' && setShaking(false)}
+        >
+          <div className="login-card-header login-enter">
+            <h1>Welcome back</h1>
+            <p>Login to continue your fitness journey.</p>
+          </div>
+          <label className="login-field login-enter">
+            <MailIcon />
+            <input
+              name="email"
+              type="email"
+              aria-label="Email address"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="john123@gmail.com"
+              autoComplete="email"
+              required
+            />
+            <span>Email address</span>
+          </label>
+          <label className={`login-field login-enter${shaking ? ' shake' : ''}${credentialError ? ' login-field--error' : ''}`}>
+            <LockIcon />
+            <input
+              name="password"
+              ref={passwordRef}
+              type={visiblePassword ? 'text' : 'password'}
+              aria-label="Password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter your password"
+              autoComplete="current-password"
+              minLength="8"
+              required
+            />
+            <span>Password</span>
+            <button
+              type="button"
+              onClick={() => setVisiblePassword((current) => !current)}
+              aria-label={visiblePassword ? 'Hide password' : 'Show password'}
+            >
+              {visiblePassword ? <EyeOffIcon /> : <EyeIcon />}
+            </button>
+          </label>
           {error && (
-            <p className="form-error" role="alert">
+            <p className="login-error login-password-error" aria-live="polite">
               {error}
             </p>
           )}
-          <div className="form-row">
-            <label className="check">
-              <input type="checkbox" /> Remember me
+          <div className="login-options login-enter">
+            <label>
+              <input type="checkbox" /> <span>Remember me</span>
             </label>
-            <button type="button" className="link-button" onClick={() => setDialog('forgot')}>
+            <button type="button" ref={forgotPasswordRef} onClick={() => setResetOpen(true)}>
               Forgot password?
             </button>
           </div>
-          <button className="button" type="submit" disabled={pending}>
-            Log in <span aria-hidden="true">→</span>
+          <button className="login-submit login-enter" type="submit" disabled={pending}>
+            {pending ? 'Logging in…' : 'Login'}
           </button>
-          <p className="form-switch">
-            New to FitPulse?{' '}
-            <button type="button" className="link-button" onClick={() => setDialog('create')}>
-              Create an account
-            </button>
-          </p>
-          <p className="form-hint">
-            Demo: admin@fitpulse.com / admin123 · member@fitpulse.com / member123
-          </p>
         </form>
       </section>
-
-      <AuthDialog
-        open={dialog === 'forgot'}
-        onClose={() => setDialog(null)}
-        label="Forgot password"
-      >
-        <ForgotPasswordDialog />
-      </AuthDialog>
-
-      <AuthDialog
-        open={dialog === 'create'}
-        onClose={() => setDialog(null)}
-        label="Create an account"
-      >
-        <CreateAccountDialog onClose={() => setDialog(null)} />
-      </AuthDialog>
+      {resetOpen && <ForgotPasswordModal initialEmail={email} onClose={() => setResetOpen(false)} returnFocusRef={forgotPasswordRef} />}
     </main>
   )
 }

@@ -40,16 +40,7 @@
   padding: clamp(28px, 5vw, 60px);
 }
 
-/* 1) Dimmed barbell photo — ~0.2 opacity so the floating graphic stays the hero */
-.account-intro::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: url('../images/barbell.jpg') center / cover no-repeat;
-  opacity: 0.2;
-}
-
-/* 2) Dark gradient overlay blends both photos with the theme */
+/* Dark gradient overlay for the shared auth showcase panel. */
 .account-intro::after {
   content: '';
   position: absolute;
@@ -82,34 +73,6 @@
   margin: 0;
   font-size: clamp(38px, 5.2vw, 64px);
   line-height: 0.98;
-}
-
-/* 3) Floating gym objects — slow vertical float, decorative, never interactive */
-.gym-objects {
-  position: absolute;
-  z-index: 3;
-  right: -3%;
-  bottom: 8%;
-  width: clamp(170px, 24vw, 300px);
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 22px;
-  box-shadow: var(--shadow-lg);
-  opacity: 0.95;
-  pointer-events: none;
-  animation: float-y 7s ease-in-out infinite;
-  will-change: transform;
-}
-
-@keyframes float-y {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-16px);
-  }
 }
 
 /* --- Right: glass form panel ------------------------------------------------ */
@@ -646,12 +609,6 @@
   .intro-tagline h1 {
     font-size: clamp(32px, 9vw, 44px);
   }
-  .gym-objects {
-    right: 4%;
-    bottom: 12%;
-    width: clamp(120px, 28vw, 200px);
-    opacity: 0.9;
-  }
   .form-panel {
     padding: clamp(28px, 7vw, 48px) 20px;
   }
@@ -663,9 +620,6 @@
 @media (max-width: 560px) {
   .account-intro {
     padding: 22px 20px 18px;
-  }
-  .gym-objects {
-    width: 118px;
   }
   .form-panel {
     padding: 24px 16px 44px;
