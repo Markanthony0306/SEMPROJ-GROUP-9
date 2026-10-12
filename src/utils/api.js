@@ -6,7 +6,7 @@ function buildHeaders(options = {}) {
   return headers
 }
 
-export async function apiRequest(path, options = {}) {
+export async function apiResponse(path, options = {}) {
   const { token, ...requestOptions } = options
   let response
   try {
@@ -20,7 +20,16 @@ export async function apiRequest(path, options = {}) {
     error.cause = cause
     throw error
   }
-  const payload = await response.json().catch(() => ({}))
-  if (!response.ok) throw new Error(payload.message || `Request failed (${response.status}).`)
-  return payload
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({}))
+    const error = new Error(payload.message || `Request failed (${response.status}).`)
+    error.status = response.status
+    throw error
+  }
+  return response
+}
+
+export async function apiRequest(path, options = {}) {
+  const response = await apiResponse(path, options)
+  return response.json().catch(() => ({}))
 }
