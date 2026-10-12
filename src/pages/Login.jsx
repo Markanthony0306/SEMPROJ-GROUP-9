@@ -1,183 +1,105 @@
-import { useRef, useState } from 'react'
-import BrandLogo from '../components/brand/Logo'
-import ThemeToggle from '../components/brand/ThemeToggle'
-import ForgotPasswordModal from '../components/ForgotPasswordModal'
-import { EyeIcon, EyeOffIcon, LockIcon, MailIcon } from '../components/icons'
+import { useEffect, useRef, useState } from 'react'
 import { apiRequest } from '../utils/api'
 import './Login.css'
 
-function SocialLinks() {
-  return (
-    <nav className="login-socials" aria-label="FitPulse social media">
-      <a
-        href="https://www.facebook.com"
-        aria-label="FitPulse on Facebook"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M14 8h3V4h-3c-3.1 0-5 1.9-5 5v3H6v4h3v4h4v-4h3l1-4h-4V9c0-.7.3-1 1-1Z" />
-        </svg>
-      </a>
-      <a
-        href="https://www.instagram.com"
-        aria-label="FitPulse on Instagram"
-        target="_blank"
-        rel="noreferrer"
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <rect x="3" y="3" width="18" height="18" rx="5" />
-          <circle cx="12" cy="12" r="4" />
-          <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
-        </svg>
-      </a>
-    </nav>
-  )
+const ICONS = {
+  alert: <><path d="M12 3 22 21H2L12 3Z" /><path d="M12 10v5M12 18h.01" /></>,
+  eye: <><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>,
+  eyeoff: <><path d="m3 3 18 18M10.6 6.2A9.7 9.7 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.2 3.8M6.3 7.6C3.6 9.3 2 12 2 12s4 6 10 6a9.6 9.6 0 0 0 4-.9M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>,
+  fb: <path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8Z" />,
+  ig: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><path d="M17.5 6.5h.01" /></>,
+  lock: <><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></>,
+  mail: <><rect x="2" y="4" width="20" height="16" rx="3" /><path d="m2 7 10 7 10-7" /></>,
+  qr: <><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3zM20 14v7h-3" /></>,
+  bell: <><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0" /></>,
+  wallet: <><rect x="2" y="6" width="20" height="14" rx="3" /><path d="M2 10h20" /><circle cx="17" cy="15" r="1.4" /></>,
+  moon: <path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10Z" />,
+  sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5" /></>
 }
 
-export default function Login({ navigate, onLogin }) {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [visiblePassword, setVisiblePassword] = useState(false)
-  const [pending, setPending] = useState(false)
-  const [error, setError] = useState('')
-  const [credentialError, setCredentialError] = useState(false)
-  const [shaking, setShaking] = useState(false)
-  const [resetOpen, setResetOpen] = useState(false)
-  const passwordRef = useRef(null)
-  const forgotPasswordRef = useRef(null)
+function Icon({ name, size = 20 }) {
+  return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICONS[name]}</svg>
+}
 
-  // A generic 401 keeps account information private while providing clear feedback.
+function Brand() {
+  return <><svg width="46" height="24" viewBox="0 0 88 28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7v14M4 14h14l5-9 8 18 7-13 4 4h36M84 7v14M84 14h-6" /></svg>Fit<span>Pulse</span></>
+}
+
+function Dumbbell() {
+  return <svg className="dumb" viewBox="0 0 300 200" aria-hidden="true"><defs><linearGradient id="gO" x1="0" x2="1"><stop offset="0" stopColor="#ffb23a" /><stop offset=".55" stopColor="#f08a0c" /><stop offset="1" stopColor="#d9700a" /></linearGradient><linearGradient id="gR" x1="0" x2="1"><stop offset="0" stopColor="#f0525a" /><stop offset=".55" stopColor="#d62f37" /><stop offset="1" stopColor="#b21f28" /></linearGradient><linearGradient id="gB" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#3c7a9b" /><stop offset="1" stopColor="#0a3249" /></linearGradient><filter id="sh" x="-20%" y="-20%" width="150%" height="170%"><feDropShadow dx="6" dy="10" stdDeviation="7" floodColor="#0d2b3e" floodOpacity=".3" /></filter></defs><g filter="url(#sh)" transform="rotate(-7 150 100)"><rect x="82" y="93" width="136" height="15" rx="7.5" fill="url(#gB)" /><rect x="18" y="56" width="30" height="92" rx="15" fill="url(#gO)" /><rect x="54" y="46" width="32" height="108" rx="16" fill="url(#gR)" /><rect x="214" y="46" width="32" height="108" rx="16" fill="url(#gR)" /><rect x="252" y="56" width="30" height="92" rx="15" fill="url(#gO)" /><g fill="#fff" opacity=".28"><rect x="24" y="68" width="5" height="60" rx="2.5" /><rect x="60" y="58" width="5" height="82" rx="2.5" /><rect x="220" y="58" width="5" height="82" rx="2.5" /><rect x="258" y="68" width="5" height="60" rx="2.5" /></g></g></svg>
+}
+
+export default function Login({ onLogin }) {
+  const [email, setEmail] = useState(() => localStorage.getItem('fp_email') || '')
+  const [password, setPassword] = useState('')
+  const [remember, setRemember] = useState(() => Boolean(localStorage.getItem('fp_email')))
+  const [showPassword, setShowPassword] = useState(false)
+  const [capsLock, setCapsLock] = useState(false)
+  const [pending, setPending] = useState(false)
+  const [shaking, setShaking] = useState(false)
+  const [errors, setErrors] = useState({ email: '', password: '', general: '' })
+  const [resetOpen, setResetOpen] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetPending, setResetPending] = useState(false)
+  const [resetError, setResetError] = useState('')
+  const [toast, setToast] = useState('')
+  const [dark, setDark] = useState(() => document.documentElement.dataset.theme === 'dark')
+  const emailRef = useRef(null)
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+    localStorage.setItem('fitpulse-theme', dark ? 'dark' : 'light')
+  }, [dark])
+
+  const clearErrors = () => setErrors({ email: '', password: '', general: '' })
+  const showToast = (message) => {
+    setToast(message)
+    window.setTimeout(() => setToast(''), 2400)
+  }
+  const fillDemo = (role) => {
+    setEmail(role === 'admin' ? 'admin@fitpulse.com' : 'member@fitpulse.com')
+    setPassword(role === 'admin' ? 'admin123' : 'member123')
+    clearErrors()
+  }
   const submit = async (event) => {
     event.preventDefault()
-    setError('')
-    setCredentialError(false)
+    const normalizedEmail = email.trim().toLowerCase()
+    const nextErrors = {
+      email: /^\S+@\S+\.\S+$/.test(normalizedEmail) ? '' : 'Enter a valid email address',
+      password: password ? '' : 'Enter your password',
+      general: ''
+    }
+    setErrors(nextErrors)
+    if (nextErrors.email || nextErrors.password) return
     setPending(true)
     try {
-      const session = await apiRequest('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password })
-      })
+      const session = await apiRequest('/auth/login', { method: 'POST', body: JSON.stringify({ email: normalizedEmail, password }) })
+      if (remember) localStorage.setItem('fp_email', normalizedEmail)
+      else localStorage.removeItem('fp_email')
       onLogin(session)
-    } catch (apiError) {
-      const invalid = apiError.message === 'Invalid email or password.'
-      setError(
-        invalid
-          ? 'Incorrect email or password'
-          : apiError.message || 'We could not log you in. Please try again.'
-      )
-      if (invalid) {
-        setPassword('')
-        setCredentialError(true)
-        setShaking(true)
-        requestAnimationFrame(() => passwordRef.current?.focus())
-      }
-    } finally {
-      setPending(false)
-    }
+    } catch (error) {
+      setPassword('')
+      setErrors({ email: '', password: '', general: error.message || 'Wrong email or password. Please try again.' })
+      setShaking(true)
+      emailRef.current?.focus()
+    } finally { setPending(false) }
+  }
+  const sendReset = async (event) => {
+    event.preventDefault()
+    if (!/^\S+@\S+\.\S+$/.test(resetEmail.trim())) { setResetError('Enter a valid email address'); return }
+    setResetError(''); setResetPending(true)
+    try { await apiRequest('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email: resetEmail.trim() }) }); setResetOpen(false); showToast('If that email has an account, a reset link was sent') }
+    catch (error) { setResetError(error.message || 'We could not send the reset link. Please try again.') }
+    finally { setResetPending(false) }
   }
 
-  return (
-    <main className="login-page">
-      {/* CSS-only animated mesh */}
-      <div className="login-mesh" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </div>
-      <ThemeToggle />
-      {/* Left video-led hero */}
-      <section className="login-hero">
-        <BrandLogo />
-        <div className="login-hero__content">
-          <div className="clay-dumbbell" aria-hidden="true">
-            <i className="clay-dumbbell__plate clay-dumbbell__plate--orange clay-dumbbell__plate--left-outer" />
-            <i className="clay-dumbbell__plate clay-dumbbell__plate--red clay-dumbbell__plate--left-inner" />
-            <b className="clay-dumbbell__bar" />
-            <i className="clay-dumbbell__plate clay-dumbbell__plate--red clay-dumbbell__plate--right-inner" />
-            <i className="clay-dumbbell__plate clay-dumbbell__plate--orange clay-dumbbell__plate--right-outer" />
-          </div>
-          <p className="login-hero__eyebrow">Train with purpose</p>
-          <h1>Your next session starts here.</h1>
-          <p>Everything you need to stay strong, focused, and on track.</p>
-        </div>
-        <div className="login-hero__socials"><span>Follow FitPulse</span><SocialLinks /></div>
-      </section>
-      {/* Split divider */}
-      <div className="login-divider" aria-hidden="true">
-        <span className="login-divider-node">
-          <svg viewBox="0 0 32 32">
-            <path d="M3 17h7l3-7 5 13 4-9 2 3h5" />
-          </svg>
-        </span>
-      </div>
-      {/* Glass login card */}
-      <section className="login-panel">
-        <form
-          className="login-card"
-          onSubmit={submit}
-          onAnimationEnd={(event) => event.animationName === 'login-shake' && setShaking(false)}
-        >
-          <div className="login-card-header login-enter">
-            <h1>Welcome back</h1>
-            <p>Login to continue your fitness journey.</p>
-          </div>
-          <label className="login-field login-enter">
-            <MailIcon />
-            <input
-              name="email"
-              type="email"
-              aria-label="Email address"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="john123@gmail.com"
-              autoComplete="email"
-              required
-            />
-            <span>Email address</span>
-          </label>
-          <label className={`login-field login-enter${shaking ? ' shake' : ''}${credentialError ? ' login-field--error' : ''}`}>
-            <LockIcon />
-            <input
-              name="password"
-              ref={passwordRef}
-              type={visiblePassword ? 'text' : 'password'}
-              aria-label="Password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Enter your password"
-              autoComplete="current-password"
-              minLength="8"
-              required
-            />
-            <span>Password</span>
-            <button
-              type="button"
-              onClick={() => setVisiblePassword((current) => !current)}
-              aria-label={visiblePassword ? 'Hide password' : 'Show password'}
-            >
-              {visiblePassword ? <EyeOffIcon /> : <EyeIcon />}
-            </button>
-          </label>
-          {error && (
-            <p className="login-error login-password-error" aria-live="polite">
-              {error}
-            </p>
-          )}
-          <div className="login-options login-enter">
-            <label>
-              <input type="checkbox" /> <span>Remember me</span>
-            </label>
-            <button type="button" ref={forgotPasswordRef} onClick={() => setResetOpen(true)}>
-              Forgot password?
-            </button>
-          </div>
-          <button className="login-submit login-enter" type="submit" disabled={pending}>
-            {pending ? 'Logging in…' : 'Login'}
-          </button>
-        </form>
-      </section>
-      {resetOpen && <ForgotPasswordModal initialEmail={email} onClose={() => setResetOpen(false)} returnFocusRef={forgotPasswordRef} />}
-    </main>
-  )
+  return <div id="login">
+    <button className="ib theme-fab" type="button" onClick={() => setDark((value) => !value)} title="Toggle theme" aria-label="Toggle theme"><Icon name={dark ? 'sun' : 'moon'} /></button>
+    <div className="lwrap">
+      <section className="hero clay"><div className="brandbar"><Brand /><em>Gym Management System</em></div><div className="hbody"><Dumbbell /><span className="eyebrow">Train with purpose</span><h1>Your next session starts here.</h1><p>Everything you need to stay strong, focused, and on track.</p><div className="feats"><span className="feat"><Icon name="qr" size={16} />QR check-in</span><span className="feat"><Icon name="bell" size={16} />Expiry reminders</span><span className="feat"><Icon name="wallet" size={16} />Payment records</span></div></div><div className="follow">Follow FitPulse <a className="soc fb" href="https://www.facebook.com" title="Facebook" aria-label="FitPulse on Facebook"><Icon name="fb" size={22} /></a><a className="soc ig" href="https://www.instagram.com" title="Instagram" aria-label="FitPulse on Instagram"><Icon name="ig" size={22} /></a></div></section>
+      <section className={`lform clay${shaking ? ' shake' : ''}`} onAnimationEnd={() => setShaking(false)}><div className="fhead"><h2>Welcome back</h2><p>Login to continue your fitness journey.</p></div><div className="demo">Try a demo: <button type="button" onClick={() => fillDemo('admin')}>Admin</button><button type="button" onClick={() => fillDemo('member')}>Member</button></div>{errors.general && <div className="banner show" role="alert"><Icon name="alert" size={16} />{errors.general}</div>}<form onSubmit={submit}><label className={`inp${errors.email ? ' bad' : ''}`}><Icon name="mail" /><input ref={emailRef} type="email" autoComplete="username" placeholder="john123@gmail.com" value={email} onChange={(event) => { setEmail(event.target.value); clearErrors() }} /></label>{errors.email && <div className="err show">{errors.email}</div>}<label className={`inp${errors.password ? ' bad' : ''}`}><Icon name="lock" /><input type={showPassword ? 'text' : 'password'} autoComplete="current-password" placeholder="Enter your password" value={password} onKeyDown={(event) => setCapsLock(event.getModifierState('CapsLock'))} onKeyUp={(event) => setCapsLock(event.getModifierState('CapsLock'))} onChange={(event) => { setPassword(event.target.value); clearErrors() }} /><button className="eye" type="button" onClick={() => setShowPassword((value) => !value)} aria-label="Show or hide password"><Icon name={showPassword ? 'eyeoff' : 'eye'} /></button></label>{errors.password && <div className="err show">{errors.password}</div>}<div className={`caps${capsLock ? ' show' : ''}`}><Icon name="alert" size={14} />Caps Lock is on</div><div className="opts"><label><input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} /> Remember me</label><button className="forgot-link" type="button" onClick={() => { setResetEmail(email); setResetError(''); setResetOpen(true) }}>Forgot password?</button></div><button className={`btn lbtn${pending ? ' load' : ''}`} type="submit" disabled={pending}><span className="tx">Login</span><span className="sp" /></button></form><p className="lfoot">Need an account? Ask your gym admin to create one for you.</p></section>
+    </div>
+    {resetOpen && <div className="modal show" role="dialog" aria-modal="true" aria-labelledby="reset-title" onMouseDown={(event) => event.target === event.currentTarget && setResetOpen(false)}><div className="clay" id="mbody"><div className="mh"><h2 id="reset-title">Reset password</h2><button className="ib sm" type="button" onClick={() => setResetOpen(false)} aria-label="Close">×</button></div><form onSubmit={sendReset}><p className="modal-copy">Enter your account email and we'll send you a reset link.</p><label className="field">Email<input className="clay-in" type="email" placeholder="john123@gmail.com" value={resetEmail} onChange={(event) => setResetEmail(event.target.value)} /></label>{resetError && <p className="reset-error">{resetError}</p>}<div className="ma"><button className="btn" type="submit" disabled={resetPending}>Send Reset Link</button><button className="btn ghost" type="button" onClick={() => setResetOpen(false)}>Cancel</button></div></form></div></div>}
+    <div id="toast" className={`clay${toast ? ' show' : ''}`}>{toast}</div>
+  </div>
 }

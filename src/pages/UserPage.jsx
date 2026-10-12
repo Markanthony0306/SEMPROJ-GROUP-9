@@ -2,184 +2,26 @@ import { useEffect, useState } from 'react'
 import DashboardShell from '../components/DashboardShell'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
-import {
-  formatDate,
-  formatDateTime,
-  heightsFor,
-  monthIndexOf,
-  trailingBuckets
-} from '../utils/metrics'
 
-function MemberWorkspace({ section, user, attendance }) {
-  const content = {
-    'My Membership': [
-      'My membership',
-      [
-        `Plan: ${user?.plan || 'Unlimited Monthly'}`,
-        `Status: ${user?.status === 'active' ? 'Active' : user?.status || 'Active'}`,
-        user?.joined ? `Member since: ${formatDate(user.joined)}` : 'Member since: Not available'
-      ]
-    ],
-    'My Attendance': [
-      'My attendance',
-      attendance.length
-        ? attendance.map((item) => formatDateTime(item.date))
-        : ['No attendance records are available yet.']
-    ],
-    'My Profile': [
-      'My profile',
-      [
-        `Name: ${user?.name || 'FitPulse Member'}`,
-        `Email: ${user?.email || 'Not available'}`,
-        `Member ID: ${user?.id || 'Not available'}`
-      ]
-    ]
-  }[section]
-  if (!content) return null
-  return (
-    <section className="dashboard-card workspace-card">
-      <p className="eyebrow">Member portal</p>
-      <h2>{content[0]}</h2>
-      {content[1].map((item) => (
-        <p className="workspace-row" key={item}>
-          {item}
-        </p>
-      ))}
-    </section>
-  )
-}
+const date = (value) => value ? new Date(value).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
+const time = (value) => value ? new Date(value).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'
+const money = (value) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(value || 0))
+function Table({ headings, children }) { return <div className="wrap"><table><thead><tr>{headings.map((heading) => <th key={heading}>{heading}</th>)}</tr></thead><tbody>{children}</tbody></table></div> }
 
 export default function UserPage({ user, onSignOut }) {
-  const { token } = useAuth()
-  const [section, setSection] = useState('Dashboard')
-  const [showPass, setShowPass] = useState(false)
-  const [attendance, setAttendance] = useState([])
-  const [loadError, setLoadError] = useState('')
-
-  useEffect(() => {
-    if (!token) return
-    let cancelled = false
-    apiRequest('/attendance', { token })
-      .then((result) => {
-        if (!cancelled) setAttendance(result.attendance || [])
-      })
-      .catch((error) => {
-        if (!cancelled) setLoadError(error.message || 'Could not load your attendance.')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [token])
-
-  const today = new Date()
-  const visitsThisMonth = attendance.filter(
-    (item) => monthIndexOf(new Date(item.date)) === monthIndexOf(today)
-  ).length
-  const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-  const daysRemaining = Math.max(0, lastDay.getDate() - today.getDate())
-  const stats = [
-    [
-      'Membership status',
-      user?.status === 'active' ? 'Active' : user?.status || 'Active',
-      user?.plan || 'Unlimited Monthly'
-    ],
-    [
-      'Days remaining',
-      String(daysRemaining),
-      `Renewal due ${lastDay.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}`
-    ],
-    [
-      'Visits this month',
-      String(visitsThisMonth),
-      visitsThisMonth > 0 ? `+${visitsThisMonth} this month` : 'No check-ins yet'
-    ]
-  ]
-  const chartHeights = heightsFor(trailingBuckets(attendance, 8, 'week'))
-
-  return (
-    <DashboardShell
-      role="member"
-      user={user}
-      onSignOut={onSignOut}
-      activeSection={section}
-      onSectionChange={setSection}
-    >
-      {loadError && (
-        <p className="load-error" role="alert">
-          {loadError}
-        </p>
-      )}
-      {section !== 'Dashboard' ? (
-        <MemberWorkspace section={section} user={user} attendance={attendance} />
-      ) : (
-        <>
-          <section className="dashboard-heading">
-            <div>
-              <p className="eyebrow">Your fitness dashboard</p>
-              <h1>Keep your pulse moving.</h1>
-              <p>Every check-in is progress. You are doing great.</p>
-            </div>
-          </section>
-          <section className="stat-grid member-stats">
-            {stats.map(([label, value, detail], index) => (
-              <article className="stat-card" key={label}>
-                <p>{label}</p>
-                <strong>{value}</strong>
-                <small className={index === 2 ? 'trend' : ''}>{detail}</small>
-              </article>
-            ))}
-          </section>
-          <section className="dashboard-grid member-dashboard">
-            <article className="dashboard-card chart-card">
-              <div className="card-heading">
-                <div>
-                  <p className="eyebrow">Your progress</p>
-                  <h2>Attendance over time</h2>
-                </div>
-              </div>
-              <p className="chart-description">Last 8 weeks</p>
-              <div className="bar-chart">
-                {chartHeights.map((height, index) => (
-                  <div key={index}>
-                    <i style={{ height: `${height}%` }} />
-                    <span>W{index + 1}</span>
-                  </div>
-                ))}
-              </div>
-            </article>
-            <article className="dashboard-card next-card">
-              <p className="eyebrow">Membership</p>
-              <h2>Ready for your next session?</h2>
-              <p>Your digital check-in pass is available at the front desk.</p>
-              <button className="button" onClick={() => setShowPass(true)}>
-                View check-in code
-              </button>
-            </article>
-          </section>
-          {showPass && (
-            <div
-              className="modal-backdrop"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Member check-in code"
-            >
-              <section className="checkin-modal">
-                <button
-                  className="modal-close"
-                  onClick={() => setShowPass(false)}
-                  aria-label="Close check-in code"
-                >
-                  Close
-                </button>
-                <p className="eyebrow">FitPulse check-in</p>
-                <h2>{user?.name || 'Member'}</h2>
-                <div className="member-code">{user?.id || 'FP-MEMBER'}</div>
-                <p>Show this member ID at the front desk to check in.</p>
-              </section>
-            </div>
-          )}
-        </>
-      )}
-    </DashboardShell>
-  )
+  const { token } = useAuth(); const [section, setSection] = useState('Dashboard'); const [attendance, setAttendance] = useState([]); const [payments, setPayments] = useState([]); const [currentUser, setCurrentUser] = useState(user); const [error, setError] = useState(''); const [notice, setNotice] = useState('')
+  const load = async () => { try { const [profile, attendanceResult, paymentResult] = await Promise.all([apiRequest('/me', { token }), apiRequest('/attendance', { token }), apiRequest('/payments', { token })]); setCurrentUser(profile.user); setAttendance(attendanceResult.attendance); setPayments(paymentResult.payments); setError('') } catch (cause) { setError(cause.message) } }
+  useEffect(() => { load() }, [token])
+  const action = async (path, options, message) => { try { await apiRequest(path, { token, ...options, headers: { 'Content-Type': 'application/json' } }); setNotice(message); await load() } catch (cause) { setError(cause.message) } }
+  const expiry = currentUser?.membershipEnd ? Math.max(0, Math.ceil((new Date(currentUser.membershipEnd) - new Date()) / 86400000)) : null
+  const settings = <section className="grid g2"><article className="card clay"><h2>Profile</h2><form className="mf" onSubmit={(event) => { event.preventDefault(); action('/profile', { method: 'PATCH', body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }, 'Profile saved.') }}><label className="field">Full name<input className="clay-in" name="name" defaultValue={currentUser?.name} required /></label><label className="field">Email<input className="clay-in" name="email" defaultValue={currentUser?.email} type="email" required /></label><label className="field">Contact number<input className="clay-in" name="phone" defaultValue={currentUser?.phone || ''} /></label><button className="btn">Save profile</button></form></article><article className="card clay"><h2>Change Password</h2><form className="mf" onSubmit={(event) => { event.preventDefault(); const form = new FormData(event.currentTarget); action('/profile/change-password', { method: 'POST', body: JSON.stringify({ currentPassword: form.get('currentPassword'), password: form.get('password') }) }, 'Password updated.') }}><label className="field">Current password<input className="clay-in" name="currentPassword" type="password" required /></label><label className="field">New password<input className="clay-in" name="password" type="password" minLength="8" required /></label><button className="btn">Update password</button></form></article></section>
+  const views = {
+    Dashboard: <><section className="grid g4"><article className="stat clay"><div><small>Plan</small><b>{currentUser?.plan || 'Monthly'}</b></div></article><article className="stat clay"><div><small>Status</small><b>{currentUser?.status === 'expired' ? 'Expired' : 'Active'}</b></div></article><article className="stat clay"><div><small>Days Left</small><b>{expiry ?? '—'}</b></div></article><article className="stat clay"><div><small>Check-ins</small><b>{attendance.length}</b></div></article></section><section className="grid g2"><article className="card clay"><h2>My Membership</h2><div className="info"><span>Member ID</span>{currentUser?.id}<span>Start</span>{date(currentUser?.membershipStart || currentUser?.joined)}<span>Expires</span>{date(currentUser?.membershipEnd)}<span>Contact</span>{currentUser?.phone || 'Not available'}</div></article><article className="card clay center"><h2>My QR Code</h2><div className="member-code">{currentUser?.id}</div><small>Show this at the gym entrance</small></article></section></>,
+    'My QR': <article className="card clay center"><h2>Gym Entry QR Code</h2><div className="member-code">{currentUser?.id}</div><b>{currentUser?.name} · {currentUser?.id}</b><small>Show this at the gym entrance to record your check-in.</small><button className="btn" onClick={() => action('/attendance/check-in', { method: 'POST' }, 'Check-in recorded.')}>Simulate Check-In</button></article>,
+    Attendance: <article className="card clay"><h2>My Attendance History</h2><Table headings={['Date & Time']}>{attendance.map((item) => <tr key={item.id}><td>{time(item.date)}</td></tr>)}</Table></article>,
+    Payments: <article className="card clay"><h2>My Payment History</h2><Table headings={['Amount', 'Method', 'Date']}>{payments.map((item) => <tr key={item.id}><td>{money(item.amount)}</td><td>{item.method}</td><td>{date(item.date)}</td></tr>)}</Table></article>,
+    Notifications: <article className="card clay"><h2>Notifications</h2><div className="item clay-in">{currentUser?.status === 'expired' ? 'Your membership has expired. Please renew at the front desk.' : expiry !== null && expiry <= 7 ? `Your membership expires in ${expiry} day(s). Renew soon!` : 'All good! Your membership is active.'}</div></article>,
+    Settings: settings
+  }
+  return <DashboardShell role={currentUser?.role || 'user'} user={currentUser} onSignOut={onSignOut} activeSection={section} onSectionChange={setSection}>{error && <p className="load-error">{error}</p>}{notice && <div id="toast" className="clay show">{notice}</div>}{views[section]}</DashboardShell>
 }

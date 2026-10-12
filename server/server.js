@@ -69,7 +69,7 @@ const mailer = smtpConfigured
 // ---------------------------------------------------------------- database
 
 function defaultDatabase() {
-  return { accounts: [], attendance: [], payments: [] }
+  return { accounts: [], attendance: [], payments: [], equipment: [], maintenance: [], settings: { gym: 'FitPulse Gym', remind: 7, emailOn: true } }
 }
 
 function loadDatabase() {
@@ -86,6 +86,9 @@ function loadDatabase() {
   database.accounts ||= []
   database.attendance ||= []
   database.payments ||= []
+  database.equipment ||= []
+  database.maintenance ||= []
+  database.settings ||= { gym: 'FitPulse Gym', remind: 7, emailOn: true }
   return database
 }
 
@@ -96,6 +99,26 @@ function saveDatabase(database) {
 function publicAccount(account) {
   const { passwordHash, resetTokenHash, resetTokenExpiresAt, ...safe } = account
   return safe
+}
+
+const planDays = { Monthly: 30, Quarterly: 90, Annual: 365, 'Unlimited Monthly': 30 }
+const planCost = { Monthly: 800, Quarterly: 2200, Annual: 7800, 'Unlimited Monthly': 1500 }
+function membershipStatus(account) {
+  return account.membershipEnd && new Date(account.membershipEnd) < new Date() ? 'expired' : account.status || 'active'
+}
+function addMembershipDays(date, plan) {
+  const next = new Date(date)
+  next.setDate(next.getDate() + (planDays[plan] || 30))
+  return next.toISOString()
+}
+function validAccountInput(body, { passwordRequired = false } = {}) {
+  const name = typeof body.name === 'string' ? body.name.trim() : ''
+  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const password = typeof body.password === 'string' ? body.password : ''
+  if (!name || name.length > 100) return { error: 'Please enter a name of up to 100 characters.' }
+  if (!emailPattern.test(email)) return { error: 'Please enter a valid email address.' }
+  if (passwordRequired && !passwordPolicy(password)) return { error: `The password must be ${passwordMin}-${passwordMax} characters.` }
+  return { name, email, password, phone: typeof body.phone === 'string' ? body.phone.trim() : '', plan: planDays[body.plan] ? body.plan : 'Monthly' }
 }
 
 // ---------------------------------------------------------------- auth helpers
@@ -260,9 +283,53 @@ app.get('/api/me', authenticate, (req, res) => {
 })
 
 app.get('/api/members', authenticate, requireRole('admin', 'staff'), (req, res) => {
-  const members = loadDatabase().accounts.map(publicAccount)
+  const members = loadDatabase().accounts.map((account) => ({ ...publicAccount(account), status: membershipStatus(account) }))
   res.json({ members })
 })
+
+app.post('/api/admin/members', authenticate, requireRole('admin', 'staff'), async (req, res) => {
+  const input = validAccountInput(req.body, { passwordRequired: true })
+  if (input.error) return res.status(400).json({ message: input.error })
+  const database = loadDatabase()
+  if (database.accounts.some((account) => account.email === input.email)) return res.status(409).json({ message: 'An account with this email already exists.' })
+  const now = new Date().toISOString()
+  const member = { id: crypto.randomUUID(), name: input.name, email: input.email, phone: input.phone, passwordHash: await bcrypt.hash(input.password, 12), role: 'user', plan: input.plan, status: 'active', joined: now, membershipStart: now, membershipEnd: addMembershipDays(now, input.plan) }
+  database.accounts.push(member)
+  if (req.body.recordPayment !== false) database.payments.push({ id: crypto.randomUUID(), memberId: member.id, memberName: member.name, amount: planCost[input.plan], method: typeof req.body.method === 'string' ? req.body.method : 'Cash', plan: input.plan, type: 'New', date: now })
+  saveDatabase(database)
+  res.status(201).json({ member: publicAccount(member) })
+})
+
+app.patch('/api/admin/members/:id', authenticate, requireRole('admin', 'staff'), async (req, res) => {
+  const database = loadDatabase(); const member = database.accounts.find((account) => account.id === req.params.id && !['admin', 'staff'].includes(account.role))
+  if (!member) return res.status(404).json({ message: 'Member not found.' })
+  const input = validAccountInput({ ...member, ...req.body })
+  if (input.error) return res.status(400).json({ message: input.error })
+  if (database.accounts.some((account) => account.id !== member.id && account.email === input.email)) return res.status(409).json({ message: 'An account with this email already exists.' })
+  Object.assign(member, { name: input.name, email: input.email, phone: input.phone, plan: input.plan })
+  if (req.body.password) { if (!passwordPolicy(req.body.password)) return res.status(400).json({ message: `The password must be ${passwordMin}-${passwordMax} characters.` }); member.passwordHash = await bcrypt.hash(req.body.password, 12) }
+  saveDatabase(database); res.json({ member: publicAccount(member) })
+})
+
+app.post('/api/admin/members/:id/renew', authenticate, requireRole('admin', 'staff'), (req, res) => {
+  const database = loadDatabase(); const member = database.accounts.find((account) => account.id === req.params.id && !['admin', 'staff'].includes(account.role))
+  if (!member) return res.status(404).json({ message: 'Member not found.' })
+  const plan = planDays[req.body.plan] ? req.body.plan : member.plan || 'Monthly'; const now = new Date(); const base = member.membershipEnd && new Date(member.membershipEnd) > now ? new Date(member.membershipEnd) : now
+  member.plan = plan; member.status = 'active'; member.membershipStart ||= now.toISOString(); member.membershipEnd = addMembershipDays(base, plan)
+  const payment = { id: crypto.randomUUID(), memberId: member.id, memberName: member.name, amount: Number(req.body.amount) || planCost[plan], method: typeof req.body.method === 'string' ? req.body.method : 'Cash', plan, type: 'Renewal', date: now.toISOString() }
+  database.payments.push(payment); saveDatabase(database); res.json({ member: publicAccount(member), payment })
+})
+
+app.get('/api/admin/equipment', authenticate, requireRole('admin', 'staff'), (req, res) => { const database = loadDatabase(); res.json({ equipment: database.equipment, maintenance: database.maintenance }) })
+app.post('/api/admin/equipment', authenticate, requireRole('admin', 'staff'), (req, res) => { const name = typeof req.body.name === 'string' ? req.body.name.trim() : ''; if (!name) return res.status(400).json({ message: 'Equipment name is required.' }); const database = loadDatabase(); const equipment = { id: crypto.randomUUID(), name, category: typeof req.body.category === 'string' ? req.body.category : 'Other', condition: 'Good', lastInspected: new Date().toISOString() }; database.equipment.push(equipment); saveDatabase(database); res.status(201).json({ equipment }) })
+app.patch('/api/admin/equipment/:id', authenticate, requireRole('admin', 'staff'), (req, res) => { const database = loadDatabase(); const equipment = database.equipment.find((item) => item.id === req.params.id); if (!equipment) return res.status(404).json({ message: 'Equipment not found.' }); if (['Good', 'Needs Maintenance', 'Out of Service'].includes(req.body.condition)) { equipment.condition = req.body.condition; database.maintenance.unshift({ id: crypto.randomUUID(), equipmentId: equipment.id, item: equipment.name, note: `Condition set to ${equipment.condition}`, date: new Date().toISOString() }) } if (req.body.inspected) { equipment.lastInspected = new Date().toISOString(); database.maintenance.unshift({ id: crypto.randomUUID(), equipmentId: equipment.id, item: equipment.name, note: 'Inspection completed', date: equipment.lastInspected }) } saveDatabase(database); res.json({ equipment }) })
+
+app.get('/api/admin/settings', authenticate, requireRole('admin', 'staff'), (req, res) => res.json({ settings: loadDatabase().settings }))
+app.patch('/api/admin/settings', authenticate, requireRole('admin', 'staff'), (req, res) => { const database = loadDatabase(); if (typeof req.body.gym === 'string' && req.body.gym.trim()) database.settings.gym = req.body.gym.trim(); if (Number.isInteger(req.body.remind) && req.body.remind >= 1 && req.body.remind <= 30) database.settings.remind = req.body.remind; if (typeof req.body.emailOn === 'boolean') database.settings.emailOn = req.body.emailOn; saveDatabase(database); res.json({ settings: database.settings }) })
+app.post('/api/admin/members/:id/expiry-email', authenticate, requireRole('admin', 'staff'), async (req, res) => { const database = loadDatabase(); const member = database.accounts.find((account) => account.id === req.params.id); if (!member) return res.status(404).json({ message: 'Member not found.' }); if (!mailer) return res.status(503).json({ message: 'Email is not configured. Add SMTP settings to .env.' }); await mailer.sendMail({ from: process.env.SMTP_FROM || 'FitPulse <no-reply@fitpulse.local>', to: member.email, subject: 'FitPulse membership reminder', text: `Hello ${member.name}, your ${member.plan} membership expires on ${new Date(member.membershipEnd).toLocaleDateString('en-PH')}.` }); res.json({ message: `Expiry email sent to ${member.email}.` }) })
+
+app.patch('/api/profile', authenticate, async (req, res) => { const database = loadDatabase(); const account = database.accounts.find((item) => item.id === req.user.id); const input = validAccountInput({ ...account, ...req.body }); if (!account) return res.status(404).json({ message: 'Account not found.' }); if (input.error) return res.status(400).json({ message: input.error }); if (database.accounts.some((item) => item.id !== account.id && item.email === input.email)) return res.status(409).json({ message: 'An account with this email already exists.' }); Object.assign(account, { name: input.name, email: input.email, phone: input.phone }); saveDatabase(database); res.json({ user: publicAccount(account) }) })
+app.post('/api/profile/change-password', authenticate, async (req, res) => { const currentPassword = typeof req.body.currentPassword === 'string' ? req.body.currentPassword : ''; const password = typeof req.body.password === 'string' ? req.body.password : ''; const database = loadDatabase(); const account = database.accounts.find((item) => item.id === req.user.id); if (!account || !(await bcrypt.compare(currentPassword, account.passwordHash))) return res.status(400).json({ message: 'Current password is incorrect.' }); if (!passwordPolicy(password)) return res.status(400).json({ message: `The password must be ${passwordMin}-${passwordMax} characters.` }); account.passwordHash = await bcrypt.hash(password, 12); saveDatabase(database); res.json({ message: 'Password updated.' }) })
 
 app.get('/api/attendance', authenticate, (req, res) => {
   const database = loadDatabase()
@@ -271,6 +338,18 @@ app.get('/api/attendance', authenticate, (req, res) => {
     ? database.attendance
     : database.attendance.filter((item) => item.memberId === req.user.id)
   res.json({ attendance })
+})
+
+app.post('/api/attendance/check-in', authenticate, (req, res) => {
+  const database = loadDatabase()
+  const member = database.accounts.find((account) => account.id === req.user.id)
+  if (!member) return res.status(401).json({ message: 'Your session is invalid or has expired.' })
+  if (['admin', 'staff'].includes(member.role)) return res.status(403).json({ message: 'Only member accounts can use this check-in code.' })
+  if (membershipStatus(member) === 'expired') return res.status(403).json({ message: 'Your membership has expired. Please renew before checking in.' })
+  const attendance = { id: crypto.randomUUID(), memberId: member.id, memberName: member.name, date: new Date().toISOString() }
+  database.attendance.push(attendance)
+  saveDatabase(database)
+  res.status(201).json({ attendance })
 })
 
 app.get('/api/payments', authenticate, (req, res) => {

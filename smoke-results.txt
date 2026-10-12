@@ -1,0 +1,67 @@
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - member sees only their attendance
+PASS - member sees only their payments
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - forgot-password is rate limited
+PASS - reset-password rejects unknown tokens
+17/17 checks passed
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - member sees only their payments
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - forgot-password is rate limited
+PASS - reset-password rejects unknown tokens
+23/23 checks passed
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - member can record their own check-in
+PASS - member sees only their payments
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - forgot-password is rate limited
+PASS - reset-password rejects unknown tokens
+24/24 checks passed

@@ -145,12 +145,79 @@ try {
       !membersPayload.includes('passwordHash')
   )
 
+  const createMember = await request('POST', '/admin/members', {
+    token: adminToken,
+    body: {
+      name: 'Managed Member',
+      email: 'managed@example.com',
+      password: 'managed-password',
+      phone: '09171234567',
+      plan: 'Monthly',
+      method: 'Cash'
+    }
+  })
+  const managedMember = createMember.payload.member
+  check(
+    'staff can create a member account with a membership',
+    createMember.status === 201 && Boolean(managedMember?.membershipEnd)
+  )
+
+  check(
+    'staff can edit a member account',
+    (
+      await request('PATCH', `/admin/members/${managedMember.id}`, {
+        token: adminToken,
+        body: { name: 'Updated Member', email: 'managed@example.com', phone: '09999999999', plan: 'Annual' }
+      })
+    ).status === 200
+  )
+
+  check(
+    'staff can renew a membership',
+    (
+      await request('POST', `/admin/members/${managedMember.id}/renew`, {
+        token: adminToken,
+        body: { plan: 'Annual', method: 'GCash' }
+      })
+    ).status === 200
+  )
+
+  const createEquipment = await request('POST', '/admin/equipment', {
+    token: adminToken,
+    body: { name: 'Smoke Treadmill', category: 'Treadmill' }
+  })
+  check('staff can add equipment', createEquipment.status === 201)
+  check(
+    'staff can inspect equipment and change its condition',
+    (
+      await request('PATCH', `/admin/equipment/${createEquipment.payload.equipment.id}`, {
+        token: adminToken,
+        body: { condition: 'Needs Maintenance', inspected: true }
+      })
+    ).status === 200
+  )
+
+  check(
+    'staff can save gym settings',
+    (
+      await request('PATCH', '/admin/settings', {
+        token: adminToken,
+        body: { gym: 'Smoke Gym', remind: 5, emailOn: false }
+      })
+    ).status === 200
+  )
+
   const memberAttendance = await request('GET', '/attendance', { token: memberToken })
   check(
     'member sees only their attendance',
     memberAttendance.status === 200 &&
       memberAttendance.payload.attendance.length >= 4 &&
       memberAttendance.payload.attendance.every((item) => item.memberId === memberId)
+  )
+
+  check(
+    'member can record their own check-in',
+    (await request('POST', '/attendance/check-in', { token: memberToken })).status === 201
   )
 
   const memberPayments = await request('GET', '/payments', { token: memberToken })

@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FitPulse</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ===== THEME TOKENS (003049 / D62828 / F77F00 / FCBF49) ===== */
+  :root {
+    --navy:#003049; --red:#D62828; --orange:#F77F00; --gold:#FCBF49;
+    --bg:#D5DFEE; --card:#F5F8FD; --card2:#E7EDF7; --text:#0d2b3e; --muted:#566d80;
+    --sd:rgba(64,92,135,.30); --sl:rgba(255,255,255,.95); --id:rgba(64,92,135,.16); --il:rgba(255,255,255,.9);
+  }
+  [data-theme="dark"] {
+    --bg:#0a1f2f; --card:#11304a; --card2:#0e2a40; --text:#f3e9d8; --muted:#92abbb;
+    --sd:rgba(0,0,0,.55); --sl:rgba(70,120,160,.22); --id:rgba(0,0,0,.35); --il:rgba(130,180,220,.16);
+  }
+  * { box-sizing:border-box; margin:0; font-family:"Nunito","Segoe UI",system-ui,sans-serif; }
+  body { background:var(--bg); color:var(--text); min-height:100vh; transition:background .3s,color .3s; }
+  button { font-family:inherit; }
+  svg { flex-shrink:0; }
+
+  /* ===== CLAY ===== */
+  .clay { background:var(--card); border-radius:24px;
+    box-shadow:9px 9px 20px var(--sd),-7px -7px 16px var(--sl),inset 2px 2px 5px var(--il),inset -3px -3px 7px var(--id); }
+  .clay-in { background:var(--bg); border:0; border-radius:14px; color:var(--text);
+    box-shadow:inset 3px 3px 8px var(--id),inset -3px -3px 8px var(--sl); }
+
+  /* ===== LOGIN ===== */
+  @keyframes shake { 20%,60%{transform:translateX(-10px)} 40%,80%{transform:translateX(10px)} }
+  .logo { display:flex; align-items:center; gap:10px; font-weight:800; font-size:21px; }
+  .logo i { width:40px; height:40px; border-radius:13px; display:grid; place-items:center; color:#fff;
+    background:linear-gradient(145deg,var(--orange),var(--red)); box-shadow:4px 4px 9px var(--sd),inset 2px 2px 4px rgba(255,255,255,.45); }
+  .field { display:flex; flex-direction:column; gap:6px; font-size:13px; font-weight:600; color:var(--muted); flex:1; min-width:150px; }
+  .field input,.field select { padding:12px 14px; font-size:14px; outline:none; width:100%; }
+  .field input::placeholder { color:var(--muted); opacity:.7; }
+  .field input:focus,.field select:focus { box-shadow:inset 3px 3px 8px var(--id),inset -3px -3px 8px var(--sl),0 0 0 3px rgba(247,127,0,.4); }
+
+  /* ===== APP SHELL ===== */
+  .app { display:grid; grid-template-columns:250px 1fr; gap:22px; padding:22px; min-height:100vh; }
+  aside { padding:20px 14px; display:flex; flex-direction:column; gap:6px; position:sticky; top:22px; height:calc(100vh - 44px); z-index:20; }
+  aside .logo { padding:0 8px 16px; }
+  #nav { display:flex; flex-direction:column; gap:6px; overflow-y:auto; }
+  .nav { display:flex; align-items:center; gap:12px; border:0; background:transparent; color:var(--text); text-align:left;
+    padding:12px 14px; border-radius:14px; font-size:14px; font-weight:600; cursor:pointer; transition:all .25s ease; }
+  .nav:hover { transform:translateX(4px); box-shadow:4px 4px 10px var(--sd),-3px -3px 8px var(--sl); }
+  .nav.on { color:#fff; background:linear-gradient(145deg,var(--orange),var(--red)); box-shadow:5px 5px 12px var(--sd),inset 2px 2px 4px rgba(255,255,255,.35); }
+  .spacer { flex:1; }
+  main { display:flex; flex-direction:column; gap:22px; min-width:0; }
+  header { display:flex; align-items:center; gap:14px; padding:14px 20px; position:sticky; top:22px; z-index:10; }
+  header h1 { font-size:21px; flex:1; }
+  .ib { width:42px; height:42px; border:0; border-radius:14px; display:grid; place-items:center; cursor:pointer; color:var(--text);
+    background:var(--card); box-shadow:4px 4px 9px var(--sd),-3px -3px 8px var(--sl); transition:all .25s ease; }
+  .ib:hover { transform:translateY(-3px); color:var(--orange); } .ib.sm { width:34px; height:34px; border-radius:11px; }
+  #menuBtn { display:none; }
+  .chip { display:flex; align-items:center; gap:10px; border:0; background:transparent; cursor:pointer; color:var(--text); padding:4px 6px; border-radius:16px; transition:all .25s; }
+  .chip:hover { transform:translateY(-2px); }
+  .chip b { font-size:14px; display:block; text-align:left; } .chip small { color:var(--muted); font-size:12px; display:block; text-align:left; }
+  .av { width:40px; height:40px; border-radius:50%; display:grid; place-items:center; color:#fff; font-weight:800;
+    background:linear-gradient(145deg,var(--gold),var(--orange)); box-shadow:3px 3px 8px var(--sd); }
+  .ov { display:none; position:fixed; inset:0; background:rgba(0,20,35,.5); z-index:15; }
+
+  /* ===== COMPONENTS ===== */
+  .grid { display:grid; gap:20px; } .g4 { grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); }
+  .g2 { grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr)); }
+  .card { padding:22px; min-width:0; }
+  .card h2 { font-size:16px; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  .stat { display:flex; align-items:center; gap:14px; padding:20px; }
+  .bub { width:50px; height:50px; border-radius:16px; display:grid; place-items:center; color:#fff; box-shadow:4px 4px 9px var(--sd),inset 2px 2px 4px rgba(255,255,255,.4); }
+  .b1 { background:linear-gradient(145deg,var(--orange),var(--red)); } .b2 { background:linear-gradient(145deg,#38b36f,#1f8a52); }
+  .b3 { background:linear-gradient(145deg,#e95555,var(--red)); } .b4 { background:linear-gradient(145deg,#1d6a96,var(--navy)); }
+  .stat small { color:var(--muted); font-weight:600; font-size:13px; } .stat b { display:block; font-size:26px; line-height:1.2; }
+  .btn { border:0; cursor:pointer; padding:11px 18px; border-radius:14px; font-weight:700; font-size:14px; color:#fff; display:inline-flex; align-items:center; gap:8px; justify-content:center;
+    background:linear-gradient(145deg,var(--orange),var(--red)); transition:all .25s ease; box-shadow:5px 5px 11px var(--sd),inset 2px 2px 4px rgba(255,255,255,.4); }
+  .btn:hover { transform:translateY(-3px); box-shadow:7px 10px 16px var(--sd),inset 2px 2px 4px rgba(255,255,255,.4); } .btn:active { transform:translateY(1px); }
+  .btn.sm { padding:7px 12px; font-size:12px; border-radius:11px; }
+  .btn.ghost { color:var(--text); background:var(--card); box-shadow:4px 4px 9px var(--sd),-3px -3px 8px var(--sl); }
+  .btn.alt { background:linear-gradient(145deg,#1d6a96,var(--navy)); }
+  .bar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+  .sbox { flex:1; min-width:200px; display:flex; align-items:center; gap:10px; padding:0 14px; color:var(--muted); }
+  .sbox input { flex:1; border:0; background:transparent; padding:12px 0; outline:none; color:var(--text); font-size:14px; min-width:0; }
+  .wrap { overflow-x:auto; margin:0 -6px; padding:0 6px; }
+  table { width:100%; border-collapse:separate; border-spacing:0 8px; font-size:14px; }
+  th { text-align:left; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:.7px; padding:4px 14px; white-space:nowrap; }
+  td { padding:12px 14px; background:var(--card2); white-space:nowrap; transition:background .2s; }
+  td:first-child { border-radius:14px 0 0 14px; } td:last-child { border-radius:0 14px 14px 0; }
+  tbody tr:hover td { background:var(--bg); }
+  .nmc { display:flex; align-items:center; gap:10px; font-weight:600; }
+  .nmc i { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-style:normal; font-size:12px; color:#fff; background:linear-gradient(145deg,var(--gold),var(--orange)); }
+  .acts { display:flex; gap:6px; }
+  .pill { padding:4px 11px; border-radius:20px; font-size:11px; font-weight:700; color:#fff; }
+  .p-ok { background:#2a9d5c; } .p-warn { background:var(--orange); } .p-bad { background:var(--red); }
+  .chart { height:230px; display:flex; gap:10px; padding:8px 4px 0; border-bottom:2px solid var(--id);
+    background:repeating-linear-gradient(to top,transparent 0 53px,var(--id) 53px 54px); }
+  .col { flex:1; height:100%; display:flex; flex-direction:column; align-items:center; font-size:12px; font-weight:700; }
+  .col .t { flex:1; width:100%; display:flex; align-items:flex-end; justify-content:center; }
+  .col span { width:100%; max-width:40px; border-radius:12px 12px 4px 4px; background:linear-gradient(180deg,var(--gold),var(--orange)); box-shadow:3px 3px 8px var(--sd); transition:height .6s; }
+  .col small { color:var(--muted); margin-top:8px; position:relative; top:24px; margin-bottom:-24px; }
+  .donut { width:150px; height:150px; border-radius:50%; display:grid; place-items:center; box-shadow:6px 6px 14px var(--sd),-5px -5px 12px var(--sl); }
+  .donut div { width:98px; height:98px; border-radius:50%; background:var(--card); display:grid; place-items:center; font-weight:800; font-size:24px; box-shadow:inset 3px 3px 7px var(--id); }
+  .dwrap { display:flex; align-items:center; gap:24px; flex-wrap:wrap; justify-content:center; }
+  .leg { display:flex; flex-direction:column; gap:10px; font-size:14px; } .leg i { display:inline-block; width:12px; height:12px; border-radius:50%; margin-right:8px; }
+  .prog { margin-bottom:14px; font-size:14px; } .prog div { height:12px; border-radius:8px; margin-top:6px; overflow:hidden; }
+  .prog span { display:block; height:100%; border-radius:8px; background:linear-gradient(90deg,var(--gold),var(--orange)); }
+  .item { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:13px 15px; margin-bottom:12px; font-size:14px; }
+  .item small { color:var(--muted); }
+  .qr { width:190px; height:190px; fill:#003049; background:#ffffff; border-radius:18px; padding:12px; box-shadow:5px 5px 12px var(--sd); }
+  .center { display:grid; place-items:center; gap:10px; text-align:center; }
+  .tabs { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .row { display:flex; gap:14px; flex-wrap:wrap; }
+  .tog { width:54px; height:30px; border-radius:20px; border:0; cursor:pointer; position:relative; background:var(--bg); box-shadow:inset 3px 3px 7px var(--id),inset -3px -3px 7px var(--sl); }
+  .tog::after { content:""; position:absolute; top:4px; left:4px; width:22px; height:22px; border-radius:50%; transition:transform .3s; background:#9a9a9a; box-shadow:2px 2px 5px var(--sd); }
+  .tog.on::after { transform:translateX(24px); background:linear-gradient(145deg,var(--gold),var(--orange)); }
+  .set { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:6px 0 14px; font-size:14px; }
+
+  /* ===== MODAL & TOAST ===== */
+  .modal { position:fixed; inset:0; background:rgba(0,20,35,.55); display:none; place-items:center; z-index:50; padding:16px; overflow-y:auto; }
+  .modal.show { display:grid; }
+  #mbody { width:min(440px,100%); padding:24px; animation:pop .3s ease; }
+  @keyframes pop { from{transform:scale(.88);opacity:0} }
+  .mh { display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; } .mh h2 { font-size:19px; }
+  .mf { display:flex; gap:12px; flex-wrap:wrap; } .mf .field { min-width:180px; }
+  .ma { display:flex; gap:12px; justify-content:flex-end; margin-top:22px; flex-wrap:wrap; }
+  .info { display:grid; grid-template-columns:auto 1fr; gap:8px 18px; font-size:14px; margin-top:12px; } .info span { color:var(--muted); }
+  #toast { position:fixed; bottom:22px; right:22px; padding:14px 22px; font-weight:700; font-size:14px; transform:translateY(120px); transition:transform .3s; z-index:60; }
+  #toast.show { transform:none; }
+
+
+  /* ===== v3: FONTS, BUTTONS, LOGIN ===== */
+  h1,h2,.logo,.stat b,.eyebrow,.brandbar { font-family:"Fredoka","Baloo 2","Segoe UI",system-ui,sans-serif; }
+  .card h2 { font-weight:600; } .logo.brand { color:var(--text); font-weight:700; }
+  .clay { border-radius:28px; } .ib { border-radius:16px; }
+  .btn { border-radius:999px; position:relative; overflow:hidden; }
+  .btn::after { content:""; position:absolute; top:0; left:-70%; width:45%; height:100%; transform:skewX(-20deg); pointer-events:none;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.5),transparent); transition:left .65s ease; }
+  .btn:hover { transform:translateY(-4px); box-shadow:8px 14px 20px var(--sd),inset 2px 2px 4px rgba(255,255,255,.4); }
+  .btn:hover::after { left:130%; } .btn.ghost::after { display:none; }
+  .btn:disabled { opacity:.5; pointer-events:none; }
+  #login { min-height:100vh; display:grid; place-items:center; padding:24px; }
+  .theme-fab { position:fixed; top:18px; right:18px; z-index:5; color:var(--orange); border-radius:50%; }
+  .lwrap { width:min(1120px,100%); display:grid; grid-template-columns:1.15fr 1fr; gap:28px; align-items:stretch; min-height:min(660px,calc(100vh - 48px)); }
+  .hero { padding:26px; display:flex; flex-direction:column; gap:14px; overflow:hidden; }
+  .brandbar { display:flex; align-items:center; gap:10px; padding:11px 20px; border-radius:999px; font-size:24px; font-weight:700; color:var(--text);
+    background:var(--card2); box-shadow:inset 3px 3px 7px var(--id),inset -3px -3px 7px var(--sl); }
+  .brandbar em { margin-left:auto; font:700 12px "Nunito",sans-serif; color:var(--muted); }
+  .hbody { flex:1; display:flex; flex-direction:column; justify-content:center; gap:10px; padding:0 8px; }
+  .dumb { width:min(270px,60%); height:auto; animation:float 4s ease-in-out infinite; }
+  @keyframes float { 50% { transform:translateY(-10px) rotate(-1.5deg); } }
+  .eyebrow { color:var(--orange); font-weight:600; font-size:17px; }
+  .hbody h1 { font-size:clamp(34px,4.4vw,54px); line-height:1.06; font-weight:700; }
+  .hbody p { color:var(--muted); font-size:clamp(14px,1.3vw,17px); max-width:470px; line-height:1.5; }
+  .feats { display:flex; gap:10px; flex-wrap:wrap; margin-top:8px; }
+  .feat { display:flex; align-items:center; gap:8px; padding:9px 15px; font-size:13px; font-weight:700; border-radius:999px; background:var(--card); box-shadow:4px 4px 9px var(--sd),-3px -3px 8px var(--sl); }
+  .feat svg { color:var(--orange); }
+  .follow { display:flex; align-items:center; gap:14px; font-weight:700; color:var(--muted); padding:0 8px; }
+  .soc { width:48px; height:48px; border-radius:16px; display:grid; place-items:center; color:#fff; cursor:pointer; transition:all .3s ease; box-shadow:5px 5px 11px var(--sd),inset 2px 2px 4px rgba(255,255,255,.4); }
+  .soc.fb { background:linear-gradient(145deg,#3b8bff,#1659d6); } .soc.ig { background:linear-gradient(145deg,#ffb02e,#f06a0b); }
+  .soc:hover { transform:translateY(-6px) scale(1.07); box-shadow:8px 14px 20px var(--sd),inset 2px 2px 4px rgba(255,255,255,.4); }
+  .lform { padding:36px 34px; display:flex; flex-direction:column; justify-content:center; gap:14px; }
+  .lform.shake { animation:shake .45s; }
+  .fhead h2 { font-size:clamp(28px,3vw,38px); font-weight:700; margin:0; display:block; } .fhead p { color:var(--muted); font-size:15px; margin-top:4px; }
+  .demo { display:flex; gap:8px; flex-wrap:wrap; align-items:center; font-size:12px; font-weight:700; color:var(--muted); }
+  .demo button { border:0; cursor:pointer; padding:6px 13px; border-radius:999px; font-weight:700; font-size:12px; color:var(--text); background:var(--card); box-shadow:3px 3px 7px var(--sd),-2px -2px 6px var(--sl); transition:all .25s; }
+  .demo button:hover { transform:translateY(-3px); color:var(--orange); }
+  .inp { display:flex; align-items:center; gap:12px; padding:0 18px; height:56px; color:var(--muted); border-radius:999px; background:var(--card2);
+    box-shadow:inset 3px 3px 8px var(--id),inset -3px -3px 8px var(--sl); transition:box-shadow .25s,color .25s; }
+  .inp:focus-within { color:var(--orange); box-shadow:inset 3px 3px 8px var(--id),inset -3px -3px 8px var(--sl),0 0 0 3px rgba(247,127,0,.4); }
+  .inp.bad { box-shadow:inset 3px 3px 8px var(--id),0 0 0 2px var(--red); }
+  .inp input { flex:1; min-width:0; height:100%; border:0; background:transparent; outline:none; font-size:15px; color:var(--text); }
+  .inp input::placeholder { color:var(--muted); opacity:.8; }
+  .eye { border:0; background:transparent; color:var(--muted); cursor:pointer; display:grid; place-items:center; padding:4px; border-radius:50%; transition:color .2s; } .eye:hover { color:var(--orange); }
+  .err { display:none; color:var(--red); font-size:12px; font-weight:700; margin:-6px 0 0 20px; }
+  .caps { display:none; align-items:center; gap:6px; color:var(--orange); font-size:12px; font-weight:700; margin:-6px 0 0 20px; }
+  .banner { display:none; align-items:center; gap:8px; padding:11px 15px; border-radius:16px; background:rgba(214,40,40,.12); color:var(--red); font-size:13px; font-weight:700; }
+  .opts { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; font-size:13px; font-weight:600; }
+  .opts label { display:flex; align-items:center; gap:8px; cursor:pointer; color:var(--muted); } .opts input { accent-color:var(--orange); width:17px; height:17px; }
+  .opts a { color:var(--orange); font-weight:800; cursor:pointer; transition:all .2s; } .opts a:hover { color:var(--red); transform:translateX(3px); }
+  .lbtn { height:56px; font-size:16px; width:100%; margin-top:4px; }
+  .lbtn .sp { display:none; width:20px; height:20px; border:3px solid rgba(255,255,255,.4); border-top-color:#fff; border-radius:50%; animation:spin .7s linear infinite; }
+  .lbtn.load { pointer-events:none; } .lbtn.load .sp { display:block; } .lbtn.load .tx { display:none; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .lfoot { text-align:center; color:var(--muted); font-size:12px; }
+  @media (max-width:900px) { .lwrap { grid-template-columns:1fr; min-height:0; } .feats,.hbody p { display:none; } .dumb { width:min(200px,50%); } .hero { padding:20px; } .brandbar em { display:none; } }
+  @media (max-width:560px) { #login { padding:14px; } .lform { padding:26px 20px; } .hbody h1 { font-size:32px; } .follow { flex-wrap:wrap; } }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width:1000px) {
+    .app { grid-template-columns:1fr; padding:14px; gap:16px; }
+    aside { position:fixed; left:14px; top:14px; bottom:14px; height:auto; width:260px; transform:translateX(-120%); transition:transform .3s; }
+    aside.open { transform:none; } aside.open ~ .ov, .ov.show { display:block; }
+    #menuBtn { display:grid; } header { top:14px; padding:12px 14px; }
+  }
+  @media (max-width:560px) {
+    .chip div { display:none; } header h1 { font-size:18px; } .card { padding:16px; } .lcard { padding:28px 20px; }
+    .stat b { font-size:22px; } .chart { height:190px; } #toast { left:14px; right:14px; bottom:14px; }
+    .ma .btn { flex:1; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="login">
+  <button class="ib theme-fab" onclick="toggleTheme()" data-theme-btn title="Toggle theme"></button>
+  <div class="lwrap">
+    <section class="hero clay">
+      <div class="brandbar" id="lbrand"></div>
+      <div class="hbody">
+        <svg class="dumb" viewBox="0 0 300 200" aria-hidden="true">
+          <defs>
+            <linearGradient id="gO" x1="0" x2="1"><stop offset="0" stop-color="#ffb23a"/><stop offset=".55" stop-color="#f08a0c"/><stop offset="1" stop-color="#d9700a"/></linearGradient>
+            <linearGradient id="gR" x1="0" x2="1"><stop offset="0" stop-color="#f0525a"/><stop offset=".55" stop-color="#d62f37"/><stop offset="1" stop-color="#b21f28"/></linearGradient>
+            <linearGradient id="gB" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#3c7a9b"/><stop offset="1" stop-color="#0a3249"/></linearGradient>
+            <filter id="sh" x="-20%" y="-20%" width="150%" height="170%"><feDropShadow dx="6" dy="10" stdDeviation="7" flood-color="#0d2b3e" flood-opacity=".3"/></filter>
+          </defs>
+          <g filter="url(#sh)" transform="rotate(-7 150 100)">
+            <rect x="82" y="93" width="136" height="15" rx="7.5" fill="url(#gB)"/>
+            <rect x="18" y="56" width="30" height="92" rx="15" fill="url(#gO)"/><rect x="54" y="46" width="32" height="108" rx="16" fill="url(#gR)"/>
+            <rect x="214" y="46" width="32" height="108" rx="16" fill="url(#gR)"/><rect x="252" y="56" width="30" height="92" rx="15" fill="url(#gO)"/>
+            <g fill="#fff" opacity=".28"><rect x="24" y="68" width="5" height="60" rx="2.5"/><rect x="60" y="58" width="5" height="82" rx="2.5"/><rect x="220" y="58" width="5" height="82" rx="2.5"/><rect x="258" y="68" width="5" height="60" rx="2.5"/></g>
+          </g>
+        </svg>
+        <span class="eyebrow">Train with purpose</span>
+        <h1>Your next session starts here.</h1>
+        <p>Everything you need to stay strong, focused, and on track.</p>
+        <div class="feats" id="feats"></div>
+      </div>
+      <div class="follow">Follow FitPulse <a class="soc fb" id="fb" title="Facebook"></a><a class="soc ig" id="ig" title="Instagram"></a></div>
+    </section>
+
+    <section class="lform clay" id="lcard">
+      <div class="fhead"><h2>Welcome back</h2><p>Login to continue your fitness journey.</p></div>
+      <div class="demo">Try a demo: <button onclick="fill('admin')">Admin</button><button onclick="fill('member')">Member</button></div>
+      <div class="banner" id="ge"></div>
+      <label class="inp" id="we"><span id="ie"></span><input id="le" type="email" autocomplete="username" placeholder="john123@gmail.com" onkeydown="if(event.key==='Enter')login()"></label>
+      <div class="err" id="ee"></div>
+      <label class="inp" id="wp"><span id="il"></span><input id="lp" type="password" autocomplete="current-password" placeholder="Enter your password" onkeydown="caps(event);if(event.key==='Enter')login()" onkeyup="caps(event)"><button type="button" class="eye" id="eye" onclick="togglePw()" aria-label="Show or hide password"></button></label>
+      <div class="err" id="pe"></div>
+      <div class="caps" id="caps"></div>
+      <div class="opts"><label><input type="checkbox" id="rem"> Remember me</label><a onclick="forgotModal()">Forgot password?</a></div>
+      <button class="btn lbtn" id="lbtn" onclick="login()"><span class="tx">Login</span><span class="sp"></span></button>
+      <p class="lfoot">Need an account? Ask your gym admin to create one for you.</p>
+    </section>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div class="app" id="app" style="display:none">
+  <aside class="clay" id="side">
+    <div class="logo brand" id="lg2"></div>
+    <div id="nav"></div>
+    <div class="spacer"></div>
+    <button class="nav" onclick="askLogout()"></button>
+  </aside>
+  <div class="ov" id="ov" onclick="closeNav()"></div>
+  <main>
+    <header class="clay">
+      <button class="ib" id="menuBtn" onclick="openNav()"></button>
+      <h1 id="title"></h1>
+      <button class="ib" onclick="toggleTheme()" data-theme-btn title="Toggle theme"></button>
+      <button class="chip" onclick="profileModal()"><div><b id="who"></b><small id="rl"></small></div><span class="av" id="av"></span></button>
+    </header>
+    <section id="view" class="grid"></section>
+  </main>
+</div>
+
+<div class="modal" id="modal" onclick="if(event.target===this)closeM()"><div class="clay" id="mbody"></div></div>
+<div id="toast" class="clay"></div>
+
+<script>
+/* ===== ICONS (stroke SVG paths, 24x24) ===== */
+const I = {
+  home:'<path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>',
+  users:'<circle cx="9" cy="8" r="4"/><path d="M2 21c0-4 3-6 7-6s7 2 7 6M16 4a4 4 0 0 1 0 8M22 21c0-3-2-5-4-5.5"/>',
+  card:'<rect x="2" y="5" width="20" height="14" rx="3"/><path d="M2 10h20M6 15h4"/>',
+  dumbbell:'<path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12"/>',
+  qr:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v7h-3"/>',
+  wallet:'<rect x="2" y="6" width="20" height="14" rx="3"/><path d="M2 10h20"/><circle cx="17" cy="15" r="1.4"/>',
+  bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0"/>',
+  chart:'<path d="M3 3v18h18M7 15l4-4 3 3 6-7"/>',
+  sliders:'<path d="M4 6h8M18 6h2M4 12h2M12 12h8M4 18h10M20 18h0"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/>',
+  out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/>',
+  moon:'<path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>', search:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4"/>',
+  menu:'<path d="M3 6h18M3 12h18M3 18h18"/>', x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  mail:'<rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 7l10 7 10-7"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/>',
+  eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  heart:'<path d="M12 21s-8-5-8-11a4.5 4.5 0 0 1 8-2.5A4.5 4.5 0 0 1 20 10c0 6-8 11-8 11z"/>',
+  check:'<path d="M5 12l5 5 9-10"/>', refresh:'<path d="M20 11a8 8 0 0 0-14-4M4 4v4h4M4 13a8 8 0 0 0 14 4M20 20v-4h-4"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/>',
+  tool:'<path d="M14 6a4 4 0 0 0 5 5l-9 9a2.1 2.1 0 0 1-3-3l9-9a4 4 0 0 0-2-2z"/>', file:'<path d="M6 3h8l4 4v14H6zM14 3v4h4M9 13h6M9 17h6"/>',
+  lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  fb:'<path d="M14 8h3V4h-3a4 4 0 0 0-4 4v3H7v4h3v6h4v-6h3l1-4h-4V8z"/>',
+  ig:'<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h0"/>',
+  eyeoff:'<path d="M3 3l18 18M10.6 6.2A9.7 9.7 0 0 1 12 6c6 0 10 6 10 6a17 17 0 0 1-3.2 3.8M6.3 7.6C3.6 9.3 2 12 2 12s4 6 10 6a9.6 9.6 0 0 0 4-.9M9.9 9.9a3 3 0 0 0 4.2 4.2"/>',
+  alert:'<path d="M12 3l10 18H2zM12 10v5M12 18h0"/>'
+};
+const ic = (n, s = 20) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
+
+/* ===== HELPERS ===== */
+const $ = s => document.querySelector(s);
+const day = n => { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const fmt = d => new Date(d).toLocaleDateString('en-PH', { month:'short', day:'numeric', year:'numeric' });
+const time = d => new Date(d).toLocaleString('en-PH', { month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+const peso = n => '₱' + Number(n).toLocaleString();
+const left = m => Math.ceil((new Date(m.end) - new Date(day(0))) / 864e5);
+const pill = (t, c) => `<span class="pill p-${c}">${t}</span>`;
+const stPill = m => left(m) < 0 ? pill('Expired', 'bad') : left(m) <= cfg.remind ? pill('Expiring', 'warn') : pill('Active', 'ok');
+const nm = n => `<div class="nmc"><i>${n[0]}</i>${n}</div>`;
+const name = id => (members.find(m => m.id === id) || {}).name || id;
+const planDays = { Monthly:30, Quarterly:90, Annual:365 }, planCost = { Monthly:800, Quarterly:2200, Annual:7800 };
+const table = (h, rows) => `<div class="wrap"><table><thead><tr>${h.map(x => `<th>${x}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${h.length}">No records yet</td></tr>`}</tbody></table></div>`;
+const card = (t, b, icon = '') => `<div class="card clay"><h2>${icon ? ic(icon, 18) : ''}${t}</h2>${b}</div>`;
+const fld = (id, l, ph = '', type = 'text', v = '') => `<label class="field">${l}<input id="${id}" class="clay-in" type="${type}" placeholder="${ph}" value="${v}"></label>`;
+const sel = (id, l, opts, v) => `<label class="field">${l}<select id="${id}" class="clay-in">${opts.map(o => `<option value="${o[1] ?? o}" ${(o[1] ?? o) === v ? 'selected' : ''}>${o[0] ?? o}</option>`).join('')}</select></label>`;
+const toast = t => { const e = $('#toast'); e.textContent = t; e.classList.add('show'); setTimeout(() => e.classList.remove('show'), 2400); };
+const pid = () => 'P-' + (101 + payments.length);
+
+/* ===== MODAL ===== */
+function modal(title, body, actions = '') {
+  $('#mbody').innerHTML = `<div class="mh"><h2>${title}</h2><button class="ib sm" onclick="closeM()">${ic('x', 16)}</button></div>${body}<div class="ma">${actions}</div>`;
+  $('#modal').classList.add('show');
+}
+const closeM = () => $('#modal').classList.remove('show');
+const cancelBtn = `<button class="btn ghost" onclick="closeM()">Cancel</button>`;
+
+/* ===== DATA (in-memory demo) ===== */
+const admin = { name:'Coach Admin', email:'admin@fitpulse.com', pw:'admin123' };
+const cfg = { gym:'FitPulse Gym', remind:7, emailOn:true };
+let members = [
+  { id:'FP-001', name:'Juan Dela Cruz', contact:'0917 123 4567', email:'juan@mail.com', pw:'member123', plan:'Monthly', start:day(-27), end:day(3) },
+  { id:'FP-002', name:'Maria Santos', contact:'0928 555 0192', email:'maria@mail.com', pw:'member123', plan:'Quarterly', start:day(-40), end:day(50) },
+  { id:'FP-003', name:'Paolo Reyes', contact:'0945 777 3321', email:'paolo@mail.com', pw:'member123', plan:'Monthly', start:day(-45), end:day(-15) },
+  { id:'FP-004', name:'Ana Villanueva', contact:'0956 210 8844', email:'ana@mail.com', pw:'member123', plan:'Annual', start:day(-100), end:day(265) },
+  { id:'FP-005', name:'Carlo Mendoza', contact:'0935 664 1209', email:'carlo@mail.com', pw:'member123', plan:'Monthly', start:day(-24), end:day(6) }
+];
+let equipment = [
+  { name:'Treadmill #1', cat:'Treadmill', cond:'Good', last:day(-12) }, { name:'Bench Press A', cat:'Bench Press', cond:'Needs Maintenance', last:day(-40) },
+  { name:'Dumbbell Rack', cat:'Dumbbell Rack', cond:'Good', last:day(-5) }, { name:'Treadmill #2', cat:'Treadmill', cond:'Out of Service', last:day(-60) }
+];
+let payments = [
+  { id:'P-101', mid:'FP-001', amt:800, method:'GCash', date:day(-27), type:'Renewal' }, { id:'P-102', mid:'FP-002', amt:2200, method:'Cash', date:day(-40), type:'New' },
+  { id:'P-103', mid:'FP-004', amt:7800, method:'GCash', date:day(-100), type:'New' }, { id:'P-104', mid:'FP-005', amt:800, method:'Cash', date:day(-24), type:'Renewal' }
+];
+let attendance = [{ mid:'FP-001', at:new Date(Date.now() - 864e5).toISOString() }, { mid:'FP-002', at:new Date(Date.now() - 36e5).toISOString() }];
+let maintLog = [{ item:'Treadmill #2', note:'Belt motor failure, marked Out of Service', date:day(-10) }];
+let sent = {}, user = null, role = '', page = 'Dashboard', q = '', rep = 'Active';
+
+/* ===== QR (decorative pattern from member ID) ===== */
+function qr(id) {
+  let h = 0, s = ''; for (const c of id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  for (let y = 0; y < 21; y++) for (let x = 0; x < 21; x++) {
+    const f = (x < 7 && y < 7) || (x > 13 && y < 7) || (x < 7 && y > 13); let on;
+    if (f) { const lx = x < 7 ? x : x - 14, ly = y > 13 ? y - 14 : y; on = lx == 0 || lx == 6 || ly == 0 || ly == 6 || (lx > 1 && lx < 5 && ly > 1 && ly < 5); }
+    else { h = (h * 1103515245 + 12345) >>> 0; on = (h >> 16) & 1; }
+    if (on) s += `<rect x="${x}" y="${y}" width="1" height="1"/>`;
+  }
+  return `<svg viewBox="-1 -1 23 23" class="qr">${s}</svg>`;
+}
+
+/* ===== AUTH ===== */
+const BRAND = `<svg width="46" height="24" viewBox="0 0 88 28" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7v14M4 14h14l5-9 8 18 7-13 4 4h36M84 7v14M84 14h-6"/></svg>Fit<span style="color:var(--orange)">Pulse</span>`;
+const showErr = (id, m) => { const e = $('#' + id); e.textContent = m; e.style.display = m ? 'block' : 'none'; };
+function clearErr() { showErr('ee', ''); showErr('pe', ''); $('#ge').style.display = 'none'; $('#we').classList.remove('bad'); $('#wp').classList.remove('bad'); }
+function togglePw() { const p = $('#lp'), h = p.type === 'password'; p.type = h ? 'text' : 'password'; $('#eye').innerHTML = ic(h ? 'eyeoff' : 'eye', 20); }
+function caps(e) { $('#caps').style.display = e.getModifierState && e.getModifierState('CapsLock') ? 'flex' : 'none'; }
+function fill(w) { $('#le').value = w === 'admin' ? 'admin@fitpulse.com' : 'juan@mail.com'; $('#lp').value = w === 'admin' ? 'admin123' : 'member123'; clearErr(); }
+function initLogin() {
+  $('#le').value = ''; $('#lp').value = ''; $('#lp').type = 'password'; $('#eye').innerHTML = ic('eye', 20); $('#rem').checked = false; clearErr();
+  try { const r = localStorage.getItem('fp_email'); if (r) { $('#le').value = r; $('#rem').checked = true; } } catch (x) {}
+}
+function login() {
+  const b = $('#lbtn'); if (b.classList.contains('load')) return;
+  clearErr(); const e = $('#le').value.trim().toLowerCase(), p = $('#lp').value; let bad = false;
+  if (!/^\S+@\S+\.\S+$/.test(e)) { showErr('ee', 'Enter a valid email address'); $('#we').classList.add('bad'); bad = true; }
+  if (!p) { showErr('pe', 'Enter your password'); $('#wp').classList.add('bad'); bad = true; }
+  if (bad) return;
+  b.classList.add('load');
+  setTimeout(() => {
+    b.classList.remove('load');
+    const a = (admin.email === e && admin.pw === p) ? admin : members.find(m => m.email.toLowerCase() === e && m.pw === p);
+    if (!a) {
+      const c = $('#lcard'); c.classList.add('shake'); setTimeout(() => c.classList.remove('shake'), 500);
+      $('#le').value = ''; $('#lp').value = ''; $('#ge').innerHTML = ic('alert', 16) + 'Wrong email or password. Please try again.'; $('#ge').style.display = 'flex'; $('#le').focus(); return;
+    }
+    try { $('#rem').checked ? localStorage.setItem('fp_email', e) : localStorage.removeItem('fp_email'); } catch (x) {}
+    user = a; role = a === admin ? 'admin' : 'member'; page = 'Dashboard';
+    $('#login').style.display = 'none'; $('#app').style.display = ''; render(); toast('Welcome, ' + a.name.split(' ')[0] + '!');
+  }, 700);
+}
+function forgotModal() {
+  modal('Reset password', `<p style="font-size:14px;color:var(--muted);margin-bottom:14px;line-height:1.6">Enter your account email and we'll send you a reset link.</p><div class="mf">${fld('fe', 'Email', 'john123@gmail.com', 'email')}</div>`,
+    `<button class="btn" onclick="sendReset()">${ic('mail', 16)}Send Reset Link</button><button class="btn ghost" onclick="closeM()">Cancel</button>`);
+}
+function sendReset() {
+  if (!/^\S+@\S+\.\S+$/.test($('#fe').value.trim())) return toast('Enter a valid email address');
+  closeM(); toast('If that email has an account, a reset link was sent');
+}
+function askLogout() {
+  modal('Sign out?', `<p style="font-size:14px;color:var(--muted);line-height:1.6">Are you sure you want to sign out of FitPulse?</p>`,
+    `${cancelBtn}<button class="btn" onclick="logout()">${ic('out', 16)}Sign out</button>`);
+}
+function logout() { user = null; closeM(); closeNav(); $('#app').style.display = 'none'; $('#login').style.display = ''; initLogin(); }
+
+/* ===== MEMBER ACTIONS ===== */
+function createModal() {
+  modal('Create Member Account', `<div class="mf">${fld('n', 'Full name', 'Juan Dela Cruz')}${fld('c', 'Contact number', '0917 123 4567')}${fld('e', 'Email', 'john123@gmail.com', 'email')}${fld('pw', 'Temporary password', 'Enter a password', 'password')}${sel('p', 'Plan', Object.keys(planDays))}${sel('pm', 'Payment', ['Cash', 'GCash'])}</div>`,
+    `${cancelBtn}<button class="btn" onclick="addMember()">${ic('plus', 16)}Create</button>`);
+}
+function addMember() {
+  const v = id => $('#' + id).value.trim(), n = v('n'), c = v('c'), e = v('e').toLowerCase(), pw = v('pw'), p = v('p');
+  if (!n || !c || !e || pw.length < 6) return toast('Fill all fields (password min 6 characters)');
+  if (members.some(m => m.email.toLowerCase() === e) || e === admin.email) return toast('Email already in use');
+  const id = 'FP-' + String(members.length + 1).padStart(3, '0');
+  members.push({ id, name:n, contact:c, email:e, pw, plan:p, start:day(0), end:day(planDays[p]) });
+  payments.push({ id:pid(), mid:id, amt:planCost[p], method:v('pm'), date:day(0), type:'New' });
+  closeM(); toast(`Account created for ${n} (${id})`); render();
+}
+function viewMember(id) {
+  const m = members.find(x => x.id === id);
+  modal('Member Profile', `<div class="center">${qr(m.id)}<b>${m.name}</b></div><div class="info"><span>Member ID</span>${m.id}<span>Contact</span>${m.contact}<span>Email</span>${m.email}<span>Plan</span>${m.plan}<span>Valid</span>${fmt(m.start)} – ${fmt(m.end)}<span>Status</span>${stPill(m)}</div>`, `<button class="btn" onclick="closeM()">Close</button>`);
+}
+function editModal(id) {
+  const m = members.find(x => x.id === id);
+  modal('Edit Member', `<div class="mf">${fld('n', 'Full name', '', 'text', m.name)}${fld('c', 'Contact number', '', 'text', m.contact)}${fld('e', 'Email', '', 'email', m.email)}${sel('p', 'Plan', Object.keys(planDays), m.plan)}</div>`,
+    `${cancelBtn}<button class="btn" onclick="saveMember('${id}')">Save changes</button>`);
+}
+function saveMember(id) {
+  const m = members.find(x => x.id === id);
+  m.name = $('#n').value.trim() || m.name; m.contact = $('#c').value.trim() || m.contact; m.email = $('#e').value.trim() || m.email; m.plan = $('#p').value;
+  closeM(); toast('Member updated'); render();
+}
+function renewModal(id) {
+  const m = members.find(x => x.id === id);
+  modal('Renew Membership', `<p style="font-size:14px;margin-bottom:14px"><b>${m.name}</b> · ${m.plan} plan · ${peso(planCost[m.plan])}</p><div class="mf">${sel('rm', 'Payment method', ['Cash', 'GCash'])}</div>`,
+    `${cancelBtn}<button class="btn" onclick="renew('${id}')">${ic('refresh', 16)}Renew</button>`);
+}
+function renew(id) {
+  const m = members.find(x => x.id === id), base = left(m) > 0 ? new Date(m.end) : new Date();
+  base.setDate(base.getDate() + planDays[m.plan]); m.start = day(0); m.end = base.toISOString().slice(0, 10);
+  payments.push({ id:pid(), mid:id, amt:planCost[m.plan], method:$('#rm').value, date:day(0), type:'Renewal' });
+  delete sent[id]; closeM(); toast(`${m.name} renewed`); render();
+}
+function checkIn(id) {
+  const m = members.find(x => x.id === (id || $('#scan').value.trim().toUpperCase()));
+  if (!m) return toast('Member ID not found');
+  if (left(m) < 0) return toast('Membership expired – check-in denied');
+  attendance.unshift({ mid:m.id, at:new Date().toISOString() }); toast(`${m.name} checked in`); render();
+}
+function payModal() {
+  modal('Record Payment', `<div class="mf">${sel('pmm', 'Member', members.map(m => [m.name, m.id]))}${fld('pa', 'Amount (₱)', '800', 'number')}${sel('pt', 'Method', ['Cash', 'GCash'])}</div><p style="font-size:12px;color:var(--muted);margin-top:12px">Records only – no online payment processing.</p>`,
+    `${cancelBtn}<button class="btn" onclick="addPay()">Save payment</button>`);
+}
+function addPay() {
+  const a = $('#pa').value; if (!a) return toast('Enter an amount');
+  payments.push({ id:pid(), mid:$('#pmm').value, amt:+a, method:$('#pt').value, date:day(0), type:'Payment' }); closeM(); toast('Payment recorded'); render();
+}
+function eqModal() {
+  modal('Add Equipment', `<div class="mf">${fld('en', 'Equipment name', 'Treadmill #3')}${sel('ec', 'Category', ['Treadmill', 'Bench Press', 'Dumbbell Rack', 'Other'])}</div>`,
+    `${cancelBtn}<button class="btn" onclick="addEq()">Add</button>`);
+}
+function addEq() {
+  const n = $('#en').value.trim(); if (!n) return toast('Enter equipment name');
+  equipment.push({ name:n, cat:$('#ec').value, cond:'Good', last:day(0) }); closeM(); toast('Equipment added'); render();
+}
+function setCond(i, v) { equipment[i].cond = v; maintLog.unshift({ item:equipment[i].name, note:'Condition set to ' + v, date:day(0) }); toast('Condition updated'); render(); }
+function inspect(i) { equipment[i].last = day(0); maintLog.unshift({ item:equipment[i].name, note:'Inspection completed', date:day(0) }); toast('Inspection logged'); render(); }
+function sendMail(id) { sent[id] = 1; toast('Email sent to ' + name(id)); render(); }
+
+/* ===== PROFILE & SETTINGS ===== */
+function profileModal() {
+  const m = role === 'member';
+  modal('Profile Details', `<div class="center"><span class="av" style="width:72px;height:72px;font-size:28px">${user.name[0]}</span><b style="font-size:18px">${user.name}</b>${pill(m ? 'Member' : 'Administrator', m ? 'ok' : 'warn')}</div>
+    <div class="info"><span>Email</span>${user.email}${m ? `<span>Member ID</span>${user.id}<span>Contact</span>${user.contact}<span>Plan</span>${user.plan}<span>Expires</span>${fmt(user.end)}` : `<span>Gym</span>${cfg.gym}`}</div>`,
+    `${cancelBtn}<button class="btn" onclick="closeM();go('Settings')">${ic('sliders', 16)}Settings</button>`);
+}
+function saveProfile() {
+  user.name = $('#sn').value.trim() || user.name; user.email = $('#se').value.trim() || user.email;
+  if (role === 'member') user.contact = $('#sc').value.trim() || user.contact; toast('Profile saved'); render();
+}
+function savePw() {
+  if ($('#cp').value !== user.pw) return toast('Current password is incorrect');
+  if ($('#np').value.length < 6) return toast('New password needs 6+ characters');
+  user.pw = $('#np').value; $('#cp').value = $('#np').value = ''; toast('Password updated');
+}
+function savePref() { cfg.gym = $('#gn').value.trim() || cfg.gym; cfg.remind = +$('#rd').value; toast('Preferences saved'); render(); }
+function togMail() { cfg.emailOn = !cfg.emailOn; render(); }
+
+/* ===== VIEWS ===== */
+const stat = (l, v, i, b) => `<div class="card clay stat"><div class="bub ${b}">${ic(i, 24)}</div><div><small>${l}</small><b>${v}</b></div></div>`;
+const memRows = list => list.map(m => [m.id, nm(m.name), m.contact, m.plan, fmt(m.end), stPill(m)]);
+const views = {
+  admin: {
+    Dashboard() {
+      const act = members.filter(m => left(m) >= 0), exp = act.filter(m => left(m) <= cfg.remind), n = members.length || 1;
+      const ok = act.length - exp.length, a = ok / n * 100, b = a + exp.length / n * 100;
+      const today = attendance.filter(x => x.at.slice(0, 10) === day(0)).length, total = payments.reduce((s, p) => s + p.amt, 0);
+      const data = [18, 24, 21, 30, 27, 35, 12 + today], dn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const gc = payments.filter(p => p.method === 'GCash').reduce((s, p) => s + p.amt, 0), cash = total - gc;
+      return `<div class="grid g4">${stat('Total Members', members.length, 'users', 'b1')}${stat('Active', act.length, 'check', 'b2')}${stat('Expired', members.length - act.length, 'bell', 'b3')}${stat('Revenue', peso(total), 'wallet', 'b4')}</div>
+      <div class="grid g2">
+        ${card('Weekly Attendance', `<div class="chart">${data.map((v, i) => `<div class="col"><div class="t"><span style="height:${v / 40 * 100}%"></span></div><small>${dn[i]}</small></div>`).join('')}</div><div style="height:30px"></div>`, 'chart')}
+        ${card('Membership Status', `<div class="dwrap"><div class="donut" style="background:conic-gradient(#2a9d5c 0 ${a}%,var(--orange) ${a}% ${b}%,var(--red) ${b}% 100%)"><div>${members.length}</div></div>
+          <div class="leg"><span><i style="background:#2a9d5c"></i>Active · ${ok}</span><span><i style="background:var(--orange)"></i>Expiring · ${exp.length}</span><span><i style="background:var(--red)"></i>Expired · ${members.length - act.length}</span></div></div>`, 'users')}
+      </div>
+      <div class="grid g2">
+        ${card('Payments by Method', `<div class="prog">Cash · ${peso(cash)}<div class="clay-in"><span style="width:${cash / total * 100}%"></span></div></div><div class="prog">GCash · ${peso(gc)}<div class="clay-in"><span style="width:${gc / total * 100}%"></span></div></div>`, 'wallet')}
+        ${card('Expiring Soon', exp.map(m => `<div class="item clay-in"><span>${m.name}<br><small>${left(m)} day(s) left</small></span>${pill(fmt(m.end), 'warn')}</div>`).join('') || 'No memberships expiring.', 'bell')}
+      </div>
+      ${card('Equipment Needing Attention', table(['Equipment', 'Condition', 'Last Inspection'], equipment.filter(e => e.cond !== 'Good').map(e => [e.name, pill(e.cond, e.cond === 'Out of Service' ? 'bad' : 'warn'), fmt(e.last)])), 'dumbbell')}`;
+    },
+    Members() {
+      const list = members.filter(m => (m.name + m.id + m.contact).toLowerCase().includes(q.toLowerCase()));
+      return card('Member Records', `<div class="bar"><div class="sbox clay-in">${ic('search', 18)}<input id="s" placeholder="Search by name, member ID or contact" value="${q}" oninput="q=this.value;render('s')"></div><button class="btn" onclick="createModal()">${ic('plus', 16)}Create Account</button></div>`
+        + table(['ID', 'Name', 'Contact', 'Plan', 'Expires', 'Status', 'Actions'], memRows(list).map((r, i) => [...r, `<div class="acts"><button class="ib sm" title="View" onclick="viewMember('${list[i].id}')">${ic('eye', 16)}</button><button class="ib sm" title="Edit" onclick="editModal('${list[i].id}')">${ic('edit', 16)}</button></div>`])), 'users');
+    },
+    Memberships() {
+      return card('Memberships', table(['ID', 'Name', 'Plan', 'Start', 'Expiry', 'Status', 'Action'], members.map(m => [m.id, nm(m.name), m.plan, fmt(m.start), fmt(m.end), stPill(m), `<button class="btn sm" onclick="renewModal('${m.id}')">${ic('refresh', 14)}Renew</button>`])), 'card')
+        + card('Renewal History', table(['Member', 'Amount', 'Date'], payments.filter(p => p.type === 'Renewal').map(p => [nm(name(p.mid)), peso(p.amt), fmt(p.date)])), 'file');
+    },
+    Equipment() {
+      return card('Equipment Monitoring', `<div class="bar"><button class="btn" onclick="eqModal()">${ic('plus', 16)}Add Equipment</button></div>` + table(['Name', 'Category', 'Condition', 'Last Inspection', 'Action'], equipment.map((e, i) => {
+        const due = (new Date(day(0)) - new Date(e.last)) / 864e5 > 30;
+        return [e.name, e.cat, `<select class="clay-in" style="padding:7px 10px" onchange="setCond(${i},this.value)">${['Good', 'Needs Maintenance', 'Out of Service'].map(c => `<option ${c === e.cond ? 'selected' : ''}>${c}</option>`).join('')}</select>`, fmt(e.last) + (due ? ' ' + pill('Due', 'bad') : ''), `<button class="btn sm" onclick="inspect(${i})">${ic('tool', 14)}Inspected</button>`];
+      })), 'dumbbell') + card('Maintenance & Repair Log', table(['Equipment', 'Note', 'Date'], maintLog.map(l => [l.item, l.note, fmt(l.date)])), 'tool');
+    },
+    Attendance() {
+      return card('QR Check-In', `<div class="bar"><div class="sbox clay-in">${ic('qr', 18)}<input id="scan" placeholder="Scan or type Member ID (e.g. FP-001)" onkeydown="if(event.key==='Enter')checkIn()"></div><button class="btn" onclick="checkIn()">${ic('check', 16)}Check In</button></div>`, 'qr')
+        + card('Attendance History', table(['Member', 'ID', 'Date & Time'], attendance.map(a => [nm(name(a.mid)), a.mid, time(a.at)])), 'file');
+    },
+    Payments() {
+      return card('Payment History', `<div class="bar"><button class="btn" onclick="payModal()">${ic('plus', 16)}Record Payment</button></div>` + table(['ID', 'Member', 'Amount', 'Method', 'Date'], payments.map(p => [p.id, nm(name(p.mid)), peso(p.amt), pill(p.method, p.method === 'GCash' ? 'warn' : 'ok'), fmt(p.date)])), 'wallet');
+    },
+    Notifications() {
+      const due = members.filter(m => left(m) <= cfg.remind);
+      return card('Membership Email Notifications', (cfg.emailOn ? '' : `<p style="margin-bottom:14px;color:var(--red);font-size:14px">Email notifications are turned off in Settings.</p>`) + (due.map(m => `<div class="item clay-in"><span><b>${m.name}</b><br><small>${left(m) < 0 ? 'Expired ' + fmt(m.end) : 'Expires in ' + left(m) + ' day(s)'} · ${m.email}</small></span>${sent[m.id] ? pill('Sent', 'ok') : `<button class="btn sm" ${cfg.emailOn ? '' : 'disabled style="opacity:.5"'} onclick="sendMail('${m.id}')">${ic('mail', 14)}Send</button>`}</div>`).join('') || 'No memberships nearing expiration.'), 'bell');
+    },
+    Reports() {
+      const R = {
+        Active:() => table(['ID', 'Name', 'Plan', 'Expires'], members.filter(m => left(m) >= 0).map(m => [m.id, nm(m.name), m.plan, fmt(m.end)])),
+        Expired:() => table(['ID', 'Name', 'Plan', 'Expired'], members.filter(m => left(m) < 0).map(m => [m.id, nm(m.name), m.plan, fmt(m.end)])),
+        Attendance:() => table(['Member', 'Date & Time'], attendance.map(a => [nm(name(a.mid)), time(a.at)])),
+        Payment:() => table(['Member', 'Amount', 'Method', 'Date'], payments.map(p => [nm(name(p.mid)), peso(p.amt), p.method, fmt(p.date)])) + `<p style="margin-top:8px"><b>Total: ${peso(payments.reduce((s, p) => s + p.amt, 0))}</b></p>`,
+        Renewal:() => table(['Member', 'Amount', 'Date'], payments.filter(p => p.type === 'Renewal').map(p => [nm(name(p.mid)), peso(p.amt), fmt(p.date)])),
+        Maintenance:() => table(['Equipment', 'Note', 'Date'], maintLog.map(l => [l.item, l.note, fmt(l.date)]))
+      };
+      return card('Reports', `<div class="tabs">${Object.keys(R).map(k => `<button class="btn sm ${k === rep ? '' : 'ghost'}" onclick="rep='${k}';render()">${k}</button>`).join('')}</div>${R[rep]()}`, 'chart');
+    },
+    Settings: () => settingsView()
+  },
+  member: {
+    Dashboard() {
+      const m = user, l = left(m);
+      return `<div class="grid g4">${stat('Plan', m.plan, 'card', 'b1')}${stat('Status', l < 0 ? 'Expired' : 'Active', 'check', l < 0 ? 'b3' : 'b2')}${stat('Days Left', Math.max(l, 0), 'heart', 'b4')}${stat('Check-ins', attendance.filter(a => a.mid === m.id).length, 'qr', 'b1')}</div>
+      <div class="grid g2">${card('My Membership', `<div class="info"><span>Member ID</span>${m.id}<span>Start</span>${fmt(m.start)}<span>Expires</span>${fmt(m.end)}<span>Contact</span>${m.contact}<span>Status</span>${stPill(m)}</div>`, 'card')}
+      ${card('My QR Code', `<div class="center">${qr(m.id)}<small style="color:var(--muted)">Show this at the gym entrance</small></div>`, 'qr')}</div>`;
+    },
+    'My QR':() => card('Gym Entry QR Code', `<div class="center">${qr(user.id)}<b>${user.name} · ${user.id}</b><small style="color:var(--muted)">Scanned on entry to record your check-in</small><button class="btn" onclick="checkIn('${user.id}')">${ic('check', 16)}Simulate Check-In</button></div>`, 'qr'),
+    Attendance:() => card('My Attendance History', table(['Date & Time'], attendance.filter(a => a.mid === user.id).map(a => [time(a.at)])), 'file'),
+    Payments:() => card('My Payment History', table(['ID', 'Amount', 'Method', 'Date'], payments.filter(p => p.mid === user.id).map(p => [p.id, peso(p.amt), p.method, fmt(p.date)])), 'wallet'),
+    Notifications() {
+      const l = left(user);
+      return card('Notifications', l < 0 ? `<div class="item clay-in">Your membership expired on ${fmt(user.end)}. Please renew at the front desk.${pill('Expired', 'bad')}</div>` : l <= cfg.remind ? `<div class="item clay-in">Your membership expires in ${l} day(s). Renew soon!${pill('Reminder', 'warn')}</div>` : `<div class="item clay-in">All good! Your membership is active.${pill('OK', 'ok')}</div>`, 'bell');
+    },
+    Settings: () => settingsView()
+  }
+};
+function settingsView() {
+  const ad = role === 'admin';
+  return `<div class="grid g2">
+    ${card('Profile', `<div class="mf">${fld('sn', 'Full name', '', 'text', user.name)}${fld('se', 'Email', 'john123@gmail.com', 'email', user.email)}${ad ? '' : fld('sc', 'Contact number', '', 'text', user.contact)}</div><div class="ma"><button class="btn" onclick="saveProfile()">Save profile</button></div>`, 'user')}
+    ${card('Change Password', `<div class="mf">${fld('cp', 'Current password', 'Enter your password', 'password')}${fld('np', 'New password', 'At least 6 characters', 'password')}</div><div class="ma"><button class="btn" onclick="savePw()">Update password</button></div>`, 'sliders')}
+    ${ad ? card('Gym Preferences', `<div class="mf">${fld('gn', 'Gym name', '', 'text', cfg.gym)}${sel('rd', 'Expiry reminder (days before)', [['3 days', '3'], ['5 days', '5'], ['7 days', '7']], String(cfg.remind))}</div>
+      <div class="set" style="padding-top:18px">Send email reminders<button class="tog ${cfg.emailOn ? 'on' : ''}" onclick="togMail()" aria-label="Toggle email"></button></div><div class="ma" style="margin-top:0"><button class="btn" onclick="savePref()">Save preferences</button></div>`, 'bell') : ''}
+  </div>`;
+}
+
+/* ===== RENDER & UI ===== */
+const NA = [['Dashboard', 'home'], ['Members', 'users'], ['Memberships', 'card'], ['Equipment', 'dumbbell'], ['Attendance', 'qr'], ['Payments', 'wallet'], ['Notifications', 'bell'], ['Reports', 'chart'], ['Settings', 'sliders']];
+const NM = [['Dashboard', 'home'], ['My QR', 'qr'], ['Attendance', 'file'], ['Payments', 'wallet'], ['Notifications', 'bell'], ['Settings', 'sliders']];
+function render(keep) {
+  const nav = role === 'admin' ? NA : NM;
+  $('#nav').innerHTML = nav.map(([p, i]) => `<button class="nav ${p === page ? 'on' : ''}" onclick="go('${p}')">${ic(i)}<span>${p}</span></button>`).join('');
+  $('#title').textContent = page; $('#who').textContent = user.name; $('#rl').textContent = role === 'admin' ? 'Administrator' : user.id; $('#av').textContent = user.name[0];
+  $('#view').innerHTML = views[role][page]();
+  if (keep === 's') { const s = $('#s'); s.focus(); s.setSelectionRange(q.length, q.length); }
+}
+const go = p => { page = p; closeNav(); render(); window.scrollTo(0, 0); };
+const openNav = () => { $('#side').classList.add('open'); $('#ov').classList.add('show'); };
+const closeNav = () => { $('#side').classList.remove('open'); $('#ov').classList.remove('show'); };
+function toggleTheme() {
+  const d = document.documentElement; d.dataset.theme = d.dataset.theme === 'dark' ? 'light' : 'dark'; themeIcons();
+}
+const themeIcons = () => document.querySelectorAll('[data-theme-btn]').forEach(b => b.innerHTML = ic(document.documentElement.dataset.theme === 'dark' ? 'sun' : 'moon'));
+$('#lg2').innerHTML = BRAND; $('#lbrand').innerHTML = BRAND + '<em>Gym Management System</em>'; $('#menuBtn').innerHTML = ic('menu');
+$('#fb').innerHTML = ic('fb', 22); $('#ig').innerHTML = ic('ig', 22); $('#ie').innerHTML = ic('mail', 20); $('#il').innerHTML = ic('lock', 20); $('#caps').innerHTML = ic('alert', 14) + 'Caps Lock is on';
+$('#feats').innerHTML = [['qr', 'QR check-in'], ['bell', 'Expiry reminders'], ['wallet', 'Payment records']].map(f => `<span class="feat">${ic(f[0], 16)}${f[1]}</span>`).join('');
+initLogin();
+document.querySelector('aside > .nav').innerHTML = ic('out') + '<span>Sign out</span>'; themeIcons();
+</script>
+</body>
+</html>

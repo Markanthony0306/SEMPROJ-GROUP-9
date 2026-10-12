@@ -9,8 +9,6 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import ResetPassword from './pages/ResetPassword'
 import UserPage from './pages/UserPage'
-import './styles/landing_and_forms.css'
-import './styles/admin_staff_page.css'
 
 // Vite injects BASE_URL (with a trailing slash) when the app is hosted under a
 // subpath such as GitHub Pages. Every generated link must respect it.

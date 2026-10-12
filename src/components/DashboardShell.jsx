@@ -1,160 +1,22 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
+import { useTheme } from './brand/useTheme'
 
-const ADMIN_LINKS = [
-  'Dashboard',
-  'Members',
-  'Staff / Coaches',
-  'Memberships',
-  'Attendance',
-  'Payments',
-  'Create Account',
-  'Profile / Account'
-]
-const MEMBER_LINKS = ['Dashboard', 'My Membership', 'My Attendance', 'My Profile']
+const ADMIN_NAVIGATION = [['Dashboard', 'home'], ['Members', 'users'], ['Memberships', 'card'], ['Equipment', 'dumbbell'], ['Attendance', 'qr'], ['Payments', 'wallet'], ['Notifications', 'bell'], ['Reports', 'chart'], ['Settings', 'sliders']]
+const MEMBER_NAVIGATION = [['Dashboard', 'home'], ['My QR', 'qr'], ['Attendance', 'file'], ['Payments', 'wallet'], ['Notifications', 'bell'], ['Settings', 'sliders']]
+const PATHS = { home:<path d="M3 11l9-8 9 8v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z" />, users:<><circle cx="9" cy="8" r="4" /><path d="M2 21c0-4 3-6 7-6s7 2 7 6M16 4a4 4 0 0 1 0 8M22 21c0-3-2-5-4-5.5" /></>, card:<><rect x="2" y="5" width="20" height="14" rx="3" /><path d="M2 10h20M6 15h4" /></>, dumbbell:<path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12" />, qr:<><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><path d="M14 14h3v3h-3zM20 14v7h-3" /></>, wallet:<><rect x="2" y="6" width="20" height="14" rx="3" /><path d="M2 10h20" /><circle cx="17" cy="15" r="1.4" /></>, bell:<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21a2 2 0 0 0 4 0" />, chart:<path d="M3 3v18h18M7 15l4-4 3 3 6-7" />, sliders:<><path d="M4 6h8M18 6h2M4 12h2M12 12h8M4 18h10M20 18h0" /><circle cx="15" cy="6" r="2" /><circle cx="9" cy="12" r="2" /><circle cx="17" cy="18" r="2" /></>, out:<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />, sun:<><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5" /></>, moon:<path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z" />, menu:<path d="M3 6h18M3 12h18M3 18h18" />, x:<path d="M6 6l12 12M18 6 6 18" /> }
 
-// Shared dashboard navigation and utility controls for both allowed roles.
-export default function DashboardShell({
-  role,
-  user,
-  onSignOut,
-  navigate,
-  activeSection,
-  onSectionChange,
-  children
-}) {
+function Icon({ name, size = 20 }) { return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{PATHS[name]}</svg> }
+function Brand() { return <><svg width="46" height="24" viewBox="0 0 88 28" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7v14M4 14h14l5-9 8 18 7-13 4 4h36M84 7v14M84 14h-6" /></svg>Fit<span>Pulse</span></> }
+
+export default function DashboardShell({ role, user, onSignOut, activeSection, onSectionChange, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [panel, setPanel] = useState('')
-  const [query, setQuery] = useState('')
-  const links = role === 'admin' ? ADMIN_LINKS : MEMBER_LINKS
-  const initials = (user?.name || 'FitPulse')
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-  const matches = useMemo(
-    () => links.filter((link) => link.toLowerCase().includes(query.toLowerCase())),
-    [links, query]
-  )
-  const selectSection = (section) => {
-    setSidebarOpen(false)
-    if (section === 'Create Account') return navigate?.('register')
-    onSectionChange(section)
-  }
-
-  return (
-    <main className="dashboard-shell">
-      <aside className={sidebarOpen ? 'dashboard-sidebar open' : 'dashboard-sidebar'}>
-        <p className="dashboard-logo">
-          FIT<span>PULSE</span>
-        </p>
-        <nav>
-          {links.map((link, index) => (
-            <button
-              className={activeSection === link ? 'active' : ''}
-              key={link}
-              onClick={() => selectSection(link)}
-            >
-              <span>{['D', 'M', 'C', 'S', 'A', 'P', '+', 'O'][index]}</span>
-              {link}
-            </button>
-          ))}
-        </nav>
-        <button className="sidebar-signout" onClick={onSignOut}>
-          Sign out
-        </button>
-      </aside>
-      <section className="dashboard-content">
-        <header className="dashboard-topbar">
-          <button
-            className="top-icon hamburger"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            aria-label="Toggle sidebar"
-          >
-            Menu
-          </button>
-          <div className="top-actions">
-            <button
-              className="top-icon"
-              onClick={() => setPanel(panel === 'search' ? '' : 'search')}
-              aria-label="Search"
-            >
-              Search
-            </button>
-            <button
-              className="top-icon"
-              onClick={() => setPanel(panel === 'help' ? '' : 'help')}
-              aria-label="Help"
-            >
-              ?
-            </button>
-            <button
-              className="top-icon notification"
-              onClick={() => setPanel(panel === 'notifications' ? '' : 'notifications')}
-              aria-label="Notifications"
-            >
-              Bell
-              {panel !== 'notifications' && <b>3</b>}
-            </button>
-            <button
-              className="user-chip"
-              onClick={() => selectSection(role === 'admin' ? 'Profile / Account' : 'My Profile')}
-            >
-              <span>{initials}</span>
-              <div>
-                <strong>{user?.name || 'FitPulse User'}</strong>
-                <small>{role === 'admin' ? 'Administrator' : 'Member'}</small>
-              </div>
-            </button>
-          </div>
-        </header>
-        {panel && (
-          <section className="utility-panel" role="status">
-            {panel === 'search' && (
-              <>
-                <label>
-                  Search dashboard
-                  <input
-                    autoFocus
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Find a page"
-                  />
-                </label>
-                <div>
-                  {matches.map((match) => (
-                    <button
-                      key={match}
-                      onClick={() => {
-                        selectSection(match)
-                        setPanel('')
-                      }}
-                    >
-                      {match}
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-            {panel === 'help' && (
-              <>
-                <strong>Need help?</strong>
-                <p>
-                  Use the sidebar to move between FitPulse tools. Contact your gym administrator for
-                  account support.
-                </p>
-              </>
-            )}
-            {panel === 'notifications' && (
-              <>
-                <strong>Notifications</strong>
-                <p>3 member renewals need review this week.</p>
-                <p>Today has 67 recorded check-ins.</p>
-              </>
-            )}
-          </section>
-        )}
-        {children}
-      </section>
-    </main>
-  )
+  const [modal, setModal] = useState('')
+  const { dark, toggle } = useTheme()
+  const isAdmin = ['admin', 'staff'].includes(role)
+  const navigation = isAdmin ? ADMIN_NAVIGATION : MEMBER_NAVIGATION
+  const initials = (user?.name || 'FitPulse User').split(' ').map((part) => part[0]).join('').slice(0, 2)
+  const select = (section) => { setSidebarOpen(false); onSectionChange(section) }
+  return <div className="app"><aside className={`clay${sidebarOpen ? ' open' : ''}`}><div className="logo brand"><Brand /></div><div id="nav">{navigation.map(([label, icon]) => <button className={`nav${activeSection === label ? ' on' : ''}`} type="button" key={label} onClick={() => select(label)}><Icon name={icon} /><span>{label}</span></button>)}</div><div className="spacer" /><button className="nav" type="button" onClick={() => setModal('logout')}><Icon name="out" /><span>Sign out</span></button></aside><div className={`ov${sidebarOpen ? ' show' : ''}`} onClick={() => setSidebarOpen(false)} />
+    <main><header className="clay"><button className="ib" id="menuBtn" type="button" onClick={() => setSidebarOpen(true)} aria-label="Open navigation"><Icon name="menu" /></button><h1>{activeSection}</h1><button className="ib" type="button" onClick={toggle} title="Toggle theme" aria-label="Toggle theme"><Icon name={dark ? 'sun' : 'moon'} /></button><button className="chip" type="button" onClick={() => setModal('profile')}><div><b>{user?.name || 'FitPulse User'}</b><small>{isAdmin ? 'Administrator' : user?.id || 'Member'}</small></div><span className="av">{initials}</span></button></header><section id="view" className="grid">{children}</section></main>
+    {modal && <div className="modal show" role="dialog" aria-modal="true" onMouseDown={(event) => event.target === event.currentTarget && setModal('')}><div className="clay" id="mbody">{modal === 'logout' ? <><div className="mh"><h2>Sign out?</h2><button className="ib sm" type="button" onClick={() => setModal('')} aria-label="Close"><Icon name="x" size={16} /></button></div><p className="modal-copy">Are you sure you want to sign out of FitPulse?</p><div className="ma"><button className="btn ghost" type="button" onClick={() => setModal('')}>Cancel</button><button className="btn" type="button" onClick={onSignOut}><Icon name="out" size={16} />Sign out</button></div></> : <><div className="mh"><h2>Profile Details</h2><button className="ib sm" type="button" onClick={() => setModal('')} aria-label="Close"><Icon name="x" size={16} /></button></div><div className="center"><span className="av profile-avatar">{initials}</span><b className="profile-name">{user?.name || 'FitPulse User'}</b><span className={`pill ${isAdmin ? 'p-warn' : 'p-ok'}`}>{isAdmin ? 'Administrator' : 'Member'}</span></div><div className="info"><span>Email</span>{user?.email || 'Not available'}{!isAdmin && <><span>Member ID</span>{user?.id || 'Not available'}<span>Plan</span>{user?.plan || 'Not available'}</>}</div><div className="ma"><button className="btn ghost" type="button" onClick={() => setModal('')}>Cancel</button><button className="btn" type="button" onClick={() => { setModal(''); select('Settings') }}><Icon name="sliders" size={16} />Settings</button></div></>}</div></div>}</div>
 }

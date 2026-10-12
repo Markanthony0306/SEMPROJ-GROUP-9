@@ -1,291 +1,39 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import DashboardShell from '../components/DashboardShell'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
-import {
-  formatCurrency,
-  formatDateTime,
-  heightsFor,
-  monthIndexOf,
-  monthLabels,
-  quarterLabels,
-  totalBuckets,
-  trailingBuckets,
-  trailingQuarterBuckets
-} from '../utils/metrics'
 
-const ROLE_LABELS = { admin: 'Administrator', staff: 'Staff / Coach', user: 'Member' }
+const money = (value) => new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(value || 0))
+const date = (value) => value ? new Date(value).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'
+const dateTime = (value) => value ? new Date(value).toLocaleString('en-PH', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—'
+const plans = ['Monthly', 'Quarterly', 'Annual']
 
-function AdminWorkspace({ section, user, members, attendance, payments }) {
-  if (section === 'Dashboard') return null
-  const staff = members.filter((account) => ['admin', 'staff'].includes(account.role))
-  const roster = members.filter((account) => !['admin', 'staff'].includes(account.role))
-  const planned = roster.reduce((counts, member) => {
-    const plan = member.plan || 'Unlimited Monthly'
-    counts[plan] = (counts[plan] || 0) + 1
-    return counts
-  }, {})
+function Modal({ title, children, onClose }) { return <div className="modal show" role="dialog" aria-modal="true" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><section className="clay" id="mbody"><div className="mh"><h2>{title}</h2><button className="ib sm" type="button" onClick={onClose} aria-label="Close">×</button></div>{children}</section></div> }
+function Pill({ status }) { const state = String(status || '').toLowerCase(); return <span className={`pill ${state === 'active' || state === 'good' ? 'p-ok' : state === 'expired' || state === 'out of service' ? 'p-bad' : 'p-warn'}`}>{status || 'Active'}</span> }
+function Table({ headings, children }) { return <div className="wrap"><table><thead><tr>{headings.map((heading) => <th key={heading}>{heading}</th>)}</tr></thead><tbody>{children}</tbody></table></div> }
+
+export default function AdminStaffPage({ user, onSignOut }) {
+  const { token } = useAuth(); const [section, setSection] = useState('Dashboard'); const [data, setData] = useState({ members: [], attendance: [], payments: [], equipment: [], maintenance: [], settings: { gym: 'FitPulse Gym', remind: 7, emailOn: true } }); const [error, setError] = useState(''); const [notice, setNotice] = useState(''); const [modal, setModal] = useState(null); const [query, setQuery] = useState('')
+  const load = async () => { try { const [members, attendance, payments, equipment, settings] = await Promise.all([apiRequest('/members', { token }), apiRequest('/attendance', { token }), apiRequest('/payments', { token }), apiRequest('/admin/equipment', { token }), apiRequest('/admin/settings', { token })]); setData({ ...members, ...attendance, ...payments, ...equipment, ...settings }); setError('') } catch (cause) { setError(cause.message) } }
+  useEffect(() => { load() }, [token])
+  const act = async (path, options, message) => { try { await apiRequest(path, { token, ...options, headers: { 'Content-Type': 'application/json' } }); setNotice(message); setModal(null); await load() } catch (cause) { setError(cause.message) } }
+  const members = useMemo(() => data.members.filter((member) => !['admin', 'staff'].includes(member.role)), [data.members]); const active = members.filter((member) => member.status !== 'expired').length; const revenue = data.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+  const createMember = (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); act('/admin/members', { method: 'POST', body: JSON.stringify(Object.fromEntries(form)) }, 'Member account created.') }
+  const updateMember = (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); act(`/admin/members/${modal.member.id}`, { method: 'PATCH', body: JSON.stringify(Object.fromEntries(form)) }, 'Member updated.') }
+  const recordPayment = (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); act('/admin/payments', { method: 'POST', body: JSON.stringify(Object.fromEntries(form)) }, 'Payment recorded.') }
+  const settings = (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); act('/admin/settings', { method: 'PATCH', body: JSON.stringify({ gym: form.get('gym'), remind: Number(form.get('remind')), emailOn: form.get('emailOn') === 'on' }) }, 'Preferences saved.') }
+  const profile = (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); act('/profile', { method: 'PATCH', body: JSON.stringify(Object.fromEntries(form)) }, 'Profile saved.') }
+  const password = (event) => { event.preventDefault(); const form = new FormData(event.currentTarget); act('/profile/change-password', { method: 'POST', body: JSON.stringify({ currentPassword: form.get('currentPassword'), password: form.get('password') }) }, 'Password updated.') }
   const content = {
-    Members: [
-      'Members directory',
-      roster.length
-        ? roster.map((member) => `${member.name} - ${member.plan || 'No plan'}`)
-        : ['No members yet. Create one from the dashboard.']
-    ],
-    'Staff / Coaches': [
-      'Staff and coaches',
-      staff.length
-        ? staff.map((member) => `${member.name} - ${ROLE_LABELS[member.role] || member.role}`)
-        : ['No staff accounts yet.']
-    ],
-    Memberships: [
-      'Membership overview',
-      [
-        `${roster.length} member accounts`,
-        `${roster.filter((member) => (member.status || 'active') === 'active').length} active memberships`,
-        ...Object.entries(planned).map(([plan, count]) => `${count} × ${plan}`)
-      ]
-    ],
-    Attendance: [
-      'Attendance log',
-      attendance.length
-        ? attendance.map(
-            (item) => `${item.memberName || item.memberId} - ${formatDateTime(item.date)}`
-          )
-        : ['No attendance records yet.']
-    ],
-    Payments: [
-      'Payment records',
-      payments.length
-        ? payments.map(
-            (item) =>
-              `${item.memberName || item.memberId} - ${formatCurrency(item.amount)} - ${item.method}`
-          )
-        : ['No payment records yet.']
-    ],
-    'Profile / Account': [
-      'Staff profile',
-      [
-        `${user?.name || 'FitPulse Staff'} - ${ROLE_LABELS[user?.role || 'admin'] || 'Administrator'}`,
-        user?.email || 'admin@fitpulse.com'
-      ]
-    ]
+    Dashboard: <><section className="grid g4">{[['Total Members', members.length, 'users', 'b1'], ['Active Memberships', active, 'card', 'b2'], ["Today's Check-ins", data.attendance.filter((item) => new Date(item.date).toDateString() === new Date().toDateString()).length, 'qr', 'b3'], ['Revenue', money(revenue), 'wallet', 'b4']].map(([label, value, icon, color]) => <article className="stat clay" key={label}><span className={`bub ${color}`}>{icon}</span><div><small>{label}</small><b>{value}</b></div></article>)}</section><section className="grid g2"><article className="card clay"><h2>Member growth</h2><div className="chart">{members.slice(-6).map((member) => <div className="col" key={member.id}><div className="t"><span style={{ height: `${Math.max(16, Math.min(92, members.length * 12))}%` }} /></div><small>{member.name.split(' ')[0]}</small></div>)}</div></article><article className="card clay"><h2>Expiring Soon</h2>{members.filter((member) => member.status !== 'active').map((member) => <div className="item clay-in" key={member.id}>{member.name}<Pill status={member.status} /></div>) || <p>No memberships requiring review.</p>}</article></section></>,
+    Members: <article className="card clay"><h2>Member Records</h2><div className="bar"><label className="sbox clay-in">Search <input value={query} placeholder="Search by name or email" onChange={(event) => setQuery(event.target.value)} /></label><button className="btn" onClick={() => setModal({ kind: 'create' })}>Create Account</button></div><Table headings={['Name', 'Email', 'Plan', 'Status', 'Actions']}>{members.filter((member) => `${member.name} ${member.email}`.toLowerCase().includes(query.toLowerCase())).map((member) => <tr key={member.id}><td>{member.name}</td><td>{member.email}</td><td>{member.plan}</td><td><Pill status={member.status} /></td><td className="acts"><button className="btn sm" onClick={() => setModal({ kind: 'edit', member })}>Edit</button><button className="btn sm ghost" onClick={() => setModal({ kind: 'renew', member })}>Renew</button></td></tr>)}</Table></article>,
+    Memberships: <article className="card clay"><h2>Memberships</h2><Table headings={['Member', 'Plan', 'Joined', 'Expires', 'Status', 'Action']}>{members.map((member) => <tr key={member.id}><td>{member.name}</td><td>{member.plan}</td><td>{date(member.membershipStart || member.joined)}</td><td>{date(member.membershipEnd)}</td><td><Pill status={member.status} /></td><td><button className="btn sm" onClick={() => setModal({ kind: 'renew', member })}>Renew</button></td></tr>)}</Table></article>,
+    Equipment: <><article className="card clay"><div className="bar"><h2>Equipment Monitoring</h2><button className="btn" onClick={() => setModal({ kind: 'equipment' })}>Add Equipment</button></div><Table headings={['Name', 'Category', 'Condition', 'Last inspection', 'Action']}>{data.equipment.map((item) => <tr key={item.id}><td>{item.name}</td><td>{item.category}</td><td><select className="clay-in" value={item.condition} onChange={(event) => act(`/admin/equipment/${item.id}`, { method: 'PATCH', body: JSON.stringify({ condition: event.target.value }) }, 'Condition updated.')}><option>Good</option><option>Needs Maintenance</option><option>Out of Service</option></select></td><td>{date(item.lastInspected)}</td><td><button className="btn sm" onClick={() => act(`/admin/equipment/${item.id}`, { method: 'PATCH', body: JSON.stringify({ inspected: true }) }, 'Inspection logged.')}>Inspected</button></td></tr>)}</Table></article><article className="card clay"><h2>Maintenance & Repair Log</h2><Table headings={['Equipment', 'Note', 'Date']}>{data.maintenance.map((item) => <tr key={item.id}><td>{item.item}</td><td>{item.note}</td><td>{date(item.date)}</td></tr>)}</Table></article></>,
+    Attendance: <article className="card clay"><h2>QR Check-In</h2><form className="bar" onSubmit={(event) => { event.preventDefault(); const id = new FormData(event.currentTarget).get('memberId'); act('/admin/attendance', { method: 'POST', body: JSON.stringify({ memberId: id }) }, 'Check-in recorded.') }}><select className="clay-in" name="memberId">{members.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}</select><button className="btn">Check In</button></form><Table headings={['Member', 'Date & Time']}>{data.attendance.map((item) => <tr key={item.id}><td>{item.memberName}</td><td>{dateTime(item.date)}</td></tr>)}</Table></article>,
+    Payments: <article className="card clay"><div className="bar"><h2>Payment History</h2><button className="btn" onClick={() => setModal({ kind: 'payment' })}>Record Payment</button></div><Table headings={['Member', 'Amount', 'Method', 'Date']}>{data.payments.map((item) => <tr key={item.id}><td>{item.memberName}</td><td>{money(item.amount)}</td><td><Pill status={item.method} /></td><td>{date(item.date)}</td></tr>)}</Table></article>,
+    Notifications: <article className="card clay"><h2>Membership Email Notifications</h2>{members.filter((member) => member.status !== 'active').map((member) => <div className="item clay-in" key={member.id}><span><b>{member.name}</b><br /><small>{member.email}</small></span><button className="btn sm" onClick={() => act(`/admin/members/${member.id}/expiry-email`, { method: 'POST' }, `Expiry email sent to ${member.name}.`)}>Send</button></div>)}</article>,
+    Reports: <article className="card clay"><h2>Reports</h2><p>{members.length} total members · {data.attendance.length} check-ins · {money(revenue)} payments</p></article>,
+    Settings: <section className="grid g2"><article className="card clay"><h2>Profile</h2><form onSubmit={profile} className="mf"><label className="field">Full name<input className="clay-in" name="name" defaultValue={user?.name} /></label><label className="field">Email<input className="clay-in" name="email" defaultValue={user?.email} /></label><button className="btn">Save profile</button></form></article><article className="card clay"><h2>Change Password</h2><form onSubmit={password} className="mf"><label className="field">Current password<input className="clay-in" name="currentPassword" type="password" required /></label><label className="field">New password<input className="clay-in" name="password" type="password" minLength="8" required /></label><button className="btn">Update password</button></form></article><article className="card clay"><h2>Gym Preferences</h2><form onSubmit={settings} className="mf"><label className="field">Gym name<input className="clay-in" name="gym" defaultValue={data.settings.gym} /></label><label className="field">Expiry reminder<select className="clay-in" name="remind" defaultValue={data.settings.remind}><option value="3">3 days</option><option value="5">5 days</option><option value="7">7 days</option></select></label><label className="set">Send email reminders<input name="emailOn" type="checkbox" defaultChecked={data.settings.emailOn} /></label><button className="btn">Save preferences</button></form></article></section>
   }[section]
-  if (!content) return null
-  return (
-    <section className="dashboard-card workspace-card">
-      <p className="eyebrow">FitPulse management</p>
-      <h2>{content[0]}</h2>
-      {content[1].map((item) => (
-        <p className="workspace-row" key={item}>
-          {item}
-        </p>
-      ))}
-    </section>
-  )
-}
-
-export default function AdminStaffPage({ user, onSignOut, navigate }) {
-  const { token } = useAuth()
-  const [section, setSection] = useState('Dashboard')
-  const [period, setPeriod] = useState('Monthly')
-  const [showAll, setShowAll] = useState(false)
-  const [members, setMembers] = useState([])
-  const [attendance, setAttendance] = useState([])
-  const [payments, setPayments] = useState([])
-  const [ready, setReady] = useState(false)
-  const [loadError, setLoadError] = useState('')
-
-  useEffect(() => {
-    if (!token) return
-    let cancelled = false
-    Promise.all([
-      apiRequest('/members', { token }),
-      apiRequest('/attendance', { token }),
-      apiRequest('/payments', { token })
-    ])
-      .then(([membersResult, attendanceResult, paymentsResult]) => {
-        if (cancelled) return
-        setMembers(membersResult.members || [])
-        setAttendance(attendanceResult.attendance || [])
-        setPayments(paymentsResult.payments || [])
-      })
-      .catch((error) => {
-        if (!cancelled) setLoadError(error.message || 'Could not load dashboard data.')
-      })
-      .finally(() => {
-        if (!cancelled) setReady(true)
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [token])
-
-  const activeMemberships = members.filter(
-    (member) => (member.status || 'active') === 'active'
-  ).length
-  const todayKey = new Date().toDateString()
-  const todayCheckins = attendance.filter(
-    (item) => new Date(item.date).toDateString() === todayKey
-  ).length
-  const thisMonthRevenue = payments
-    .filter((item) => monthIndexOf(new Date(item.date)) === monthIndexOf(new Date()))
-    .reduce((sum, item) => sum + Number(item.amount || 0), 0)
-
-  const stats = [
-    ['Total Members', String(members.length), 'registered accounts'],
-    ['Active Memberships', String(activeMemberships), 'active members'],
-    ["Today's Check-ins", String(todayCheckins), 'checked in today'],
-    ['Monthly Revenue', formatCurrency(thisMonthRevenue), 'this month']
-  ]
-  const joinedRecords = members
-    .map((member) => ({ date: member.joined }))
-    .filter((record) => record.date)
-  const activeJoinedRecords = members
-    .filter((member) => (member.status || 'active') === 'active')
-    .map((member) => ({ date: member.joined }))
-    .filter((record) => record.date)
-  const statSpark = [
-    heightsFor(trailingBuckets(joinedRecords, 6, 'week')),
-    heightsFor(trailingBuckets(activeJoinedRecords, 6, 'week')),
-    heightsFor(trailingBuckets(attendance, 6, 'day')),
-    heightsFor(totalBuckets(payments, 6))
-  ]
-
-  const visitCounts = new Map()
-  for (const item of attendance) {
-    const name = item.memberName || item.memberId || 'Unknown'
-    visitCounts.set(name, (visitCounts.get(name) || 0) + 1)
-  }
-  const leaderboard = [...visitCounts.entries()]
-    .map(([name, visits]) => ({ name, visits }))
-    .sort((a, b) => b.visits - a.visits)
-  const visibleLeaderboard = showAll ? leaderboard : leaderboard.slice(0, 5)
-
-  const growthSeries =
-    period === 'Monthly'
-      ? trailingBuckets(joinedRecords, 6, 'month')
-      : trailingQuarterBuckets(joinedRecords, 4)
-  const growthHeights = heightsFor(growthSeries)
-  const growthLabels = period === 'Monthly' ? monthLabels(6) : quarterLabels(4)
-
-  return (
-    <DashboardShell
-      role="admin"
-      user={user}
-      onSignOut={onSignOut}
-      navigate={navigate}
-      activeSection={section}
-      onSectionChange={setSection}
-    >
-      {loadError && ready && (
-        <p className="load-error" role="alert">
-          {loadError}
-        </p>
-      )}
-      {section !== 'Dashboard' ? (
-        <AdminWorkspace
-          section={section}
-          user={user}
-          members={members}
-          attendance={attendance}
-          payments={payments}
-        />
-      ) : (
-        <>
-          <section className="dashboard-heading">
-            <div>
-              <p className="eyebrow">Operations overview</p>
-              <h1>Good morning, {user?.name?.split(' ')[0] || 'Coach'}.</h1>
-              <p>Here is how FitPulse is moving today.</p>
-            </div>
-            <button className="button" onClick={() => navigate('register')}>
-              Create account
-            </button>
-          </section>
-          <section className="stat-grid">
-            {stats.map(([label, value, detail], index) => (
-              <article className="stat-card" key={label}>
-                <p>{label}</p>
-                <strong>{value}</strong>
-                <small className="trend">{detail}</small>
-                <div className="mini-chart">
-                  {statSpark[index].map((height, bar) => (
-                    <i key={bar} style={{ height: `${height}%` }} />
-                  ))}
-                </div>
-              </article>
-            ))}
-          </section>
-          <section className="dashboard-grid">
-            <article className="dashboard-card chart-card">
-              <div className="card-heading">
-                <div>
-                  <p className="eyebrow">Analytics</p>
-                  <h2>Member growth</h2>
-                </div>
-                <div className="chart-controls">
-                  <button
-                    className={period === 'Monthly' ? 'selected' : ''}
-                    onClick={() => setPeriod('Monthly')}
-                  >
-                    Monthly
-                  </button>
-                  <button
-                    className={period === 'Yearly' ? 'selected' : ''}
-                    onClick={() => setPeriod('Yearly')}
-                  >
-                    Yearly
-                  </button>
-                </div>
-              </div>
-              <p className="chart-description">{period} member growth</p>
-              <div className="bar-chart">
-                {growthHeights.map((height, index) => (
-                  <div key={index}>
-                    <i style={{ height: `${height}%` }} />
-                    <span>{growthLabels[index]}</span>
-                  </div>
-                ))}
-              </div>
-            </article>
-            <article className="dashboard-card ranking-card">
-              <div className="card-heading">
-                <div>
-                  <p className="eyebrow">Leaderboard</p>
-                  <h2>Most active</h2>
-                </div>
-                {leaderboard.length > 5 && (
-                  <button onClick={() => setShowAll(!showAll)}>
-                    {showAll ? 'Show less' : 'View all'}
-                  </button>
-                )}
-              </div>
-              {visibleLeaderboard.length ? (
-                visibleLeaderboard.map(({ name, visits }, index) => (
-                  <div className="rank-row" key={name}>
-                    <b>{String(index + 1).padStart(2, '0')}</b>
-                    <span>
-                      {name
-                        .split(' ')
-                        .map((word) => word[0])
-                        .join('')}
-                    </span>
-                    <div>
-                      <strong>{name}</strong>
-                      <small>
-                        {visits} {visits === 1 ? 'visit' : 'visits'}
-                      </small>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="workspace-row">No check-ins yet.</p>
-              )}
-            </article>
-          </section>
-        </>
-      )}
-    </DashboardShell>
-  )
+  return <DashboardShell role={user?.role || 'admin'} user={user} onSignOut={onSignOut} activeSection={section} onSectionChange={setSection}>{error && <p className="load-error">{error}</p>}{notice && <div id="toast" className="clay show">{notice}</div>}{content}{modal?.kind === 'create' && <Modal title="Create Member Account" onClose={() => setModal(null)}><form onSubmit={createMember} className="mf"><label className="field">Full name<input className="clay-in" name="name" required /></label><label className="field">Contact number<input className="clay-in" name="phone" /></label><label className="field">Email<input className="clay-in" name="email" type="email" required /></label><label className="field">Temporary password<input className="clay-in" name="password" type="password" minLength="8" required /></label><label className="field">Plan<select className="clay-in" name="plan">{plans.map((plan) => <option key={plan}>{plan}</option>)}</select></label><label className="field">Payment<select className="clay-in" name="method"><option>Cash</option><option>GCash</option></select></label><div className="ma"><button className="btn ghost" type="button" onClick={() => setModal(null)}>Cancel</button><button className="btn">Create</button></div></form></Modal>}{modal?.kind === 'edit' && <Modal title="Edit Member" onClose={() => setModal(null)}><form onSubmit={updateMember} className="mf"><label className="field">Full name<input className="clay-in" name="name" defaultValue={modal.member.name} required /></label><label className="field">Contact<input className="clay-in" name="phone" defaultValue={modal.member.phone} /></label><label className="field">Email<input className="clay-in" name="email" defaultValue={modal.member.email} required /></label><label className="field">Plan<select className="clay-in" name="plan" defaultValue={modal.member.plan}>{plans.map((plan) => <option key={plan}>{plan}</option>)}</select></label><div className="ma"><button className="btn">Save changes</button></div></form></Modal>}{modal?.kind === 'renew' && <Modal title="Renew Membership" onClose={() => setModal(null)}><form onSubmit={(event) => { event.preventDefault(); const form = new FormData(event.currentTarget); act(`/admin/members/${modal.member.id}/renew`, { method: 'POST', body: JSON.stringify(Object.fromEntries(form)) }, 'Membership renewed.') }} className="mf"><p>{modal.member.name} · {modal.member.plan}</p><label className="field">Plan<select className="clay-in" name="plan" defaultValue={modal.member.plan}>{plans.map((plan) => <option key={plan}>{plan}</option>)}</select></label><label className="field">Payment method<select className="clay-in" name="method"><option>Cash</option><option>GCash</option></select></label><div className="ma"><button className="btn">Renew</button></div></form></Modal>}{modal?.kind === 'payment' && <Modal title="Record Payment" onClose={() => setModal(null)}><form onSubmit={recordPayment} className="mf"><label className="field">Member<select className="clay-in" name="memberId">{members.map((member) => <option value={member.id} key={member.id}>{member.name}</option>)}</select></label><label className="field">Amount<input className="clay-in" name="amount" type="number" min="1" required /></label><label className="field">Method<select className="clay-in" name="method"><option>Cash</option><option>GCash</option></select></label><div className="ma"><button className="btn">Save payment</button></div></form></Modal>}{modal?.kind === 'equipment' && <Modal title="Add Equipment" onClose={() => setModal(null)}><form onSubmit={(event) => { event.preventDefault(); act('/admin/equipment', { method: 'POST', body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }, 'Equipment added.') }} className="mf"><label className="field">Equipment name<input className="clay-in" name="name" required /></label><label className="field">Category<input className="clay-in" name="category" required /></label><div className="ma"><button className="btn">Add</button></div></form></Modal>}</DashboardShell>
 }
