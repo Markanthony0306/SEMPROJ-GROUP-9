@@ -8,3 +8,5 @@ server/uploads/
 hardware/**/secrets.h
 hardware/**/.pio/
 *.password-backup-*
+# Local account and activity data
+data.json
