@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import QRCode from 'qrcode'
+import { supabase } from '../lib/supabase.js'
 
 export function membershipFailure(member, now = Date.now()) {
   if (!member || !['user', 'member'].includes(member.role)) return 'MEMBER_NOT_FOUND'
@@ -14,7 +15,7 @@ export function membershipFailure(member, now = Date.now()) {
   return ''
 }
 
-export function scannerRoutes({ loadDatabase, saveDatabase, authenticate, rateLimit, jwtSecret }) {
+export function scannerRoutes({ loadAccount, authenticate, rateLimit, jwtSecret }) {
   const router = express.Router()
   // A QR token must never be usable as a web login token.
   const qrSecret = crypto.createHmac('sha256', jwtSecret).update('fitpulse-qr-v1').digest('hex')
@@ -23,7 +24,7 @@ export function scannerRoutes({ loadDatabase, saveDatabase, authenticate, rateLi
 
   router.get('/me/qr', authenticate, rateLimit({ windowMs: 60000, max: 20 }), async (req, res) => {
     res.set('Cache-Control', 'no-store')
-    const member = loadDatabase().accounts.find((account) => account.id === req.user.id)
+    const member = await loadAccount(req.user.id)
     const code = membershipFailure(member)
     if (code)
       return res.status(403).json({
@@ -31,17 +32,37 @@ export function scannerRoutes({ loadDatabase, saveDatabase, authenticate, rateLi
         message:
           'An active membership with valid start and expiry dates is required. Please contact the front desk.'
       })
-    const qrToken = jwt.sign({}, qrSecret, {
+    const membershipExpiresAt = Date.parse(member.membershipEnd)
+    const expiresInSeconds = Math.floor((membershipExpiresAt - Date.now()) / 1000)
+    if (expiresInSeconds <= 0)
+      return res.status(403).json({
+        code: 'MEMBERSHIP_EXPIRED',
+        message: 'Your membership has expired. Please renew it before generating a QR code.'
+      })
+    // Tie the QR to this exact membership period so each request renders the
+    // same credential until the plan dates change or the credential expires.
+    const membershipStartsAt = Date.parse(member.membershipStart || member.joined)
+    const issuedAt = Math.floor(membershipStartsAt / 1000)
+    const expiresAt = Math.floor(membershipExpiresAt / 1000)
+    const qrId = crypto
+      .createHmac('sha256', qrSecret)
+      .update(`fitpulse-member-qr:${member.id}:${issuedAt}:${expiresAt}`)
+      .digest('hex')
+      .slice(0, 32)
+    const qrToken = jwt.sign({ iat: issuedAt, exp: expiresAt }, qrSecret, {
       algorithm: 'HS256',
       subject: member.id,
-      jwtid: crypto.randomBytes(12).toString('hex'),
-      audience: 'fitpulse-scanner',
-      expiresIn: '2m'
+      jwtid: qrId,
+      audience: 'fitpulse-scanner'
     })
     const image = await QRCode.toDataURL(qrToken, {
       errorCorrectionLevel: 'M',
       margin: 4,
-      width: 360
+      width: 360,
+      color: {
+        dark: '#003049FF',
+        light: '#FFFFFFFF'
+      }
     })
     const { exp } = jwt.decode(qrToken)
     return res.json({ image, qrToken, expiresAt: exp * 1000 })
@@ -71,7 +92,7 @@ export function scannerRoutes({ loadDatabase, saveDatabase, authenticate, rateLi
     '/scanner/check-in',
     rateLimit({ windowMs: 60000, max: 120 }),
     authenticateScanner,
-    (req, res) => {
+    async (req, res) => {
       const { qrToken, requestId } = req.body || {}
       if (
         req.body?.deviceId !== deviceId ||
@@ -99,8 +120,7 @@ export function scannerRoutes({ loadDatabase, saveDatabase, authenticate, rateLi
           message: 'Refresh the member QR code and scan again.'
         })
       }
-      const database = loadDatabase()
-      const member = database.accounts.find((account) => account.id === claims.sub)
+      const member = await loadAccount(claims.sub)
       const code = membershipFailure(member)
       if (code)
         return res.status(403).json({
@@ -108,54 +128,45 @@ export function scannerRoutes({ loadDatabase, saveDatabase, authenticate, rateLi
           code,
           message: 'Membership could not be verified. Please contact the front desk.'
         })
-      const existingRequest = database.attendance.find(
-        (item) => item.deviceId === deviceId && item.scannerRequestId === requestId
-      )
-      if (existingRequest) {
-        if (existingRequest.qrTokenId !== claims.jti)
-          return res.status(409).json({
-            allowed: false,
-            code: 'REQUEST_CONFLICT',
-            message: 'Use a new request ID for each scan.'
-          })
-        return res.json({
-          allowed: true,
-          code: 'ALREADY_RECORDED',
-          attendanceId: existingRequest.id,
-          memberName: member.name
+      const { data, error } = await supabase.rpc('record_fitpulse_checkin', {
+        p_member_id: member.id,
+        p_member_name: member.name,
+        p_date: new Date().toISOString(),
+        p_source: 'ESP32-CAM',
+        p_device_id: deviceId,
+        p_request_id: requestId,
+        p_qr_token_id: claims.jti
+      })
+      if (error) {
+        console.error('Supabase could not record the scanner check-in:', error.message)
+        return res.status(503).json({
+          allowed: false,
+          code: 'CHECK_IN_UNAVAILABLE',
+          message: 'Attendance storage is unavailable. Please try again.'
         })
       }
-      if (database.attendance.some((item) => item.qrTokenId === claims.jti))
+      const result = data?.[0]
+      if (!result) return res.status(503).json({
+        allowed: false,
+        code: 'CHECK_IN_UNAVAILABLE',
+        message: 'Attendance storage is unavailable. Please try again.'
+      })
+      if (result.result_code === 'REQUEST_CONFLICT')
         return res.status(409).json({
           allowed: false,
-          code: 'QR_ALREADY_USED',
-          message: 'This QR code was already used. Refresh it for a new visit.'
+          code: result.result_code,
+          message: 'Use a new request ID for each scan.'
         })
-      const recent = database.attendance.some(
-        (item) => item.memberId === member.id && Date.now() - Date.parse(item.date) < 60000
-      )
-      if (recent)
+      if (result.result_code === 'CHECK_IN_COOLDOWN')
         return res.status(409).json({
           allowed: false,
-          code: 'CHECK_IN_COOLDOWN',
+          code: result.result_code,
           message: 'A check-in was just recorded for this member.'
         })
-      const attendance = {
-        id: crypto.randomUUID(),
-        memberId: member.id,
-        memberName: member.name,
-        date: new Date().toISOString(),
-        source: 'ESP32-CAM',
-        deviceId,
-        scannerRequestId: requestId,
-        qrTokenId: claims.jti
-      }
-      database.attendance.push(attendance)
-      saveDatabase(database)
-      return res.status(201).json({
+      return res.status(result.result_code === 'CHECK_IN_RECORDED' ? 201 : 200).json({
         allowed: true,
-        code: 'CHECK_IN_RECORDED',
-        attendanceId: attendance.id,
+        code: result.result_code,
+        attendanceId: result.attendance_id,
         memberName: member.name
       })
     }

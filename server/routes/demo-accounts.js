@@ -1,5 +1,4 @@
 import express from 'express'
-import bcrypt from 'bcryptjs'
 
 // These are public development defaults, never a way to recover saved passwords.
 const DEMO_ACCOUNTS = [
@@ -12,12 +11,12 @@ const DEMO_ACCOUNTS = [
   }
 ]
 
-export function demoAccountRoutes({ isProduction, loadDatabase, rateLimit }) {
+export function demoAccountRoutes({ isProduction, loadDatabase, rateLimit, verifyPassword }) {
   const router = express.Router()
   if (isProduction) return router
 
   router.get('/auth/demo-accounts', rateLimit({ max: 20 }), async (req, res) => {
-    const database = loadDatabase()
+    const database = await loadDatabase()
     const accounts = await Promise.all(
       DEMO_ACCOUNTS.map(async (demo) => {
         const account = database.accounts.find(
@@ -27,7 +26,7 @@ export function demoAccountRoutes({ isProduction, loadDatabase, rateLimit }) {
         return {
           label: demo.label,
           email: demo.email,
-          defaultPasswordAvailable: await bcrypt.compare(demo.password, account.passwordHash || '')
+          defaultPasswordAvailable: Boolean(account.authUserId) && await verifyPassword(demo.email, demo.password)
         }
       })
     )

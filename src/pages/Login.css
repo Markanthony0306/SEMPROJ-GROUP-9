@@ -964,3 +964,7 @@ h2,
 #login .auth-field .input-label {
   margin: 0;
 }
+#login .login-face-step {
+  display: grid;
+  gap: 1rem;
+}

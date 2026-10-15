@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from '../components/brand/useTheme'
+import FaceCapture from '../components/FaceCapture'
 import { apiRequest } from '../utils/api'
 import './Login.css'
 
@@ -160,6 +161,8 @@ export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false)
   const [capsLock, setCapsLock] = useState(false)
   const [pending, setPending] = useState(false)
+  const [facePending, setFacePending] = useState(false)
+  const [faceChallenge, setFaceChallenge] = useState('')
   const [shaking, setShaking] = useState(false)
   const [errors, setErrors] = useState({ email: '', password: '', general: '' })
   const [resetOpen, setResetOpen] = useState(false)
@@ -218,6 +221,11 @@ export default function Login({ onLogin }) {
   }, [resetOpen])
 
   const clearErrors = () => setErrors({ email: '', password: '', general: '' })
+  const finishLogin = (session) => {
+    if (remember) localStorage.setItem('fp_email', email.trim().toLowerCase())
+    else localStorage.removeItem('fp_email')
+    onLogin(session)
+  }
   const showToast = (message) => {
     setToast(message)
     window.setTimeout(() => setToast(''), 2400)
@@ -248,9 +256,13 @@ export default function Login({ onLogin }) {
         method: 'POST',
         body: JSON.stringify({ email: normalizedEmail, password })
       })
-      if (remember) localStorage.setItem('fp_email', normalizedEmail)
-      else localStorage.removeItem('fp_email')
-      onLogin(session)
+      if (session.requiresFaceVerification && session.challengeToken) {
+        setFaceChallenge(session.challengeToken)
+        setPending(false)
+        submissionLock.current = false
+        return
+      }
+      finishLogin(session)
     } catch (error) {
       setShowPassword(false)
       setErrors({
@@ -266,6 +278,18 @@ export default function Login({ onLogin }) {
       setPending(false)
       // Wait for disabled inputs to re-enable before moving keyboard focus.
       window.requestAnimationFrame(() => passwordRef.current?.focus())
+    }
+  }
+  const verifyFace = async (descriptor) => {
+    setFacePending(true)
+    try {
+      const session = await apiRequest('/auth/face-verify', {
+        method: 'POST',
+        body: JSON.stringify({ challengeToken: faceChallenge, descriptor })
+      })
+      finishLogin(session)
+    } finally {
+      setFacePending(false)
     }
   }
   const sendReset = async (event) => {
@@ -331,9 +355,38 @@ export default function Login({ onLogin }) {
           onAnimationEnd={() => setShaking(false)}
         >
           <div className="fhead">
-            <h2>Welcome back</h2>
-            <p>Login to continue your fitness journey.</p>
+            <h2>{faceChallenge ? 'Verify your face' : 'Welcome back'}</h2>
+            <p>
+              {faceChallenge
+                ? `Complete face verification for ${email.trim().toLowerCase()}.`
+                : 'Login to continue your fitness journey.'}
+            </p>
           </div>
+          {faceChallenge ? (
+            <div className="login-face-step">
+              <p className="form-help">
+                Face matching is an additional check after your password. It cannot detect a photo or prove liveness.
+              </p>
+              <FaceCapture
+                onCaptured={verifyFace}
+                disabled={facePending}
+                actionLabel={facePending ? 'Verifying…' : 'Verify and continue'}
+              />
+              <button
+                className="btn ghost"
+                type="button"
+                disabled={facePending}
+                onClick={() => {
+                  setFaceChallenge('')
+                  clearErrors()
+                  submissionLock.current = false
+                }}
+              >
+                Back to password login
+              </button>
+            </div>
+          ) : (
+            <>
           {import.meta.env.DEV && demoAccounts.length > 0 && (
             <div className="demo-accounts" aria-label="Development demo accounts">
               <p>Development accounts</p>
@@ -473,6 +526,8 @@ export default function Login({ onLogin }) {
             </button>
           </form>
           <p className="lfoot">Need an account? Ask your gym admin to create one for you.</p>
+            </>
+          )}
         </section>
       </div>
       {resetOpen && (

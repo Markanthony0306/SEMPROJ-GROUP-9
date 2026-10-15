@@ -8,6 +8,7 @@ import MemberQr from '../components/MemberQr'
 import ProfilePhoto from '../components/ProfilePhoto'
 import FitnessSculpture from '../components/FitnessSculpture'
 import { downloadPayments } from '../utils/paymentExport'
+import { getMemberQr } from '../utils/memberQr'
 import PasswordChangeForm from '../components/PasswordChangeForm'
 import { membershipState } from '../utils/membership'
 
@@ -56,6 +57,7 @@ export default function UserPage({ user, onSignOut }) {
   const [section, setSection] = useState('Dashboard')
   const [attendance, setAttendance] = useState([])
   const [payments, setPayments] = useState([])
+  const [faceEnrolled, setFaceEnrolled] = useState(false)
   const [currentUser, setCurrentUser] = useState(user)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -64,15 +66,17 @@ export default function UserPage({ user, onSignOut }) {
   const load = useCallback(
     async (signal) => {
       try {
-        const [profile, attendanceResult, paymentResult] = await Promise.all([
+        const [profile, attendanceResult, paymentResult, faceStatus] = await Promise.all([
           apiRequest('/me', { token, signal }),
           apiRequest('/attendance', { token, signal }),
-          apiRequest('/payments', { token, signal })
+          apiRequest('/payments', { token, signal }),
+          apiRequest('/profile/face-enrollment', { token, signal }).catch(() => ({ enrolled: false }))
         ])
         if (signal?.aborted) return
         setCurrentUser(profile.user)
         setAttendance(latestFirst(attendanceResult.attendance))
         setPayments(latestFirst(paymentResult.payments))
+        setFaceEnrolled(Boolean(faceStatus.enrolled))
         setError('')
       } catch (cause) {
         if (!signal?.aborted) setError(cause.message)
@@ -87,6 +91,17 @@ export default function UserPage({ user, onSignOut }) {
     load(controller.signal)
     return () => controller.abort()
   }, [load])
+  useEffect(() => {
+    if (!['user', 'member'].includes(currentUser?.role) || !currentUser?.membershipEnd) return
+    getMemberQr(currentUser, token).catch(() => {})
+  }, [
+    currentUser?.id,
+    currentUser?.membershipStart,
+    currentUser?.membershipEnd,
+    currentUser?.role,
+    currentUser?.status,
+    token
+  ])
   useEffect(() => {
     if (section !== 'My QR') return
     const controller = new AbortController()
@@ -171,6 +186,24 @@ export default function UserPage({ user, onSignOut }) {
       <article className="card clay">
         <h2>Change Password</h2>
         <PasswordChangeForm />
+      </article>
+      <article className="card clay">
+        <h2>Face sign-in</h2>
+        <p>
+          {faceEnrolled
+            ? 'An encrypted face template is enrolled for an extra login check.'
+            : 'No face template is enrolled. Ask the front desk if you want to set this up.'}
+        </p>
+        {faceEnrolled && (
+          <button
+            className="btn ghost"
+            type="button"
+            disabled={actionPending}
+            onClick={() => action('/profile/face-enrollment', { method: 'DELETE' }, 'Face sign-in disabled.')}
+          >
+            {actionPending ? 'Disabling…' : 'Disable face sign-in'}
+          </button>
+        )}
       </article>
     </section>
   )
@@ -264,11 +297,7 @@ export default function UserPage({ user, onSignOut }) {
           <h2>QR check-in</h2>
           <Icon name="qr" />
         </div>
-        <div className="illustrated-heading">
-          <p>Present your temporary code at the gym entrance.</p>
-          <FitnessSculpture variant="scanner" />
-        </div>
-        <MemberQr onRefresh={() => load()} />
+        <MemberQr member={currentUser} />
         <dl className="member-details">
           <div>
             <dt>Member ID</dt>

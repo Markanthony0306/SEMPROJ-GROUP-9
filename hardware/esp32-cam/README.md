@@ -6,7 +6,7 @@ The server verifies membership; the camera only decodes the QR and sends it over
 
 1. Set a random `SCANNER_API_KEY` of at least 32 characters in `.env` and keep it private. Generate one with `node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"` locally.
 2. Set `SCANNER_DEVICE_ID=entrance-esp32-cam`. This configuration supports one device; provision separate keys before adding more devices.
-3. Run the API behind HTTPS with a valid certificate. Use a stable `JWT_SECRET` in production. Keep `server/data.json` and `AVATAR_DIR` on persistent storage.
+3. Run the API behind HTTPS with a valid certificate and apply the Supabase schema in `supabase/migrations/001_fitpulse_database.sql`. Use a stable `JWT_SECRET` in production. Member records, attendance, payments, equipment, settings, and profile photos are stored in Supabase.
 4. Members need active status and valid start/expiry dates. Legacy/demo accounts without expiry dates must be reviewed or renewed by staff. Dates are not invented automatically.
 
 ## Device setup
@@ -51,7 +51,7 @@ Reuse the same request ID when retrying the same scan. Generate a new ID for a d
 
 Codes expire after two minutes and are consumed by a successful scan. Refreshing creates a new code. A copied code can still be used first by someone else within that window: QR verifies membership credentials, not a person's identity. Staff photo checks or another identity factor are needed to prevent sharing. A QR scanner must not replace physical emergency-exit controls.
 
-The current JSON database and local photo storage suit a single-server prototype. Before a real multi-device deployment, use database transactions and unique constraints for request IDs/QR usage, per-device credential rotation, and private object storage such as Supabase Storage with access policies. The profile uploader resizes photos and serves them to their authenticated owner and authorized gym staff. Staff can compare the attendance photo with the person at the entrance.
+The API stores member profiles and activity in Supabase and profile photos in a private Supabase Storage bucket. Scanner request IDs have a database uniqueness constraint; the API also checks the member's active membership and recent attendance before recording an entry. The profile uploader resizes photos and serves them to their authenticated owner and authorized gym staff. Staff can compare the attendance photo with the person at the entrance.
 
 ## Acceptance checks
 

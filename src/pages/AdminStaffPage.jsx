@@ -8,12 +8,17 @@ import ProfileAvatar from '../components/ProfileAvatar'
 import FitnessSculpture from '../components/FitnessSculpture'
 import { downloadPayments } from '../utils/paymentExport'
 import PasswordChangeForm from '../components/PasswordChangeForm'
+import FaceCapture from '../components/FaceCapture'
 import AdminReports from '../components/AdminReports'
 import { membershipState, reminderMembers, inspectionDue } from '../utils/membership'
 import './AdminStaffPage.css'
 
 const money = (value) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(value || 0))
+const planOptionLabel = (plan) => {
+  const studentRate = /student/i.test(plan.plan_name) && !/non[-\s]?student/i.test(plan.plan_name)
+  return `${plan.plan_name} - ${money(plan.price)}${studentRate ? ' (student discount)' : ''}`
+}
 const date = (value) =>
   value
     ? new Date(value).toLocaleDateString('en-PH', {
@@ -34,8 +39,6 @@ const dateTime = (value) =>
         minute: '2-digit'
       })
     : '—'
-const plans = ['Monthly', 'Quarterly', 'Annual', 'Unlimited Monthly']
-
 function Modal({ title, children, onClose, busy, error }) {
   return (
     <div
@@ -76,6 +79,49 @@ function Modal({ title, children, onClose, busy, error }) {
     </div>
   )
 }
+
+function FaceEnrollmentForm({ member, onEnroll, onRemove, busy }) {
+  const [descriptor, setDescriptor] = useState(null)
+  const [consent, setConsent] = useState(false)
+  const [idChecked, setIdChecked] = useState(false)
+
+  return (
+    <form
+      className="mf"
+      onSubmit={(event) => {
+        event.preventDefault()
+        if (!descriptor || !consent || !idChecked) return
+        onEnroll({ descriptor, consent, idChecked })
+      }}
+    >
+      <p className="form-help">
+        Enroll {member.name} while they are present. Face-api.js matches a face but does not verify an ID document or detect a photo/liveness.
+      </p>
+      <label className="set">
+        I checked the member's physical government-issued ID against their account details.
+        <input type="checkbox" checked={idChecked} onChange={(event) => setIdChecked(event.target.checked)} required />
+      </label>
+      <label className="set">
+        The member agrees to use face matching for an additional login check and understands that an encrypted face template will be stored.
+        <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} required />
+      </label>
+      <FaceCapture
+        onCaptured={setDescriptor}
+        disabled={busy || !consent || !idChecked}
+        actionLabel={descriptor ? 'Capture again' : 'Capture face'}
+      />
+      <div className="ma">
+        <button className="btn" type="submit" disabled={busy || !descriptor || !consent || !idChecked}>
+          Save encrypted face template
+        </button>
+        <button className="btn ghost" type="button" disabled={busy} onClick={onRemove}>
+          Remove saved template
+        </button>
+      </div>
+    </form>
+  )
+}
+
 function Pill({ status }) {
   const state = String(status || '').toLowerCase()
   return (
@@ -92,6 +138,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
   const [section, setSection] = useState('Dashboard')
   const [data, setData] = useState({
     members: [],
+    membershipPlans: [],
     attendance: [],
     payments: [],
     equipment: [],
@@ -108,8 +155,9 @@ export default function AdminStaffPage({ user, onSignOut }) {
   const load = useCallback(
     async (signal) => {
       try {
-        const [members, attendance, payments, equipment, settings, profile] = await Promise.all([
+        const [members, membershipPlans, attendance, payments, equipment, settings, profile] = await Promise.all([
           apiRequest('/members', { token, signal }),
+          apiRequest('/admin/membership-plans', { token, signal }),
           apiRequest('/attendance', { token, signal }),
           apiRequest('/payments', { token, signal }),
           apiRequest('/admin/equipment', { token, signal }),
@@ -118,7 +166,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
         ])
         if (signal?.aborted) return
         setCurrentUser(profile.user)
-        setData({ ...members, ...attendance, ...payments, ...equipment, ...settings })
+        setData({ ...members, ...membershipPlans, ...attendance, ...payments, ...equipment, ...settings })
         setError('')
       } catch (cause) {
         if (!signal?.aborted) setError(cause.message)
@@ -142,17 +190,18 @@ export default function AdminStaffPage({ user, onSignOut }) {
       controller.abort()
     }
   }, [section, load])
-  const act = async (path, options, message) => {
+  const act = async (path, options, message, onSuccess) => {
     if (actionLock.current) return false
     actionLock.current = true
     setPending(true)
     setError('')
     setNotice('')
     try {
-      await apiRequest(path, { token, ...options })
+      const result = await apiRequest(path, { token, ...options })
       setNotice(message)
       setModal(null)
       await load()
+      onSuccess?.(result)
       return true
     } catch (cause) {
       setError(cause.message)
@@ -185,7 +234,10 @@ export default function AdminStaffPage({ user, onSignOut }) {
           recordPayment: form.get('recordPayment') === 'on'
         })
       },
-      'Member account created.'
+      'Member account created.',
+      (result) => {
+        if (result.member) setModal({ kind: 'face', member: result.member })
+      }
     )
   }
   const updateMember = (event) => {
@@ -197,6 +249,12 @@ export default function AdminStaffPage({ user, onSignOut }) {
       'Member updated.'
     )
   }
+  const enrollFace = (details) =>
+    act(
+      `/admin/members/${modal.member.id}/face-enrollment`,
+      { method: 'POST', body: JSON.stringify(details) },
+      'Encrypted face template saved. Face login still needs to be enabled in the API environment.'
+    )
   const recordPayment = (event) => {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
@@ -389,6 +447,13 @@ export default function AdminStaffPage({ user, onSignOut }) {
                     onClick={() => setModal({ kind: 'renew', member })}
                   >
                     Renew
+                  </button>
+                  <button
+                    className="btn sm ghost"
+                    type="button"
+                    onClick={() => setModal({ kind: 'face', member })}
+                  >
+                    Face setup
                   </button>
                 </td>
               </tr>
@@ -873,26 +938,21 @@ export default function AdminStaffPage({ user, onSignOut }) {
               Email
               <input className="clay-in" name="email" type="email" required />
             </label>
-            <label className="field">
-              Temporary password
-              <input
-                className="clay-in"
-                name="password"
-                type="password"
-                minLength="8"
-                maxLength="72"
-                autoComplete="new-password"
-                required
-              />
-            </label>
+            <p className="form-help">A temporary password will be generated and emailed to the member.</p>
             <label className="field">
               Plan
-              <select className="clay-in" name="plan">
-                {plans.map((plan) => (
-                  <option key={plan}>{plan}</option>
+              <select className="clay-in" name="plan" defaultValue="" required>
+                <option value="" disabled>Select a membership plan</option>
+                {data.membershipPlans.map((plan) => (
+                  <option key={plan.plan_id} value={plan.plan_name}>
+                    {planOptionLabel(plan)}
+                  </option>
                 ))}
               </select>
             </label>
+            <p className="form-help">
+              Choose the Student plan to apply its configured student rate. Confirm eligibility before selecting it.
+            </p>
             <label className="field">
               Payment
               <select className="clay-in" name="method">
@@ -937,18 +997,31 @@ export default function AdminStaffPage({ user, onSignOut }) {
                 required
               />
             </label>
-            <label className="field">
-              Plan
-              <select className="clay-in" name="plan" defaultValue={modal.member.plan}>
-                {plans.map((plan) => (
-                  <option key={plan}>{plan}</option>
-                ))}
-              </select>
-            </label>
             <div className="ma">
               <button className="btn">Save changes</button>
             </div>
           </form>
+        </Modal>
+      )}
+      {modal?.kind === 'face' && (
+        <Modal
+          busy={pending}
+          error={error}
+          title={`Face enrollment: ${modal.member.name}`}
+          onClose={() => setModal(null)}
+        >
+          <FaceEnrollmentForm
+            member={modal.member}
+            onEnroll={enrollFace}
+            onRemove={() =>
+              act(
+                `/admin/members/${modal.member.id}/face-enrollment`,
+                { method: 'DELETE' },
+                'Saved face template removed.'
+              )
+            }
+            busy={pending}
+          />
         </Modal>
       )}
       {modal?.kind === 'renew' && (
@@ -970,9 +1043,19 @@ export default function AdminStaffPage({ user, onSignOut }) {
             </p>
             <label className="field">
               Plan
-              <select className="clay-in" name="plan" defaultValue={modal.member.plan}>
-                {plans.map((plan) => (
-                  <option key={plan}>{plan}</option>
+              <select
+                className="clay-in"
+                name="plan"
+                defaultValue={data.membershipPlans.some((plan) => plan.plan_name === modal.member.plan)
+                  ? modal.member.plan
+                  : ''}
+                required
+              >
+                <option value="" disabled>Select a membership plan</option>
+                {data.membershipPlans.map((plan) => (
+                  <option key={plan.plan_id} value={plan.plan_name}>
+                    {planOptionLabel(plan)}
+                  </option>
                 ))}
               </select>
             </label>

@@ -1,6 +1,4 @@
 import crypto from 'node:crypto'
-import fs from 'node:fs'
-import path from 'node:path'
 import express from 'express'
 
 // The browser crops and re-encodes uploads as JPEG; never accept executable SVG.
@@ -36,61 +34,79 @@ function isJpeg(buffer) {
 }
 
 export function avatarRoutes({
-  loadDatabase,
-  saveDatabase,
+  supabase,
   authenticate,
   requireRole,
-  rateLimit,
-  directory
+  rateLimit
 }) {
   const router = express.Router()
-  const uploadDirectory = process.env.AVATAR_DIR || path.join(directory, 'uploads', 'avatars')
   router.put(
     '/profile/avatar',
     authenticate,
     rateLimit({ windowMs: 60000, max: 10 }),
     express.raw({ type: 'image/jpeg', limit: '256kb' }),
-    (req, res) => {
+    async (req, res) => {
       if (!isJpeg(req.body))
         return res
           .status(400)
           .json({ message: 'Upload a JPEG photo up to 512 × 512 pixels and 256 KB.' })
-      const database = loadDatabase()
-      const account = database.accounts.find((item) => item.id === req.user.id)
-      if (!account) return res.status(401).json({ message: 'Your account could not be found.' })
-      fs.mkdirSync(uploadDirectory, { recursive: true })
-      const oldAvatarId = account.avatarId
-      const avatarId = crypto.randomUUID()
-      fs.writeFileSync(path.join(uploadDirectory, `${avatarId}.jpg`), req.body, { flag: 'wx' })
-      account.avatarId = avatarId
-      saveDatabase(database)
-      // Replacing a photo also removes the previous generated upload.
-      if (oldAvatarId && /^[a-f0-9-]{36}$/.test(oldAvatarId)) {
-        const oldFile = path.join(uploadDirectory, `${oldAvatarId}.jpg`)
-        try {
-          fs.unlinkSync(oldFile)
-        } catch (error) {
-          if (error.code !== 'ENOENT') console.error('Previous avatar cleanup failed.')
-        }
+      const { data: account, error: accountError } = await supabase
+        .from('users')
+        .select('avatar_path')
+        .eq('id', req.user.id)
+        .maybeSingle()
+      if (accountError || !account)
+        return res.status(401).json({ message: 'Your account could not be found.' })
+
+      const avatarId = `${req.user.id}/${crypto.randomUUID()}.jpg`
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(avatarId, req.body, {
+          contentType: 'image/jpeg',
+          cacheControl: '3600',
+          upsert: false
+        })
+      if (uploadError) {
+        console.error('Avatar upload failed:', uploadError.message)
+        return res.status(503).json({ message: 'Unable to save your profile photo.' })
+      }
+
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_path: avatarId })
+        .eq('id', req.user.id)
+      if (updateError) {
+        await supabase.storage.from('avatars').remove([avatarId])
+        console.error('Avatar profile update failed:', updateError.message)
+        return res.status(503).json({ message: 'Unable to save your profile photo.' })
+      }
+
+      if (account.avatar_path) {
+        const { error } = await supabase.storage.from('avatars').remove([account.avatar_path])
+        if (error) console.error('Previous avatar cleanup failed:', error.message)
       }
       res.set('Cache-Control', 'no-store').json({ avatarId })
     }
   )
-  const servePhoto = (req, res) => {
-    const account = loadDatabase().accounts.find(
-      (item) => item.id === (req.params.id || req.user.id)
-    )
-    if (!account?.avatarId || !/^[a-f0-9-]{36}$/.test(account.avatarId))
+  const servePhoto = async (req, res) => {
+    const { data: account, error: accountError } = await supabase
+      .from('users')
+      .select('avatar_path')
+      .eq('id', req.params.id || req.user.id)
+      .maybeSingle()
+    if (accountError || !account?.avatar_path)
       return res.status(404).json({ message: 'No profile photo uploaded.' })
-    const file = path.join(uploadDirectory, `${account.avatarId}.jpg`)
-    if (!fs.existsSync(file))
+    const { data: photo, error: photoError } = await supabase.storage
+      .from('avatars')
+      .download(account.avatar_path)
+    if (photoError || !photo)
       return res.status(404).json({ message: 'Profile photo is unavailable.' })
     res.set({
       'Cache-Control': 'private, no-store',
       'Content-Type': 'image/jpeg',
       'X-Content-Type-Options': 'nosniff'
     })
-    return res.sendFile(path.resolve(file))
+    return res.send(Buffer.from(await photo.arrayBuffer()))
   }
   router.get('/profile/avatar', authenticate, servePhoto)
   router.get('/members/:id/avatar', authenticate, requireRole('admin', 'staff'), servePhoto)
