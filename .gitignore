@@ -7,6 +7,7 @@ server/data.json
 server/uploads/
 hardware/**/secrets.h
 hardware/**/.pio/
+vendor/face-api.js/
 *.password-backup-*
 # Local account and activity data
 data.json
