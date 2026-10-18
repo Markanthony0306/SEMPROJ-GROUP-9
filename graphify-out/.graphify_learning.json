@@ -1,0 +1,107 @@
+{
+  "generated_at": "2026-10-17T17:14:46.999195+00:00",
+  "nodes": {
+    "src_components_adminreports_adminreports": {
+      "code_fingerprint": "036f4d88d89811fe752aa7f11d6f91f3eae586c816144b820fd0026f45b88f21",
+      "label": "AdminReports()",
+      "last": "2026-10-17T16:42:42.919734+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-17T16:42:42.919734+00:00",
+          "outcome": "useful",
+          "q": "Which components implement the member and admin dashboard design, password controls, face capture, reports, and tables?"
+        }
+      ],
+      "score": 0.999485599,
+      "source_file": "src/components/AdminReports.jsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_components_dashboardshell_dashboardshell": {
+      "code_fingerprint": "4560a499bd51769b9691d6bbfcc4c71054015e5d681ebaea3a527a7ae297fb7c",
+      "label": "DashboardShell()",
+      "last": "2026-10-17T16:42:42.919734+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-17T16:42:42.919734+00:00",
+          "outcome": "useful",
+          "q": "Which components implement the member and admin dashboard design, password controls, face capture, reports, and tables?"
+        }
+      ],
+      "score": 0.999485599,
+      "source_file": "src/components/DashboardShell.jsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_components_datatable_datatable": {
+      "code_fingerprint": "2e066398083e604bad16a21ccf968d3ee80622dc90183d3ae0b94615ce673b4e",
+      "label": "DataTable()",
+      "last": "2026-10-17T16:42:42.919734+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-17T16:42:42.919734+00:00",
+          "outcome": "useful",
+          "q": "Which components implement the member and admin dashboard design, password controls, face capture, reports, and tables?"
+        }
+      ],
+      "score": 0.999485599,
+      "source_file": "src/components/DataTable.jsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_components_facecapture_facecapture": {
+      "code_fingerprint": "ba9c91d37269af1333381a1a213f6d0a486fafb1fe1d13604c8d5b80266e16f1",
+      "label": "FaceCapture()",
+      "last": "2026-10-17T16:59:46.227074+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-17T16:59:46.227074+00:00",
+          "outcome": "useful",
+          "q": "use this as guide to make the stepper better(add a animation when you finish the 1st step) and fix the error. Check if system has errors, fix it."
+        },
+        {
+          "date": "2026-10-17T16:42:42.919734+00:00",
+          "outcome": "useful",
+          "q": "Which components implement the member and admin dashboard design, password controls, face capture, reports, and tables?"
+        }
+      ],
+      "score": 1.999244745,
+      "source_file": "src/components/FaceCapture.jsx",
+      "status": "preferred",
+      "uses": 2
+    },
+    "src_components_facecapture_loadfaceapi": {
+      "code_fingerprint": "ba9c91d37269af1333381a1a213f6d0a486fafb1fe1d13604c8d5b80266e16f1",
+      "label": "loadFaceApi()",
+      "last": "2026-10-17T16:59:46.227074+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-17T16:59:46.227074+00:00",
+          "outcome": "useful",
+          "q": "use this as guide to make the stepper better(add a animation when you finish the 1st step) and fix the error. Check if system has errors, fix it."
+        }
+      ],
+      "score": 0.999759146,
+      "source_file": "src/components/FaceCapture.jsx",
+      "status": "tentative",
+      "uses": 1
+    },
+    "src_components_passwordchangeform_passwordchangeform": {
+      "code_fingerprint": "7710f5cc4caf82d1039a39f6ee486488ae705d035b47bd7fc13d9822bf0884a7",
+      "label": "PasswordChangeForm()",
+      "last": "2026-10-17T16:42:42.919734+00:00",
+      "provenance": [
+        {
+          "date": "2026-10-17T16:42:42.919734+00:00",
+          "outcome": "useful",
+          "q": "Which components implement the member and admin dashboard design, password controls, face capture, reports, and tables?"
+        }
+      ],
+      "score": 0.999485599,
+      "source_file": "src/components/PasswordChangeForm.jsx",
+      "status": "tentative",
+      "uses": 1
+    }
+  },
+  "version": 1
+}

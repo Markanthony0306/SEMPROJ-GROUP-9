@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_hardware_esp32_cam_secrets_example_h", "label": "secrets.example.h", "file_type": "code", "source_file": "hardware/esp32-cam/secrets.example.h", "source_location": "L1"}], "edges": [], "raw_calls": [], "parse_errors": {"first_error_line": 9, "multiline_error": true}}
