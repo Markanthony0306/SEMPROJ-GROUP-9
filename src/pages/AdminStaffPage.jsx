@@ -10,6 +10,8 @@ import { downloadPayments } from '../utils/paymentExport'
 import PasswordChangeForm from '../components/PasswordChangeForm'
 import FaceCapture from '../components/FaceCapture'
 import AdminReports from '../components/AdminReports'
+import ActivityChart from '../components/ActivityChart'
+import Dialog from '../components/Dialog'
 import { membershipState, reminderMembers, inspectionDue } from '../utils/membership'
 import './AdminStaffPage.css'
 
@@ -39,55 +41,34 @@ const dateTime = (value) =>
         minute: '2-digit'
       })
     : '—'
-function Modal({ title, children, onClose, busy, error }) {
+function Modal({ title, children, onClose, busy, error, className }) {
   return (
-    <div
-      className="modal show"
-      role="dialog"
-      aria-modal="true"
-      aria-label={title}
-      aria-busy={busy}
-      onMouseDown={(event) => !busy && event.target === event.currentTarget && onClose()}
-    >
-      <section className="clay" id="mbody">
-        <div className="mh">
-          <h2>{title}</h2>
-          <button
-            className="ib sm"
-            type="button"
-            disabled={busy}
-            onClick={onClose}
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        {busy && (
-          <p className="form-help" role="status">
-            Saving...
-          </p>
-        )}
-        <fieldset className="modal-fields" disabled={busy}>
-          {children}
-        </fieldset>
-      </section>
-    </div>
+    <Dialog title={title} onClose={onClose} busy={busy} className={className}>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
+      {busy && (
+        <p className="form-help" role="status">
+          Saving...
+        </p>
+      )}
+      <fieldset className="modal-fields" disabled={busy}>
+        {children}
+      </fieldset>
+    </Dialog>
   )
 }
 
-function FaceEnrollmentForm({ member, onEnroll, onRemove, busy }) {
+function FaceEnrollmentForm({ member, onEnroll, onCancel, busy }) {
   const [descriptor, setDescriptor] = useState(null)
   const [consent, setConsent] = useState(false)
   const [idChecked, setIdChecked] = useState(false)
 
   return (
     <form
-      className="mf"
+      className="mf face-enrollment-form"
       onSubmit={(event) => {
         event.preventDefault()
         if (!descriptor || !consent || !idChecked) return
@@ -95,27 +76,50 @@ function FaceEnrollmentForm({ member, onEnroll, onRemove, busy }) {
       }}
     >
       <p className="form-help">
-        Enroll {member.name} while they are present. Face-api.js matches a face but does not verify an ID document or detect a photo/liveness.
+        Help {member.name} set up face verification. First confirm their ID and permission, then
+        take a clear capture while they are here with you.
       </p>
       <label className="set">
-        I checked the member's physical government-issued ID against their account details.
-        <input type="checkbox" checked={idChecked} onChange={(event) => setIdChecked(event.target.checked)} required />
+        I checked the member's photo ID and it matches their account.
+        <input
+          type="checkbox"
+          checked={idChecked}
+          onChange={(event) => {
+            setIdChecked(event.target.checked)
+            setDescriptor(null)
+          }}
+          required
+        />
       </label>
       <label className="set">
-        The member agrees to use face matching for an additional login check and understands that an encrypted face template will be stored.
-        <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} required />
+        The member agrees to face verification and understands how their face data is used below.
+        <input
+          type="checkbox"
+          checked={consent}
+          onChange={(event) => {
+            setConsent(event.target.checked)
+            setDescriptor(null)
+          }}
+          required
+        />
       </label>
       <FaceCapture
         onCaptured={setDescriptor}
+        onReset={() => setDescriptor(null)}
+        purpose="enrollment"
         disabled={busy || !consent || !idChecked}
         actionLabel={descriptor ? 'Capture again' : 'Capture face'}
       />
       <div className="ma">
-        <button className="btn" type="submit" disabled={busy || !descriptor || !consent || !idChecked}>
-          Save encrypted face template
+        <button
+          className="btn"
+          type="submit"
+          disabled={busy || !descriptor || !consent || !idChecked}
+        >
+          Save
         </button>
-        <button className="btn ghost" type="button" disabled={busy} onClick={onRemove}>
-          Remove saved template
+        <button className="btn ghost" type="button" disabled={busy} onClick={onCancel}>
+          Cancel
         </button>
       </div>
     </form>
@@ -131,6 +135,10 @@ function Pill({ status }) {
       {status || 'Active'}
     </span>
   )
+}
+function memberBadge(member) {
+  const state = membershipState(member)
+  return state.status === 'active' && state.daysLeft <= 7 ? 'Expiring' : state.label
 }
 export default function AdminStaffPage({ user, onSignOut }) {
   const { token } = useAuth()
@@ -155,21 +163,31 @@ export default function AdminStaffPage({ user, onSignOut }) {
   const load = useCallback(
     async (signal) => {
       try {
-        const [members, membershipPlans, attendance, payments, equipment, settings, profile] = await Promise.all([
-          apiRequest('/members', { token, signal }),
-          apiRequest('/admin/membership-plans', { token, signal }),
-          apiRequest('/attendance', { token, signal }),
-          apiRequest('/payments', { token, signal }),
-          apiRequest('/admin/equipment', { token, signal }),
-          apiRequest('/admin/settings', { token, signal }),
-          apiRequest('/me', { token, signal })
-        ])
+        const [members, membershipPlans, attendance, payments, equipment, settings, profile] =
+          await Promise.all([
+            apiRequest('/members', { token, signal }),
+            apiRequest('/admin/membership-plans', { token, signal }),
+            apiRequest('/attendance', { token, signal }),
+            apiRequest('/payments', { token, signal }),
+            apiRequest('/admin/equipment', { token, signal }),
+            apiRequest('/admin/settings', { token, signal }),
+            apiRequest('/me', { token, signal })
+          ])
         if (signal?.aborted) return
         setCurrentUser(profile.user)
-        setData({ ...members, ...membershipPlans, ...attendance, ...payments, ...equipment, ...settings })
+        setData({
+          ...members,
+          ...membershipPlans,
+          ...attendance,
+          ...payments,
+          ...equipment,
+          ...settings
+        })
         setError('')
+        return true
       } catch (cause) {
         if (!signal?.aborted) setError(cause.message)
+        return false
       } finally {
         if (!signal?.aborted) setLoading(false)
       }
@@ -292,12 +310,25 @@ export default function AdminStaffPage({ user, onSignOut }) {
   const content = {
     Dashboard: (
       <>
-        <section className="card clay illustrated-heading">
+        <section className="card clay illustrated-heading dashboard-overview">
           <div>
-            <h2>Gym overview</h2>
-            <p>Memberships, payments, and ESP32-CAM check-ins.</p>
+            <span className="dashboard-eyebrow">YOUR GYM, AT A GLANCE</span>
+            <h2>Let’s keep the momentum going.</h2>
+            <p>
+              Welcome back, {currentUser?.name?.split(' ')[0] || 'coach'}. Here’s how your community
+              is moving.
+            </p>
+            <div className="dashboard-quick-actions">
+              <button className="btn" type="button" onClick={() => setModal({ kind: 'create' })}>
+                <Icon name="users" size={16} />
+                Add a member
+              </button>
+              <button className="btn ghost" type="button" onClick={() => setSection('Reports')}>
+                <Icon name="chart" size={16} />
+                Explore reports
+              </button>
+            </div>
           </div>
-          <FitnessSculpture />
         </section>
         <section className="grid admin-stats">
           {[
@@ -326,6 +357,12 @@ export default function AdminStaffPage({ user, onSignOut }) {
             </article>
           ))}
         </section>
+        <ActivityChart
+          attendance={data.attendance}
+          payments={data.payments}
+          admin
+          loading={loading}
+        />
         <section className="grid g2">
           <article className="card clay">
             <div className="admin-card-heading">
@@ -407,53 +444,50 @@ export default function AdminStaffPage({ user, onSignOut }) {
             Create Account
           </button>
         </div>
-        <DataTable headings={['Name', 'Member ID', 'Contact', 'Plan', 'Status', 'Actions']}>
+        <DataTable
+          searchable={false}
+          headings={['ID', 'Name', 'Contact', 'Plan', 'Expires', 'Status', 'Actions']}
+        >
           {members
             .filter((member) =>
-              `${member.name} ${member.id} ${member.email} ${member.phone || ''}`
+              `${member.name} ${member.memberCode || ''} ${member.id} ${member.email} ${member.phone || ''}`
                 .toLowerCase()
                 .includes(query.trim().toLowerCase())
             )
             .map((member) => (
               <tr key={member.id}>
+                <td className="record-id">{member.memberCode || member.id}</td>
                 <td>
                   <div className="member-table-person">
                     <ProfileAvatar user={member} memberId={member.id} />
                     <span>{member.name}</span>
                   </div>
                 </td>
-                <td className="record-id">{member.id}</td>
                 <td>
                   <span>{member.email}</span>
                   <small className="table-secondary">{member.phone || 'No phone added'}</small>
                 </td>
                 <td>{member.plan}</td>
+                <td>{date(member.membershipEnd)}</td>
                 <td>
-                  <Pill status={membershipState(member).label} />
+                  <Pill status={memberBadge(member)} />
                 </td>
                 <td className="acts">
                   <button
-                    className="btn sm ghost"
+                    className="report-icon-button"
                     type="button"
+                    aria-label={`View ${member.name}`}
                     onClick={() => setModal({ kind: 'view', member })}
                   >
-                    View
-                  </button>
-                  <button className="btn sm" onClick={() => setModal({ kind: 'edit', member })}>
-                    Edit
+                    <Icon name="eye" size={18} />
                   </button>
                   <button
-                    className="btn sm ghost"
-                    onClick={() => setModal({ kind: 'renew', member })}
-                  >
-                    Renew
-                  </button>
-                  <button
-                    className="btn sm ghost"
+                    className="report-icon-button"
                     type="button"
-                    onClick={() => setModal({ kind: 'face', member })}
+                    aria-label={`Edit ${member.name}`}
+                    onClick={() => setModal({ kind: 'edit', member })}
                   >
-                    Face setup
+                    <Icon name="edit" size={18} />
                   </button>
                 </td>
               </tr>
@@ -464,9 +498,10 @@ export default function AdminStaffPage({ user, onSignOut }) {
     Memberships: (
       <article className="card clay">
         <h2>Memberships</h2>
-        <DataTable headings={['Member', 'Plan', 'Joined', 'Expires', 'Status', 'Action']}>
+        <DataTable headings={['ID', 'Member', 'Plan', 'Start', 'Expiry', 'Status', 'Action']}>
           {members.map((member) => (
             <tr key={member.id}>
+              <td className="record-id">{member.memberCode || member.id}</td>
               <td>
                 <div className="member-table-person">
                   <ProfileAvatar user={member} memberId={member.id} />
@@ -477,7 +512,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
               <td>{date(member.membershipStart || member.joined)}</td>
               <td>{date(member.membershipEnd)}</td>
               <td>
-                <Pill status={member.status} />
+                <Pill status={memberBadge(member)} />
               </td>
               <td>
                 <button className="btn sm" onClick={() => setModal({ kind: 'renew', member })}>
@@ -741,7 +776,13 @@ export default function AdminStaffPage({ user, onSignOut }) {
         </article>
       </section>
     ),
-    Reports: <AdminReports data={data} />,
+    Reports: (
+      <AdminReports
+        data={data}
+        onChanged={load}
+        onMemberAction={(kind, member) => setModal({ kind, member })}
+      />
+    ),
     Settings: (
       <section className="grid g2">
         <article className="card clay">
@@ -813,6 +854,8 @@ export default function AdminStaffPage({ user, onSignOut }) {
       onSignOut={onSignOut}
       activeSection={section}
       onSectionChange={setSection}
+      notificationCount={loading ? 0 : reminderList.length + equipmentDue.length}
+      loading={loading}
     >
       {loading && (
         <p className="dashboard-feedback" role="status">
@@ -822,6 +865,15 @@ export default function AdminStaffPage({ user, onSignOut }) {
       {error && (
         <p className="dashboard-feedback is-error" role="alert">
           {error}
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true)
+              load()
+            }}
+          >
+            Retry
+          </button>
         </p>
       )}
       {notice && (
@@ -834,41 +886,88 @@ export default function AdminStaffPage({ user, onSignOut }) {
       )}
       {content}
       {modal?.kind === 'view' && (
-        <Modal busy={pending} error={error} title="Member record" onClose={() => setModal(null)}>
-          <ProfileAvatar user={modal.member} memberId={modal.member.id} large />
-          <dl className="member-record">
-            {[
-              ['Name', modal.member.name],
-              ['Member ID', modal.member.id],
-              ['Email', modal.member.email],
-              ['Contact', modal.member.phone || 'Not added'],
-              ['Plan', modal.member.plan],
-              ['Status', membershipState(modal.member).label],
-              ['Starts', date(modal.member.membershipStart || modal.member.joined)],
-              ['Expires', date(modal.member.membershipEnd)]
-            ].map(([label, value]) => (
-              <div key={label}>
-                <dt>{label}</dt>
-                <dd>{value}</dd>
-              </div>
-            ))}
-          </dl>
-          <h3>Renewal history</h3>
-          <DataTable
-            headings={['Plan', 'Amount', 'Method', 'Date']}
-            caption="Member renewal history"
-          >
-            {renewals
-              .filter((payment) => payment.memberId === modal.member.id)
-              .map((payment) => (
-                <tr key={payment.id}>
-                  <td>{payment.plan}</td>
-                  <td>{money(payment.amount)}</td>
-                  <td>{payment.method}</td>
-                  <td>{date(payment.date)}</td>
-                </tr>
+        <Modal
+          busy={pending}
+          error={error}
+          title="Member profile"
+          className="member-profile-dialog"
+          onClose={() => setModal(null)}
+        >
+          <div className="member-profile-summary">
+            <ProfileAvatar user={modal.member} memberId={modal.member.id} large />
+            <div>
+              <strong className="profile-name">{modal.member.name}</strong>
+              <span className="member-profile-code">
+                {modal.member.memberCode || modal.member.id}
+              </span>
+              <Pill status={memberBadge(modal.member)} />
+            </div>
+          </div>
+          <section className="member-profile-section" aria-label="Contact details">
+            <h3>Contact details</h3>
+            <dl className="member-record">
+              {[
+                ['Email', modal.member.email],
+                ['Phone', modal.member.phone || 'Not added']
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
               ))}
-          </DataTable>
+            </dl>
+          </section>
+          <section className="member-profile-section" aria-label="Membership details">
+            <h3>Membership</h3>
+            <dl className="member-record">
+              {[
+                ['Plan', modal.member.plan || 'Not set'],
+                ['Status', membershipState(modal.member).label],
+                ['Starts', date(modal.member.membershipStart || modal.member.joined)],
+                ['Expires', date(modal.member.membershipEnd)]
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <dt>{label}</dt>
+                  <dd>{value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+          <div className="ma">
+            <button
+              className="btn ghost"
+              type="button"
+              onClick={() => setModal({ kind: 'face', member: modal.member })}
+            >
+              Face setup
+            </button>
+            <button
+              className="btn"
+              type="button"
+              onClick={() => setModal({ kind: 'renew', member: modal.member })}
+            >
+              Renew membership
+            </button>
+          </div>
+          <section className="member-profile-section" aria-label="Renewal history">
+            <h3>Renewal history</h3>
+            <DataTable
+              headings={['Plan', 'Amount', 'Method', 'Date']}
+              caption="Member renewal history"
+              searchable={false}
+            >
+              {renewals
+                .filter((payment) => payment.memberId === modal.member.id)
+                .map((payment) => (
+                  <tr key={payment.id}>
+                    <td>{payment.plan}</td>
+                    <td>{money(payment.amount)}</td>
+                    <td>{payment.method}</td>
+                    <td>{date(payment.date)}</td>
+                  </tr>
+                ))}
+            </DataTable>
+          </section>
         </Modal>
       )}
       {modal?.kind === 'maintenance' && (
@@ -938,11 +1037,15 @@ export default function AdminStaffPage({ user, onSignOut }) {
               Email
               <input className="clay-in" name="email" type="email" required />
             </label>
-            <p className="form-help">A temporary password will be generated and emailed to the member.</p>
+            <p className="form-help">
+              A temporary password will be generated and emailed to the member.
+            </p>
             <label className="field">
               Plan
               <select className="clay-in" name="plan" defaultValue="" required>
-                <option value="" disabled>Select a membership plan</option>
+                <option value="" disabled>
+                  Select a membership plan
+                </option>
                 {data.membershipPlans.map((plan) => (
                   <option key={plan.plan_id} value={plan.plan_name}>
                     {planOptionLabel(plan)}
@@ -951,7 +1054,8 @@ export default function AdminStaffPage({ user, onSignOut }) {
               </select>
             </label>
             <p className="form-help">
-              Choose the Student plan to apply its configured student rate. Confirm eligibility before selecting it.
+              Choose the Student plan to apply its configured student rate. Confirm eligibility
+              before selecting it.
             </p>
             <label className="field">
               Payment
@@ -1008,18 +1112,13 @@ export default function AdminStaffPage({ user, onSignOut }) {
           busy={pending}
           error={error}
           title={`Face enrollment: ${modal.member.name}`}
+          className="face-enrollment-dialog"
           onClose={() => setModal(null)}
         >
           <FaceEnrollmentForm
             member={modal.member}
             onEnroll={enrollFace}
-            onRemove={() =>
-              act(
-                `/admin/members/${modal.member.id}/face-enrollment`,
-                { method: 'DELETE' },
-                'Saved face template removed.'
-              )
-            }
+            onCancel={() => setModal(null)}
             busy={pending}
           />
         </Modal>
@@ -1046,12 +1145,16 @@ export default function AdminStaffPage({ user, onSignOut }) {
               <select
                 className="clay-in"
                 name="plan"
-                defaultValue={data.membershipPlans.some((plan) => plan.plan_name === modal.member.plan)
-                  ? modal.member.plan
-                  : ''}
+                defaultValue={
+                  data.membershipPlans.some((plan) => plan.plan_name === modal.member.plan)
+                    ? modal.member.plan
+                    : ''
+                }
                 required
               >
-                <option value="" disabled>Select a membership plan</option>
+                <option value="" disabled>
+                  Select a membership plan
+                </option>
                 {data.membershipPlans.map((plan) => (
                   <option key={plan.plan_id} value={plan.plan_name}>
                     {planOptionLabel(plan)}

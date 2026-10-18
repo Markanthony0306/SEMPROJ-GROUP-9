@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from './auth/AuthContext'
-import HeartRateLoader from './components/HeartRateLoader'
 import ProtectedRoute from './components/ProtectedRoute'
 import { apiRequest } from './utils/api'
-import AdminStaffPage from './pages/AdminStaffPage'
 import ForgotPassword from './pages/ForgotPassword'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ResetPassword from './pages/ResetPassword'
+// Load dashboard styles up front; the shared shell owns the entrance timing.
+import AdminStaffPage from './pages/AdminStaffPage'
 import UserPage from './pages/UserPage'
 
 // Vite injects BASE_URL (with a trailing slash) when the app is hosted under a
@@ -24,8 +24,6 @@ function initialState() {
 export default function App() {
   const { login, logout, user, token } = useAuth()
   const [route, setRoute] = useState(initialState)
-  const [loading, setLoading] = useState(false)
-  const [loadingMessage, setLoadingMessage] = useState('Opening your dashboard')
 
   // Re-validate an existing session on startup so an expired token does not leave
   // the user inside a dashboard that can no longer reach the API.
@@ -33,7 +31,7 @@ export default function App() {
     if (!token) return
     let cancelled = false
     apiRequest('/me', { token }).catch((error) => {
-      if (!cancelled && error.kind !== 'network') logout()
+      if (!cancelled && [401, 403].includes(error.status)) logout()
     })
     return () => {
       cancelled = true
@@ -57,14 +55,7 @@ export default function App() {
     const account = session.user
     const destination = ['admin', 'staff'].includes(account.role) ? 'admin' : 'user'
     login(session)
-    setLoadingMessage(
-      destination === 'admin' ? 'Opening the staff dashboard' : 'Opening your member dashboard'
-    )
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      navigate(destination)
-    }, 1500)
+    navigate(destination)
   }
 
   const handleLogout = () => {
@@ -93,10 +84,5 @@ export default function App() {
     )
   }
 
-  return (
-    <>
-      {pages[route] || pages.login}
-      {loading && <HeartRateLoader message={loadingMessage} />}
-    </>
-  )
+  return pages[route] || pages.login
 }

@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
+import PasswordToggle from './PasswordToggle'
 
 export default function PasswordChangeForm() {
   const { token, login } = useAuth()
@@ -80,16 +81,12 @@ export default function PasswordChangeForm() {
                 setMessage('')
               }}
             />
-            <button
-              type="button"
-              className="password-toggle"
+            <PasswordToggle
+              visible={Boolean(visible[name])}
               disabled={pending}
-              aria-label={`${visible[name] ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
-              aria-pressed={Boolean(visible[name])}
-              onClick={() => setVisible((previous) => ({ ...previous, [name]: !previous[name] }))}
-            >
-              {visible[name] ? 'Hide' : 'Show'}
-            </button>
+              label={label.toLowerCase()}
+              onToggle={() => setVisible((previous) => ({ ...previous, [name]: !previous[name] }))}
+            />
           </span>
         </label>
       ))}

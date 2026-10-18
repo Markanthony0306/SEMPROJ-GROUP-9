@@ -7,6 +7,7 @@ import DataTable from '../components/DataTable'
 import MemberQr from '../components/MemberQr'
 import ProfilePhoto from '../components/ProfilePhoto'
 import FitnessSculpture from '../components/FitnessSculpture'
+import ActivityChart from '../components/ActivityChart'
 import { downloadPayments } from '../utils/paymentExport'
 import { getMemberQr } from '../utils/memberQr'
 import PasswordChangeForm from '../components/PasswordChangeForm'
@@ -57,7 +58,6 @@ export default function UserPage({ user, onSignOut }) {
   const [section, setSection] = useState('Dashboard')
   const [attendance, setAttendance] = useState([])
   const [payments, setPayments] = useState([])
-  const [faceEnrolled, setFaceEnrolled] = useState(false)
   const [currentUser, setCurrentUser] = useState(user)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -66,17 +66,15 @@ export default function UserPage({ user, onSignOut }) {
   const load = useCallback(
     async (signal) => {
       try {
-        const [profile, attendanceResult, paymentResult, faceStatus] = await Promise.all([
+        const [profile, attendanceResult, paymentResult] = await Promise.all([
           apiRequest('/me', { token, signal }),
           apiRequest('/attendance', { token, signal }),
-          apiRequest('/payments', { token, signal }),
-          apiRequest('/profile/face-enrollment', { token, signal }).catch(() => ({ enrolled: false }))
+          apiRequest('/payments', { token, signal })
         ])
         if (signal?.aborted) return
         setCurrentUser(profile.user)
         setAttendance(latestFirst(attendanceResult.attendance))
         setPayments(latestFirst(paymentResult.payments))
-        setFaceEnrolled(Boolean(faceStatus.enrolled))
         setError('')
       } catch (cause) {
         if (!signal?.aborted) setError(cause.message)
@@ -141,6 +139,7 @@ export default function UserPage({ user, onSignOut }) {
         : expiry <= 7
           ? `Your membership expires in ${expiry} day(s). Visit the front desk to renew.`
           : `Your membership is valid until ${date(currentUser.membershipEnd)}.`
+  const notifications = currentUser ? [{ id: 'membership', message: membershipNote }] : []
   const settings = (
     <section className="grid g2">
       <article className="card clay">
@@ -187,29 +186,27 @@ export default function UserPage({ user, onSignOut }) {
         <h2>Change Password</h2>
         <PasswordChangeForm />
       </article>
-      <article className="card clay">
-        <h2>Face sign-in</h2>
-        <p>
-          {faceEnrolled
-            ? 'An encrypted face template is enrolled for an extra login check.'
-            : 'No face template is enrolled. Ask the front desk if you want to set this up.'}
-        </p>
-        {faceEnrolled && (
-          <button
-            className="btn ghost"
-            type="button"
-            disabled={actionPending}
-            onClick={() => action('/profile/face-enrollment', { method: 'DELETE' }, 'Face sign-in disabled.')}
-          >
-            {actionPending ? 'Disabling…' : 'Disable face sign-in'}
-          </button>
-        )}
-      </article>
     </section>
   )
   const views = {
     Dashboard: (
       <>
+        <section className="card clay dashboard-welcome member-welcome dashboard-overview">
+          <div>
+            <span className="dashboard-eyebrow">A LITTLE STRONGER, EVERY DAY</span>
+            <h2>Good to see you, {currentUser?.name?.split(' ')[0] || 'member'}.</h2>
+            <p>Your next great session is waiting. Let’s make it count.</p>
+            <div className="dashboard-quick-actions">
+              <button className="btn" type="button" onClick={() => setSection('My QR')}>
+                <Icon name="qr" size={16} />
+                Open my gym pass
+              </button>
+              <button className="btn ghost" type="button" onClick={() => setSection('Attendance')}>
+                View my visits
+              </button>
+            </div>
+          </div>
+        </section>
         <section className="grid member-stats" aria-label="Membership overview">
           <StatCard
             label="Membership plan"
@@ -240,6 +237,7 @@ export default function UserPage({ user, onSignOut }) {
             icon="dumbbell"
           />
         </section>
+        <ActivityChart attendance={attendance} loading={loading} />
         <section className="grid member-overview">
           <article className="card clay">
             <div className="illustrated-heading">
@@ -257,7 +255,9 @@ export default function UserPage({ user, onSignOut }) {
             <dl className="member-details">
               <div>
                 <dt>Member ID</dt>
-                <dd className="member-id">{currentUser?.id || 'Unavailable'}</dd>
+                <dd className="member-id">
+                  {currentUser?.memberCode || currentUser?.id || 'Unavailable'}
+                </dd>
               </div>
               <div>
                 <dt>Plan</dt>
@@ -301,7 +301,9 @@ export default function UserPage({ user, onSignOut }) {
         <dl className="member-details">
           <div>
             <dt>Member ID</dt>
-            <dd className="member-id">{currentUser?.id || 'Unavailable'}</dd>
+            <dd className="member-id">
+              {currentUser?.memberCode || currentUser?.id || 'Unavailable'}
+            </dd>
           </div>
         </dl>
       </article>
@@ -358,7 +360,11 @@ export default function UserPage({ user, onSignOut }) {
     Notifications: (
       <article className="card clay">
         <h2>Notifications</h2>
-        <div className="item clay-in">{membershipNote}</div>
+        {notifications.map((notification) => (
+          <div className="item clay-in" key={notification.id}>
+            {notification.message}
+          </div>
+        ))}
       </article>
     ),
     Settings: settings
@@ -371,6 +377,8 @@ export default function UserPage({ user, onSignOut }) {
       onSignOut={onSignOut}
       activeSection={section}
       onSectionChange={setSection}
+      notificationCount={loading ? 0 : notifications.length}
+      loading={loading}
     >
       {loading && (
         <p className="member-feedback" role="status">
@@ -380,6 +388,15 @@ export default function UserPage({ user, onSignOut }) {
       {error && (
         <p className="member-feedback is-error" role="alert">
           {error}
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true)
+              load()
+            }}
+          >
+            Retry
+          </button>
         </p>
       )}
       {notice && (

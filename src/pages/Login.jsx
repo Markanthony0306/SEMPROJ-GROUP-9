@@ -4,11 +4,6 @@ import FaceCapture from '../components/FaceCapture'
 import { apiRequest } from '../utils/api'
 import './Login.css'
 
-const DEMO_PASSWORDS = {
-  'admin@fitpulse.com': 'admin123',
-  'member@fitpulse.com': 'member123'
-}
-
 const ICONS = {
   alert: (
     <>
@@ -170,28 +165,11 @@ export default function Login({ onLogin }) {
   const [resetPending, setResetPending] = useState(false)
   const [resetError, setResetError] = useState('')
   const [toast, setToast] = useState('')
-  const [demoAccounts, setDemoAccounts] = useState([])
   const { dark, toggle: toggleTheme } = useTheme()
   const emailRef = useRef(null)
   const passwordRef = useRef(null)
   const submissionLock = useRef(false)
   const resetDialogRef = useRef(null)
-
-  useEffect(() => {
-    if (!import.meta.env.DEV) return
-    const controller = new AbortController()
-    apiRequest('/auth/demo-accounts', { signal: controller.signal })
-      .then(({ accounts }) => {
-        if (!controller.signal.aborted && Array.isArray(accounts))
-          setDemoAccounts(
-            accounts.filter((account) => Object.hasOwn(DEMO_PASSWORDS, account.email))
-          )
-      })
-      .catch(() => {
-        // Hide unverifiable demo shortcuts; regular login still works.
-      })
-    return () => controller.abort()
-  }, [])
 
   useEffect(() => {
     if (!resetOpen) return
@@ -222,7 +200,7 @@ export default function Login({ onLogin }) {
 
   const clearErrors = () => setErrors({ email: '', password: '', general: '' })
   const finishLogin = (session) => {
-    if (remember) localStorage.setItem('fp_email', email.trim().toLowerCase())
+    if (remember) localStorage.setItem('fp_email', session.user.email.trim().toLowerCase())
     else localStorage.removeItem('fp_email')
     onLogin(session)
   }
@@ -230,31 +208,31 @@ export default function Login({ onLogin }) {
     setToast(message)
     window.setTimeout(() => setToast(''), 2400)
   }
-  const fillDemo = (account) => {
-    setEmail(account.email)
-    setPassword(account.defaultPasswordAvailable ? DEMO_PASSWORDS[account.email] : '')
-    setShowPassword(false)
-    setCapsLock(false)
-    clearErrors()
-    passwordRef.current?.focus()
-  }
   const submit = async (event) => {
     event.preventDefault()
     if (submissionLock.current) return
-    const normalizedEmail = email.trim().toLowerCase()
+    // Read what is actually in the inputs. Browser/password-manager autofill can
+    // update their DOM values without first updating React's state.
+    const form = new FormData(event.currentTarget)
+    const normalizedEmail = String(form.get('email') || '')
+      .trim()
+      .toLowerCase()
+    const submittedPassword = String(form.get('password') || '')
     const nextErrors = {
       email: /^\S+@\S+\.\S+$/.test(normalizedEmail) ? '' : 'Enter a valid email address',
-      password: password ? '' : 'Enter your password',
+      password: submittedPassword ? '' : 'Enter your password',
       general: ''
     }
     setErrors(nextErrors)
     if (nextErrors.email || nextErrors.password) return
+    setEmail(normalizedEmail)
+    setPassword(submittedPassword)
     submissionLock.current = true
     setPending(true)
     try {
       const session = await apiRequest('/auth/login', {
         method: 'POST',
-        body: JSON.stringify({ email: normalizedEmail, password })
+        body: JSON.stringify({ email: normalizedEmail, password: submittedPassword })
       })
       if (session.requiresFaceVerification && session.challengeToken) {
         setFaceChallenge(session.challengeToken)
@@ -268,10 +246,7 @@ export default function Login({ onLogin }) {
       setErrors({
         email: '',
         password: '',
-        general:
-          error.status === 401
-            ? 'Invalid email or password. Use your current password, or choose Forgot password.'
-            : error.message || 'We could not log you in. Please try again.'
+        general: error.message || 'We could not log you in. Please try again.'
       })
       setShaking(true)
       submissionLock.current = false
@@ -364,9 +339,6 @@ export default function Login({ onLogin }) {
           </div>
           {faceChallenge ? (
             <div className="login-face-step">
-              <p className="form-help">
-                Face matching is an additional check after your password. It cannot detect a photo or prove liveness.
-              </p>
               <FaceCapture
                 onCaptured={verifyFace}
                 disabled={facePending}
@@ -387,145 +359,120 @@ export default function Login({ onLogin }) {
             </div>
           ) : (
             <>
-          {import.meta.env.DEV && demoAccounts.length > 0 && (
-            <div className="demo-accounts" aria-label="Development demo accounts">
-              <p>Development accounts</p>
-              {demoAccounts.map((account) => (
+              {errors.general && (
+                <div className="banner show" role="alert">
+                  <Icon name="alert" size={16} />
+                  {errors.general}
+                </div>
+              )}
+              <form onSubmit={submit} noValidate aria-busy={pending}>
+                <span className="input-label" id="login-email-label">
+                  Email address
+                </span>
+                <label className={`inp${errors.email ? ' bad' : ''}`}>
+                  <Icon name="mail" />
+                  <input
+                    ref={emailRef}
+                    disabled={pending}
+                    aria-labelledby="login-email-label"
+                    aria-invalid={Boolean(errors.email)}
+                    aria-describedby={errors.email ? 'login-email-error' : undefined}
+                    name="email"
+                    type="email"
+                    autoComplete="username"
+                    placeholder="john123@gmail.com"
+                    value={email}
+                    onChange={(event) => {
+                      setEmail(event.target.value)
+                      clearErrors()
+                    }}
+                  />
+                </label>
+                {errors.email && (
+                  <div id="login-email-error" className="err show" role="alert">
+                    {errors.email}
+                  </div>
+                )}
+                <span className="input-label" id="login-password-label">
+                  Password
+                </span>
+                <label className={`inp${errors.password ? ' bad' : ''}`}>
+                  <Icon name="lock" />
+                  <input
+                    ref={passwordRef}
+                    disabled={pending}
+                    aria-labelledby="login-password-label"
+                    aria-invalid={Boolean(errors.password)}
+                    aria-describedby={errors.password ? 'login-password-error' : undefined}
+                    name="password"
+                    onBlur={() => setCapsLock(false)}
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onKeyDown={(event) => setCapsLock(event.getModifierState('CapsLock'))}
+                    onKeyUp={(event) => setCapsLock(event.getModifierState('CapsLock'))}
+                    onChange={(event) => {
+                      setPassword(event.target.value)
+                      clearErrors()
+                    }}
+                  />
+                  <button
+                    className="eye"
+                    type="button"
+                    disabled={pending}
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                  >
+                    <Icon name={showPassword ? 'eyeoff' : 'eye'} />
+                  </button>
+                </label>
+                {errors.password && (
+                  <div id="login-password-error" className="err show" role="alert">
+                    {errors.password}
+                  </div>
+                )}
+                <div className={`caps${capsLock ? ' show' : ''}`}>
+                  <Icon name="alert" size={14} />
+                  Caps Lock is on
+                </div>
+                <div className="opts">
+                  <label>
+                    <input
+                      type="checkbox"
+                      disabled={pending}
+                      checked={remember}
+                      onChange={(event) => setRemember(event.target.checked)}
+                    />{' '}
+                    Remember me
+                  </label>
+                  <button
+                    className="forgot-link"
+                    type="button"
+                    disabled={pending}
+                    onClick={() => {
+                      setResetEmail(email)
+                      setResetError('')
+                      setResetOpen(true)
+                    }}
+                  >
+                    Forgot password?
+                  </button>
+                </div>
                 <button
-                  key={account.email}
-                  type="button"
+                  className={`btn lbtn login-submit${pending ? ' load' : ''}`}
+                  type="submit"
                   disabled={pending}
-                  onClick={() => fillDemo(account)}
+                  aria-busy={pending}
                 >
-                  <strong>{account.label}</strong>
-                  <span>{account.email}</span>
-                  <span>
-                    {account.defaultPasswordAvailable ? (
-                      <>
-                        Password: <code>{DEMO_PASSWORDS[account.email]}</code>
-                      </>
-                    ) : (
-                      'Use your current password'
-                    )}
+                  <span className="sp" aria-hidden="true" />
+                  <span className="tx" aria-live="polite">
+                    {pending ? 'Logging in' : 'Log in'}
                   </span>
                 </button>
-              ))}
-            </div>
-          )}
-          {errors.general && (
-            <div className="banner show" role="alert">
-              <Icon name="alert" size={16} />
-              {errors.general}
-            </div>
-          )}
-          <form onSubmit={submit} noValidate aria-busy={pending}>
-            <span className="input-label" id="login-email-label">
-              Email address
-            </span>
-            <label className={`inp${errors.email ? ' bad' : ''}`}>
-              <Icon name="mail" />
-              <input
-                ref={emailRef}
-                disabled={pending}
-                aria-labelledby="login-email-label"
-                aria-invalid={Boolean(errors.email)}
-                aria-describedby={errors.email ? 'login-email-error' : undefined}
-                name="email"
-                type="email"
-                autoComplete="username"
-                placeholder="john123@gmail.com"
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value)
-                  clearErrors()
-                }}
-              />
-            </label>
-            {errors.email && (
-              <div id="login-email-error" className="err show" role="alert">
-                {errors.email}
-              </div>
-            )}
-            <span className="input-label" id="login-password-label">
-              Password
-            </span>
-            <label className={`inp${errors.password ? ' bad' : ''}`}>
-              <Icon name="lock" />
-              <input
-                ref={passwordRef}
-                disabled={pending}
-                aria-labelledby="login-password-label"
-                aria-invalid={Boolean(errors.password)}
-                aria-describedby={errors.password ? 'login-password-error' : undefined}
-                name="password"
-                onBlur={() => setCapsLock(false)}
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                placeholder="Enter your password"
-                value={password}
-                onKeyDown={(event) => setCapsLock(event.getModifierState('CapsLock'))}
-                onKeyUp={(event) => setCapsLock(event.getModifierState('CapsLock'))}
-                onChange={(event) => {
-                  setPassword(event.target.value)
-                  clearErrors()
-                }}
-              />
-              <button
-                className="eye"
-                type="button"
-                disabled={pending}
-                onClick={() => setShowPassword((value) => !value)}
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-                aria-pressed={showPassword}
-              >
-                <Icon name={showPassword ? 'eyeoff' : 'eye'} />
-              </button>
-            </label>
-            {errors.password && (
-              <div id="login-password-error" className="err show" role="alert">
-                {errors.password}
-              </div>
-            )}
-            <div className={`caps${capsLock ? ' show' : ''}`}>
-              <Icon name="alert" size={14} />
-              Caps Lock is on
-            </div>
-            <div className="opts">
-              <label>
-                <input
-                  type="checkbox"
-                  disabled={pending}
-                  checked={remember}
-                  onChange={(event) => setRemember(event.target.checked)}
-                />{' '}
-                Remember me
-              </label>
-              <button
-                className="forgot-link"
-                type="button"
-                disabled={pending}
-                onClick={() => {
-                  setResetEmail(email)
-                  setResetError('')
-                  setResetOpen(true)
-                }}
-              >
-                Forgot password?
-              </button>
-            </div>
-            <button
-              className={`btn lbtn login-submit${pending ? ' load' : ''}`}
-              type="submit"
-              disabled={pending}
-              aria-busy={pending}
-            >
-              <span className="sp" aria-hidden="true" />
-              <span className="tx" aria-live="polite">
-                {pending ? 'Logging in' : 'Log in'}
-              </span>
-            </button>
-          </form>
-          <p className="lfoot">Need an account? Ask your gym admin to create one for you.</p>
+              </form>
+              <p className="lfoot">Need an account? Ask your gym admin to create one for you.</p>
             </>
           )}
         </section>

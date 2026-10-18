@@ -1,0 +1,99 @@
+.app .member-qr-pass {
+  width: min(460px, 100%);
+  border-radius: 24px;
+  padding: 24px 18px 18px;
+  background: #003049;
+  border-top: 5px solid var(--orange);
+  box-shadow: 0 8px 20px var(--id);
+  color: #fff;
+}
+
+.app .member-qr-pass-header {
+  display: grid;
+  gap: 5px;
+  padding-bottom: 22px;
+}
+
+.app .member-qr-pass-header > strong {
+  font-size: clamp(28px, 6vw, 36px);
+  line-height: 1.2;
+  letter-spacing: -1px;
+}
+
+.app .member-qr-pass-header strong span {
+  color: #fcbf49;
+}
+
+.app .member-qr-pass-header > span,
+.app .member-qr-pass-footer {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1.6px;
+}
+
+.app .member-qr-pass-panel {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 24px 18px;
+  background: var(--card);
+  color: var(--text);
+  border-radius: 18px;
+  min-width: 0;
+}
+
+.app .member-qr-pass-name {
+  font-size: 20px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.app .member-qr-pass-code {
+  color: var(--muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
+.app .member-qr-pass .member-qr-image {
+  width: min(300px, 100%);
+  border-radius: 8px;
+  border: 0;
+}
+
+.app .member-qr-pass-expiry {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding-top: 8px;
+}
+
+.app .member-qr-pass-expiry > span,
+.app .member-qr-pass-expiry > small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.app .member-qr-pass-expiry > strong {
+  font-size: 14px;
+}
+
+.app .member-qr-pass-download {
+  width: 100%;
+  min-height: 44px;
+}
+
+.app .member-qr-pass-footer {
+  padding-top: 18px;
+}
+
+@media (max-width: 400px) {
+  .app .member-qr-pass {
+    padding: 18px 12px 14px;
+    border-radius: 18px;
+  }
+
+  .app .member-qr-pass-panel {
+    padding: 18px 12px;
+  }
+}

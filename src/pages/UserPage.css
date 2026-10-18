@@ -80,6 +80,27 @@
     3px 3px 8px var(--member-shadow),
     inset 2px 2px 4px var(--member-highlight);
 }
+.member-app .member-welcome {
+  position: relative;
+  isolation: isolate;
+  padding: clamp(26px, 4vw, 48px);
+  min-height: 270px;
+  display: flex;
+  align-items: center;
+}
+.member-welcome > div {
+  max-width: 620px;
+}
+.member-app .member-welcome h2 {
+  font-size: clamp(25px, 3vw, 36px);
+  margin: 12px 0;
+  max-width: 20ch;
+}
+.member-welcome p {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.7;
+}
 .member-app button:focus-visible {
   outline: 3px solid var(--orange);
   outline-offset: 4px;

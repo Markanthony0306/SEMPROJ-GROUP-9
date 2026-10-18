@@ -9,7 +9,13 @@ function textContent(node) {
   return ''
 }
 
-export default function DataTable({ headings, children, empty, caption = 'Records' }) {
+export default function DataTable({
+  headings,
+  children,
+  empty,
+  caption = 'Records',
+  searchable = true
+}) {
   const searchId = useId()
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
@@ -46,19 +52,21 @@ export default function DataTable({ headings, children, empty, caption = 'Record
   return (
     <div className="data-table">
       <div className="table-toolbar">
-        <label htmlFor={searchId}>
-          Search records
-          <input
-            id={searchId}
-            type="search"
-            value={query}
-            placeholder="Type to filter..."
-            onChange={(event) => {
-              setQuery(event.target.value)
-              setPage(0)
-            }}
-          />
-        </label>
+        {searchable && (
+          <label htmlFor={searchId}>
+            Search records
+            <input
+              id={searchId}
+              type="search"
+              value={query}
+              placeholder="Type to filter..."
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setPage(0)
+              }}
+            />
+          </label>
+        )}
         <label className="table-sort">
           Sort records
           <select
@@ -87,7 +95,7 @@ export default function DataTable({ headings, children, empty, caption = 'Record
             )}
           </select>
         </label>
-        <span>
+        <span className="table-record-count" role="status">
           {rows.length} record{rows.length === 1 ? '' : 's'}
         </span>
       </div>
@@ -98,6 +106,13 @@ export default function DataTable({ headings, children, empty, caption = 'Record
             <tr role="row">
               {headings.map((heading, index) => (
                 <th
+                  className={
+                    /amount/i.test(heading)
+                      ? 'table-number'
+                      : /^actions?$/i.test(heading)
+                        ? 'table-actions-heading'
+                        : undefined
+                  }
                   role="columnheader"
                   scope="col"
                   key={heading}
@@ -135,7 +150,16 @@ export default function DataTable({ headings, children, empty, caption = 'Record
                     isValidElement(cell)
                       ? cloneElement(
                           cell,
-                          { role: 'cell', 'data-label': headings[index] },
+                          {
+                            role: 'cell',
+                            'data-label': headings[index],
+                            className: [
+                              cell.props.className,
+                              /amount/i.test(headings[index]) ? 'table-number' : ''
+                            ]
+                              .filter(Boolean)
+                              .join(' ')
+                          },
                           cell.props.className?.split(' ').includes('acts') ? (
                             <div className="table-cell-actions">{cell.props.children}</div>
                           ) : (
@@ -158,7 +182,10 @@ export default function DataTable({ headings, children, empty, caption = 'Record
       </div>
       <div className="table-pagination">
         <span aria-live="polite">
-          Page {currentPage + 1} of {pageCount}
+          {rows.length
+            ? `${currentPage * pageSize + 1}–${Math.min((currentPage + 1) * pageSize, rows.length)} of ${rows.length} records`
+            : '0 records'}
+          {' · '}Page {currentPage + 1} of {pageCount}
         </span>
         <div>
           <button

@@ -1,0 +1,113 @@
+#login .admin-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+#login .admin-identity-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+#login .admin-identity-badge {
+  align-self: flex-start;
+  border-radius: 999px;
+  background: var(--card2);
+  color: var(--orange);
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+#login .admin-identity-intro p,
+#login .admin-identity-steps p,
+#login .admin-identity-privacy {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+#login .admin-identity-steps {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+#login .admin-identity-steps li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+#login .admin-identity-step-number {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: var(--card2);
+  color: var(--orange);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+#login .admin-identity-steps strong {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+#login .admin-identity-steps p {
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+#login .admin-identity-status {
+  padding: 12px 14px;
+  border: 1px solid var(--id);
+  border-radius: 14px;
+  background: var(--card2);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+#login .admin-identity-error {
+  color: var(--red);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+#login .admin-identity-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+#login .admin-identity-actions .lbtn {
+  margin: 0;
+}
+
+#login .admin-identity-actions .btn {
+  min-height: 48px;
+  border-radius: 18px;
+}
+
+#login .admin-identity-actions .forgot-link {
+  align-self: center;
+}
+
+#login .admin-identity-privacy {
+  font-size: 12px;
+}
+
+@media (max-width: 560px) {
+  #login .admin-identity {
+    gap: 16px;
+  }
+}

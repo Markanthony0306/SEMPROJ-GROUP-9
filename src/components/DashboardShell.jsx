@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { useTheme } from './brand/useTheme'
 import ProfileAvatar from './ProfileAvatar'
+import dayBanner from '../assets/db-day-v.jpg'
+import nightBanner from '../assets/db-night-v.jpg'
 import '../styles/dashboard-features.css'
+import './DashboardShell.css'
+
+const bannerStyles = {
+  '--dashboard-day-image': `url("${dayBanner}")`,
+  '--dashboard-night-image': `url("${nightBanner}")`
+}
 
 const ADMIN_NAVIGATION = [
   ['Dashboard', 'home'],
@@ -23,6 +31,23 @@ const MEMBER_NAVIGATION = [
   ['Settings', 'sliders']
 ]
 const PATHS = {
+  eye: (
+    <>
+      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  edit: (
+    <>
+      <path d="m16 3 5 5-12 12-6 1 1-6L16 3Z" />
+      <path d="m14 5 5 5" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+    </>
+  ),
   file: (
     <>
       <path d="M4 3h11l5 5v13H4zM14 3v6h6M8 13h8M8 17h5" />
@@ -123,6 +148,8 @@ export default function DashboardShell({
   onSignOut,
   activeSection,
   onSectionChange,
+  notificationCount = 0,
+  loading = false,
   children,
   className = ''
 }) {
@@ -136,7 +163,7 @@ export default function DashboardShell({
     onSectionChange(section)
   }
   return (
-    <div className={`app ${className}`}>
+    <div className={`app ${className}`} style={bannerStyles}>
       <aside className={`clay${sidebarOpen ? ' open' : ''}`}>
         <div className="logo brand">
           <Brand />
@@ -152,6 +179,14 @@ export default function DashboardShell({
             >
               <Icon name={icon} />
               <span>{label}</span>
+              {label === 'Notifications' && notificationCount > 0 && (
+                <span
+                  className="nav-notification-count"
+                  aria-label={`${notificationCount} notifications`}
+                >
+                  {notificationCount > 99 ? '99+' : notificationCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -191,9 +226,16 @@ export default function DashboardShell({
             <ProfileAvatar user={user} />
           </button>
         </header>
-        <section id="view" className="grid">
-          {children}
-        </section>
+        <div className="dashboard-stage">
+          <section
+            id="view"
+            key={activeSection}
+            className="grid dashboard-content is-ready"
+            aria-busy={loading}
+          >
+            {children}
+          </section>
+        </div>
       </main>
       {modal && (
         <div
@@ -253,7 +295,7 @@ export default function DashboardShell({
                   {!isAdmin && (
                     <>
                       <span>Member ID</span>
-                      {user?.id || 'Not available'}
+                      {user?.memberCode || user?.id || 'Not available'}
                       <span>Plan</span>
                       {user?.plan || 'Not available'}
                     </>

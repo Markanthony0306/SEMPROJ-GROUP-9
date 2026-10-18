@@ -1,6 +1,11 @@
 .face-capture {
+  --face-success: #218253;
   display: grid;
-  gap: 0.65rem;
+  gap: 16px;
+  min-width: 0;
+}
+[data-theme='dark'] .face-capture {
+  --face-success: #67e3a2;
 }
 
 .face-capture video {
@@ -23,4 +28,363 @@
 .face-capture small {
   color: var(--muted, #8eabc0);
   line-height: 1.5;
+}
+
+.face-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  list-style: none;
+  gap: 0;
+  padding: 4px 0;
+  margin: 0;
+}
+.face-steps li {
+  position: relative;
+  min-width: 0;
+}
+.face-steps li:not(:last-child)::before,
+.face-steps li:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  width: 100%;
+  height: 3px;
+  background: var(--id);
+  border-radius: 3px;
+  pointer-events: none;
+}
+.face-steps li:not(:last-child)::after {
+  background: #218253;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.5s ease;
+}
+.face-steps li.complete::after {
+  transform: scaleX(1);
+}
+.face-steps button {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  min-height: 106px;
+  display: grid;
+  grid-template-rows: 44px auto auto;
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.face-steps button:not(:disabled):hover .face-step-circle {
+  box-shadow: 0 0 0 4px var(--id);
+}
+.face-steps button:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+.face-steps button:disabled {
+  cursor: default;
+}
+.face-steps small {
+  font-size: 10px;
+  font-weight: 500;
+}
+.face-step-circle {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--id);
+  background: var(--card2);
+  color: var(--muted);
+  border-radius: 50%;
+  font-style: normal;
+  font-size: 15px;
+  transition:
+    background 0.25s,
+    border-color 0.25s,
+    box-shadow 0.25s;
+}
+.face-steps .current button {
+  color: var(--text);
+}
+.face-steps .current .face-step-circle {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #231407;
+  box-shadow: 0 0 0 5px #f77f0026;
+}
+.face-steps .complete .face-step-circle {
+  background: #218253;
+  border-color: #218253;
+  color: #fff;
+  animation: face-step-complete 0.5s ease-out;
+}
+.face-step-check {
+  width: 24px;
+  height: 24px;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.face-step-check path {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 0;
+  animation: face-check-draw 0.35s ease-out 0.1s both;
+}
+.face-steps .complete button {
+  color: var(--text);
+}
+.face-viewport {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  background: var(--card2);
+  box-shadow:
+    inset 4px 4px 12px var(--id),
+    inset -3px -3px 8px var(--il);
+}
+.face-capture .face-viewport video {
+  border: 0;
+  border-radius: inherit;
+  min-height: 230px;
+  opacity: 0;
+  transition: opacity 0.35s;
+}
+.face-capture.is-ready video,
+.face-capture.is-scanning video,
+.face-capture.is-verifying video,
+.face-capture.is-success video,
+.face-capture.is-error video {
+  opacity: 1;
+}
+.face-guide {
+  position: absolute;
+  inset: 12% 26%;
+  border: 2px dashed #ffffff99;
+  border-radius: 45%;
+  pointer-events: none;
+  opacity: 0.65;
+}
+.face-capture.is-success .face-guide {
+  border-color: #2a9d5c;
+  border-style: solid;
+}
+.face-guide > span {
+  display: none;
+}
+.face-capture.is-scanning .face-guide > span {
+  display: block;
+  position: absolute;
+  top: 10%;
+  left: 5%;
+  width: 90%;
+  height: 2px;
+  background: #fcbf49;
+  box-shadow: 0 0 15px #f77f00;
+  animation: face-scan 1.8s ease-in-out infinite alternate;
+}
+.face-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px;
+  color: var(--muted);
+  background: var(--card2);
+  text-align: center;
+  font-size: 12px;
+}
+.face-placeholder svg {
+  width: 80px;
+  height: 80px;
+  stroke: var(--orange);
+  stroke-width: 2;
+}
+.face-processing {
+  position: absolute;
+  inset: auto 16px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--text);
+  box-shadow: 0 5px 14px #00304922;
+  font-size: 12px;
+}
+.face-spinner {
+  display: block;
+  width: 19px;
+  height: 19px;
+  border: 2px solid var(--id);
+  border-top-color: var(--orange);
+  border-radius: 50%;
+  animation: face-spin 0.8s linear infinite;
+}
+.face-camera-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  background: #003049cc;
+  color: white;
+  border-radius: 20px;
+  padding: 6px 10px;
+  font-size: 10px;
+}
+.face-camera-badge i {
+  width: 6px;
+  height: 6px;
+  background: #67e3a2;
+  border-radius: 50%;
+}
+.face-capture .face-status {
+  min-height: 42px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  padding: 0 4px;
+}
+.face-capture.is-success .face-status {
+  color: var(--face-success);
+}
+.face-capture .face-capture-actions {
+  justify-content: center;
+}
+.face-capture-actions .btn {
+  width: 100%;
+  min-height: 48px;
+}
+.face-help-toggle {
+  border: 0;
+  color: var(--text);
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  min-height: 36px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.face-tips {
+  padding: 14px 16px 14px 30px;
+  border-radius: 16px;
+  background: var(--card2);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.face-privacy {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--id);
+  border-radius: 16px;
+  background: var(--card2);
+  overflow-wrap: anywhere;
+}
+.face-privacy summary {
+  cursor: pointer;
+  padding: 4px 0;
+  color: var(--text);
+  font-weight: 700;
+  min-height: 28px;
+}
+.face-privacy p {
+  padding-top: 10px;
+}
+@media (max-width: 420px) {
+  .face-capture {
+    gap: 12px;
+  }
+  .face-steps {
+    gap: 0;
+  }
+  .face-steps button {
+    grid-template-rows: 36px auto auto;
+    min-height: 98px;
+    font-size: 11px;
+    padding-inline: 3px;
+  }
+  .face-step-circle {
+    width: 36px;
+    height: 36px;
+    font-size: 13px;
+  }
+  .face-steps li:not(:last-child)::before,
+  .face-steps li:not(:last-child)::after {
+    top: 22px;
+  }
+  .face-steps small {
+    font-size: 9px;
+  }
+  .face-capture .face-viewport video {
+    min-height: 180px;
+  }
+}
+@keyframes face-step-complete {
+  0% {
+    transform: scale(0.85);
+    box-shadow: 0 0 0 0 #21825344;
+  }
+  60% {
+    transform: scale(1.12);
+    box-shadow: 0 0 0 8px #21825311;
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 12px transparent;
+  }
+}
+@keyframes face-check-draw {
+  from {
+    stroke-dashoffset: 24;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes face-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes face-scan {
+  to {
+    top: 90%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .face-spinner,
+  .face-guide > span,
+  .face-steps .complete .face-step-circle,
+  .face-step-check path {
+    animation: none;
+  }
+  .face-capture .face-viewport video {
+    transition: none;
+  }
+  .face-step-circle,
+  .face-steps li:not(:last-child)::after {
+    transition: none;
+  }
 }

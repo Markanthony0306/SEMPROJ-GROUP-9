@@ -9,7 +9,12 @@ import nodemailer from 'nodemailer'
 import { scannerRoutes, membershipFailure } from './routes/scanner.js'
 import { avatarRoutes } from './routes/avatar.js'
 import { demoAccountRoutes } from './routes/demo-accounts.js'
-import { createClient } from '@supabase/supabase-js'
+import { reportRoutes } from './routes/reports.js'
+import { welcomeEmail, expiryEmail } from './services/emailTemplates.js'
+import { sendPasswordRecovery } from './services/passwordRecovery.js'
+import { passwordLoginHandler } from './routes/passwordLogin.js'
+import { authenticatePassword, PasswordAuthenticationError } from './services/passwordAuthentication.js'
+import { createSupabaseAuthClient } from './lib/authClient.js'
 import { supabase } from './lib/supabase.js'
 import {
   decryptFaceDescriptor,
@@ -49,18 +54,6 @@ if (!process.env.SUPABASE_URL || !supabaseAuthKey) {
     'Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY in .env'
   );
 }
-
-const supabaseAuth = createClient(
-  process.env.SUPABASE_URL,
-  supabaseAuthKey,
-  {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-    },
-  }
-);
 
 const app = express()
 const port = Number(process.env.PORT || 3001)
@@ -286,12 +279,14 @@ function rateLimit({ windowMs = 15 * 60 * 1000, max = 10 } = {}) {
 
 // ---------------------------------------------------------------- routes
 
+app.use('/api', reportRoutes({ authenticate, requireRole, loadDatabase, supabase, rateLimit }))
+
 app.use('/api', demoAccountRoutes({
   isProduction,
   loadDatabase,
   rateLimit,
   verifyPassword: async (email, password) => {
-    const { error } = await supabaseAuth.auth.signInWithPassword({ email, password })
+    const { error } = await createSupabaseAuthClient().auth.signInWithPassword({ email, password })
     return !error
   }
 }))
@@ -366,124 +361,14 @@ app.post('/api/auth/register', async (req, res) => {
 })
 
 
-app.post('/api/auth/login', rateLimit({ max: 10 }), async (req, res) => {
-  const email =
-    typeof req.body.email === 'string'
-      ? req.body.email.trim().toLowerCase()
-      : '';
-
-  const password =
-    typeof req.body.password === 'string'
-      ? req.body.password
-      : '';
-
-  if (!email || !password) {
-    return res.status(400).json({
-      message: 'Email and password are required.',
-    });
-  }
-
-  try {
-    // Authenticate the password with Supabase Auth.
-    const { data, error } =
-      await supabaseAuth.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-    if (error || !data.user) {
-      return res.status(401).json({
-        message: 'Invalid email or password.',
-      });
-    }
-
-    // Find the application account linked to this Supabase user.
-
-    const { data: profile, error: profileError } =
-      await supabase
-        .from('users')
-        .select('id, auth_user_id, role_id, name, email, phone_number, status')
-        .eq('auth_user_id', data.user.id)
-        .maybeSingle();
-
-
-    if (profileError) {
-      console.error(
-        'Supabase profile lookup failed:',
-        profileError.message
-      );
-
-      return res.status(503).json({
-        message: 'Unable to load your account. Please try again.',
-      });
-    }
-
-    if (!profile || profile.status !== 'active') {
-      return res.status(403).json({
-        message: 'Your account is unavailable. Please contact the gym administrator.',
-      });
-    }
-
-    // Resolve the role using the existing roles table.
-    const { data: roleRecord, error: roleError } =
-      await supabase
-        .from('roles')
-        .select('role_name')
-        .eq('role_id', profile.role_id)
-        .maybeSingle();
-
-    if (roleError || !roleRecord) {
-      return res.status(503).json({
-        message: 'Unable to verify account permissions.',
-      });
-    }
-
-    const roleName = roleRecord.role_name.toLowerCase();
-
-    if (!['admin', 'member'].includes(roleName)) {
-      return res.status(403).json({
-        message: 'This account does not have an application role.',
-      });
-    }
-
-    const account = await loadAccount(profile.id)
-
-    if (!account || account.email.toLowerCase() !== email || account.authUserId !== data.user.id) {
-      return res.status(409).json({
-        message: 'Your account profile is incomplete. Please contact the administrator.',
-      });
-    }
-
-    if (faceLoginEnabled && roleName === 'member') {
-      const { data: enrollment, error: enrollmentError } = await supabase
-        .from('face_enrollments')
-        .select('enrollment_id')
-        .eq('user_id', account.id)
-        .eq('status', 'active')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
-      if (enrollmentError) {
-        console.error('Face enrollment lookup failed:', enrollmentError.message)
-        return res.status(503).json({ message: 'Face verification is temporarily unavailable.' })
-      }
-      if (enrollment) {
-        return res.json({
-          requiresFaceVerification: true,
-          challengeToken: createFaceChallenge(account)
-        })
-      }
-    }
-
-    return res.json(createSession(account));
-  } catch (error) {
-    console.error('Login failed:', error.message);
-
-    return res.status(503).json({
-      message: 'Login is temporarily unavailable. Please try again.',
-    });
-  }
-});
+app.post('/api/auth/login', rateLimit({ max: 10 }), passwordLoginHandler({
+  createAuthClient: createSupabaseAuthClient,
+  supabase,
+  loadAccount,
+  createSession,
+  faceLoginEnabled,
+  createFaceChallenge
+}))
 
 app.post('/api/auth/face-verify', rateLimit({ max: 5, windowMs: 5 * 60 * 1000 }), async (req, res) => {
   if (!faceLoginEnabled || !faceEncryptionKey)
@@ -656,7 +541,7 @@ app.post('/api/auth/forgot-password', rateLimit({ max: 5 }), async (req, res) =>
   try {
     const { data: profile, error: profileError } = await supabase
       .from('users')
-      .select('email, status')
+      .select('email, name, status')
       .ilike('email', email)
       .maybeSingle()
 
@@ -672,19 +557,14 @@ app.post('/api/auth/forgot-password', rateLimit({ max: 5 }), async (req, res) =>
       return res.json(response)
     }
 
-    const { error } = await supabaseAuth.auth.resetPasswordForEmail(
-      profile.email,
-      {
-        redirectTo: `${clientUrl}/reset-password`
-      }
-    )
-
-    if (error) {
-      console.error('Supabase recovery email failed:', error.message)
-      return res.status(500).json({
-        message: 'Unable to send the reset email. Please try again later.'
-      })
-    }
+    // Supabase creates and verifies the one-time recovery token. With SMTP,
+    // FitPulse delivers that same link in the branded account email.
+    await sendPasswordRecovery({
+      supabaseAdmin: supabase, supabaseAuth: createSupabaseAuthClient(), mailer,
+      email: profile.email, name: profile.name,
+      redirectTo: `${clientUrl}/reset-password`,
+      from: process.env.SMTP_FROM || 'FitPulse <no-reply@fitpulse.local>'
+    })
 
     return res.json(response)
   } catch (error) {
@@ -706,7 +586,7 @@ app.post('/api/auth/reset-password/session', rateLimit({ max: 10 }), async (req,
 
   try {
     const { data, error } =
-      await supabaseAuth.auth.exchangeCodeForSession(code)
+      await createSupabaseAuthClient().auth.exchangeCodeForSession(code)
 
     if (error || !data.session?.access_token) {
       return res.status(401).json({
@@ -750,7 +630,7 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
     // Validate the recovery session with Supabase.
     const { data: authData, error: authError } =
-      await supabaseAuth.auth.getUser(accessToken)
+      await createSupabaseAuthClient().auth.getUser(accessToken)
 
     if (authError || !authData.user) {
       return res.status(401).json({
@@ -1041,8 +921,7 @@ app.post(
       await mailer.sendMail({
         from: process.env.SMTP_FROM || 'FitPulse <no-reply@fitpulse.local>',
         to: input.email,
-        subject: 'Your FitPulse member account',
-        text: `Hello ${input.name},\n\nYour FitPulse member account is ready. Sign in using:\nEmail: ${input.email}\nTemporary password: ${temporaryPassword}\n\nPlease change your temporary password after signing in.`
+        ...welcomeEmail({ name: input.name, email: input.email, temporaryPassword, loginUrl: clientUrl })
       })
 
       const member = {
@@ -1461,8 +1340,7 @@ app.post(
     await mailer.sendMail({
       from: process.env.SMTP_FROM || 'FitPulse <no-reply@fitpulse.local>',
       to: member.email,
-      subject: expired ? 'FitPulse membership expired' : 'FitPulse membership expiry reminder',
-      text: `Hello ${member.name}, your ${member.plan} membership ${expired ? 'expired' : 'expires'} on ${expiryDate}. Please visit the front desk to renew.`
+      ...expiryEmail({ name: member.name, plan: member.plan, expiryDate, expired, loginUrl: clientUrl })
     })
     res.json({ message: `Expiry email sent to ${member.email}.` })
   }
@@ -1666,14 +1544,13 @@ app.post(
       }
 
       // Verify the current password against Supabase Auth.
-      const { data: authData, error: authError } =
-        await supabaseAuth.auth.signInWithPassword({
-          email: profile.email,
-          password: currentPassword
-        })
+      const authUser = await authenticatePassword({
+        createAuthClient: createSupabaseAuthClient,
+        email: profile.email,
+        password: currentPassword
+      })
 
-      if (authError || !authData.user ||
-        authData.user.id !== profile.auth_user_id) {
+      if (authUser.id !== profile.auth_user_id) {
         return res.status(400).json({
           message: 'Current password is incorrect.'
         })
@@ -1703,6 +1580,12 @@ app.post(
         session: createSession(account)
       })
     } catch (error) {
+      if (error instanceof PasswordAuthenticationError) {
+        return res.status(error.status === 401 ? 400 : error.status).json({
+          message: error.status === 401 ? 'Current password is incorrect.' : error.message,
+          code: error.code
+        })
+      }
       console.error('Password change failed:', error.message)
 
       return res.status(500).json({
@@ -1937,7 +1820,7 @@ app.use((error, req, res, next) => {
   return res.status(500).json({ message: 'Something went wrong. Please try again.' })
 })
 
-ensureSeedData()
+export const serverReady = ensureSeedData()
   .then(() => app.listen(port, () => console.log(`FitPulse API listening on ${port}`)))
   .catch((error) => {
     console.error('Failed to start FitPulse API:', error.message)

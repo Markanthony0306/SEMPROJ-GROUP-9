@@ -1,0 +1,94 @@
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+}
+.loading-card {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  width: min(390px, 100%);
+  padding: 40px 28px;
+  text-align: center;
+}
+.loading-brand {
+  display: flex;
+  align-items: center;
+  font-size: 30px;
+  font-weight: 850;
+  letter-spacing: -1px;
+}
+.loading-brand span {
+  color: var(--orange);
+}
+.loading-brand i {
+  width: 8px;
+  height: 8px;
+  margin-left: 7px;
+  border-radius: 50%;
+  background: #2a9d5c;
+}
+.loading-card small {
+  color: var(--muted);
+  font-size: 13px;
+}
+.loading-pulse {
+  width: 220px;
+  height: 64px;
+  overflow: visible;
+}
+.loading-pulse path {
+  stroke: var(--orange);
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 380;
+  animation: heartbeat-draw var(--loader-duration) ease-in-out both;
+}
+.loading-track {
+  width: 160px;
+  height: 5px;
+  margin-top: 8px;
+  background: var(--card2);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.loading-track span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold), var(--orange));
+  border-radius: inherit;
+  transform-origin: left;
+  animation: loading-travel var(--loader-duration) linear both;
+}
+@keyframes heartbeat-draw {
+  from {
+    stroke-dashoffset: 380;
+  }
+  70%,
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes loading-travel {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .loading-overlay,
+  .loading-pulse path,
+  .loading-track span {
+    animation: none;
+    transition: none;
+  }
+}

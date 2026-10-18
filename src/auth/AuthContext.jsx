@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 
 const AuthContext = createContext(null)
 const SESSION_KEY = 'fitpulse-session'
@@ -14,14 +14,14 @@ function readSession() {
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(readSession)
-  const login = (nextSession) => {
+  const login = useCallback((nextSession) => {
     localStorage.setItem(SESSION_KEY, JSON.stringify(nextSession))
     setSession(nextSession)
-  }
-  const logout = () => {
+  }, [])
+  const logout = useCallback(() => {
     localStorage.removeItem(SESSION_KEY)
     setSession(null)
-  }
+  }, [])
   const value = useMemo(
     () => ({
       session,
@@ -31,7 +31,7 @@ export function AuthProvider({ children }) {
       login,
       logout
     }),
-    [session]
+    [session, login, logout]
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

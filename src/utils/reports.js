@@ -1,4 +1,4 @@
-import { membershipState, inspectionDue } from './membership.js'
+import { membershipState } from './membership.js'
 
 export const REPORT_TYPES = [
   ['active', 'Active memberships'],
@@ -23,11 +23,12 @@ export function buildReport(kind, data, now = Date.now()) {
   if (kind === 'active' || kind === 'expired')
     return {
       headings: ['Member', 'Member ID', 'Plan', 'Start date', 'Expiry date'],
+      records: members.filter((member) => membershipState(member, now).status === kind),
       rows: members
         .filter((member) => membershipState(member, now).status === kind)
         .map((member) => [
           member.name,
-          member.id,
+          member.memberCode || member.id,
           member.plan,
           date(member.membershipStart || member.joined),
           date(member.membershipEnd)
@@ -36,6 +37,7 @@ export function buildReport(kind, data, now = Date.now()) {
   if (kind === 'attendance')
     return {
       headings: ['Member', 'Member ID', 'Check-in (Asia/Manila)', 'Recorded by'],
+      records: [...data.attendance].sort((a, b) => Date.parse(b.date) - Date.parse(a.date)),
       rows: [...data.attendance]
         .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
         .map((item) => [
@@ -54,17 +56,17 @@ export function buildReport(kind, data, now = Date.now()) {
     }
   if (kind === 'maintenance')
     return {
-      headings: ['Equipment', 'Category', 'Condition', 'Last inspection', 'Inspection status'],
-      rows: data.equipment.map((item) => [
-        item.name,
-        item.category,
-        item.condition,
-        date(item.lastInspected),
-        inspectionDue(item, now) ? 'Due for inspection' : 'Up to date'
-      ])
+      headings: ['Equipment', 'Maintenance note', 'Date'],
+      records: [...(data.maintenance || [])].sort(
+        (a, b) => Date.parse(b.date) - Date.parse(a.date)
+      ),
+      rows: [...(data.maintenance || [])]
+        .sort((a, b) => Date.parse(b.date) - Date.parse(a.date))
+        .map((item) => [item.item, item.note, date(item.date)])
     }
   return {
     headings: ['Member', 'Plan', 'Payment', 'Amount (PHP)', 'Method', 'Date'],
+    records: data.payments.filter((item) => kind !== 'renewals' || item.type === 'Renewal'),
     rows: data.payments
       .filter((item) => kind !== 'renewals' || item.type === 'Renewal')
       .map((item) => [

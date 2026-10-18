@@ -1,0 +1,89 @@
+.dashboard-stage {
+  position: relative;
+  min-width: 0;
+  min-height: calc(100svh - 154px);
+}
+.dashboard-content:not(.is-ready) {
+  visibility: hidden;
+}
+.dashboard-stage > .loading-overlay {
+  position: absolute;
+  align-items: start;
+  padding-top: min(10svh, 80px);
+}
+.dashboard-preparing {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.dashboard-placeholders {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.dashboard-placeholders span {
+  min-height: 110px;
+  border-radius: 28px;
+  background: var(--card2);
+}
+.dashboard-placeholders span:first-child {
+  grid-column: 1 / -1;
+  min-height: 240px;
+}
+.dashboard-content.is-ready > :not(.modal) {
+  animation: dashboard-enter 360ms ease-out var(--entrance-delay, 0ms) backwards;
+}
+.dashboard-content.is-ready > :nth-child(2) {
+  --entrance-delay: 60ms;
+}
+.dashboard-content.is-ready > :nth-child(3) {
+  --entrance-delay: 120ms;
+}
+.dashboard-content.is-ready > :nth-child(4) {
+  --entrance-delay: 180ms;
+}
+.dashboard-content.is-ready > :nth-child(n + 5) {
+  --entrance-delay: 240ms;
+}
+/* The content entrance handles chart visibility in the same sequence. */
+.dashboard-content .activity-bar {
+  animation: none;
+}
+@keyframes dashboard-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app .dashboard-overview {
+  min-height: 270px;
+  background-image:
+    linear-gradient(90deg, #f5f8fdf2, #f5f8fdc4 45%, #f5f8fd0a), var(--dashboard-day-image);
+  background-color: var(--card);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+[data-theme='dark'] .app .dashboard-overview {
+  background-image:
+    linear-gradient(90deg, #0a1f2ff2, #0a1f2fb8 45%, #0a1f2f14), var(--dashboard-night-image);
+}
+@media (max-width: 560px) {
+  .app .dashboard-overview {
+    background-position: 60% center;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-content.is-ready > :not(.modal) {
+    animation: none;
+  }
+}

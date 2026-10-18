@@ -142,6 +142,13 @@ export async function loadDatabase(supabase, sections = [
   const paymentMethodIdByName = new Map(methods.map((method) => [String(method.method_name).toLowerCase(), method.method_id]))
   const subscriptionsById = new Map(subscriptions.map((row) => [row.subscription_id, row]))
   const subscriptionByUserId = latestSubscriptions(subscriptions)
+  const firstSubscriptionDateByUser = new Map()
+  for (const subscription of subscriptions) {
+    const timestamp = Date.parse(subscription.created_at || subscription.start_date)
+    const first = firstSubscriptionDateByUser.get(subscription.user_id)
+    if (Number.isFinite(timestamp) && (first === undefined || timestamp < first))
+      firstSubscriptionDateByUser.set(subscription.user_id, timestamp)
+  }
   const usersById = new Map(users.map((row) => [row.id, row]))
 
   const database = {
@@ -171,7 +178,8 @@ export async function loadDatabase(supabase, sections = [
         amount: Number(row.amount_paid || 0),
         method: methodNameById.get(row.method_id) || '',
         plan: row.legacy_plan_name || plan?.plan_name || '',
-        type: 'Membership',
+        type: subscription && Date.parse(subscription.created_at || subscription.start_date) >
+          firstSubscriptionDateByUser.get(subscription.user_id) ? 'Renewal' : 'Membership',
         date: row.created_at,
         subscriptionId: row.subscription_id,
         processedByUserId: row.processed_by_user_id || null,

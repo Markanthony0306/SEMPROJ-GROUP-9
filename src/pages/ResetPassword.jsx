@@ -1,6 +1,6 @@
-
 import { useState } from 'react'
 import { apiRequest } from '../utils/api'
+import PasswordToggle from '../components/PasswordToggle'
 import './Login.css'
 
 export default function ResetPassword({ navigate }) {
@@ -9,6 +9,7 @@ export default function ResetPassword({ navigate }) {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
+  const [visible, setVisible] = useState({ password: false, confirmPassword: false })
 
   const submit = async (event) => {
     event.preventDefault()
@@ -51,15 +52,11 @@ export default function ResetPassword({ navigate }) {
 
       // Token-based recovery links must contain a recovery access token.
       if (!accessToken && refreshToken) {
-        throw new Error(
-          'Unable to read the recovery session. Please request a new reset link.'
-        )
+        throw new Error('Unable to read the recovery session. Please request a new reset link.')
       }
 
       if (!accessToken) {
-        throw new Error(
-          'This reset link is invalid or expired. Please request a new one.'
-        )
+        throw new Error('This reset link is invalid or expired. Please request a new one.')
       }
 
       const result = await apiRequest('/auth/reset-password', {
@@ -71,11 +68,7 @@ export default function ResetPassword({ navigate }) {
       })
 
       setMessage(result.message)
-      window.history.replaceState(
-        {},
-        document.title,
-        window.location.pathname
-      )
+      window.history.replaceState({}, document.title, window.location.pathname)
 
       setTimeout(() => navigate('login'), 1500)
     } catch (cause) {
@@ -100,13 +93,21 @@ export default function ResetPassword({ navigate }) {
               <input
                 aria-label="New password"
                 autoComplete="new-password"
-                type="password"
+                type={visible.password ? 'text' : 'password'}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 minLength={8}
                 maxLength={72}
                 placeholder="New password"
                 required
+              />
+              <PasswordToggle
+                visible={visible.password}
+                label="new password"
+                disabled={pending}
+                onToggle={() =>
+                  setVisible((previous) => ({ ...previous, password: !previous.password }))
+                }
               />
             </span>
           </label>
@@ -117,13 +118,24 @@ export default function ResetPassword({ navigate }) {
               <input
                 aria-label="Confirm new password"
                 autoComplete="new-password"
-                type="password"
+                type={visible.confirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
                 minLength={8}
                 maxLength={72}
                 placeholder="Confirm new password"
                 required
+              />
+              <PasswordToggle
+                visible={visible.confirmPassword}
+                label="confirm new password"
+                disabled={pending}
+                onToggle={() =>
+                  setVisible((previous) => ({
+                    ...previous,
+                    confirmPassword: !previous.confirmPassword
+                  }))
+                }
               />
             </span>
           </label>
@@ -136,10 +148,7 @@ export default function ResetPassword({ navigate }) {
 
           {message && <p role="status">{message}</p>}
 
-          <button
-            className="btn lbtn"
-            disabled={pending || Boolean(message)}
-          >
+          <button className="btn lbtn" disabled={pending || Boolean(message)}>
             {pending ? 'Updating...' : 'Update password'}
           </button>
         </form>
