@@ -1,0 +1,26 @@
+.face-capture {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.face-capture video {
+  display: block;
+  width: 100%;
+  max-height: 300px;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--line, rgba(255, 255, 255, 0.14));
+  border-radius: 14px;
+  background: #071a29;
+  transform: scaleX(-1);
+}
+
+.face-capture-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.face-capture small {
+  color: var(--muted, #8eabc0);
+  line-height: 1.5;
+}

@@ -1,3 +1,12 @@
 node_modules/
 dist/
 server/data.json
+.env
+.env.*
+!.env.example
+server/uploads/
+hardware/**/secrets.h
+hardware/**/.pio/
+*.password-backup-*
+# Local account and activity data
+data.json

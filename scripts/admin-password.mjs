@@ -1,52 +1,60 @@
-// Sets a new password for the FitPulse administrator directly in the database.
-// Usage: node scripts/admin-password.mjs <new-password>
-// (or set ADMIN_PASSWORD in the environment / .env file)
-import bcrypt from 'bcryptjs'
-import fs from 'node:fs'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
+import 'dotenv/config'
+import { createClient } from '@supabase/supabase-js'
 
-const directory = path.dirname(fileURLToPath(import.meta.url))
-const databasePath = path.join(directory, '..', 'server', 'data.json')
+const email = process.env.ADMIN_EMAIL || 'admin@fitpulse.com'
+const newPassword = process.env.ADMIN_PASSWORD
+const url = process.env.SUPABASE_URL
+const secretKey = process.env.SUPABASE_SECRET_KEY
 
-const newPassword = process.argv[2] || process.env.ADMIN_PASSWORD
-if (!newPassword || newPassword.length < 8 || newPassword.length > 72) {
-  console.error('Usage: node scripts/admin-password.mjs <new-password (8-72 characters)>')
+if (!url || !secretKey) {
+  console.error('Set SUPABASE_URL and SUPABASE_SECRET_KEY in your .env file.')
+  process.exit(1)
+}
+if (!newPassword || newPassword.length < 8 || Buffer.byteLength(newPassword, 'utf8') > 72) {
+  console.error('Set ADMIN_PASSWORD to a value at least 8 characters and no longer than 72 UTF-8 bytes.')
   process.exit(1)
 }
 
-if (!fs.existsSync(databasePath)) {
-  console.error(
-    `Database not found at ${databasePath}. Start the server once so it can be created.`
-  )
+const supabase = createClient(url, secretKey, {
+  auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+})
+const { data: profile, error: lookupError } = await supabase
+  .from('users')
+  .select('id, auth_user_id, auth_version, role_id')
+  .eq('email', email)
+  .maybeSingle()
+
+if (lookupError || !profile?.auth_user_id) {
+  console.error(`No linked Supabase Auth account was found for ${email}.`, lookupError?.message || '')
   process.exit(1)
 }
 
-const database = JSON.parse(fs.readFileSync(databasePath, 'utf8'))
-const admin = database.accounts.find(
-  (account) => account.email === 'admin@fitpulse.com' || account.role === 'admin'
-)
-if (!admin) {
-  console.error('No administrator account was found in the database.')
+const { data: role, error: roleError } = await supabase
+  .from('roles')
+  .select('role_name')
+  .eq('role_id', profile.role_id)
+  .maybeSingle()
+if (roleError || role?.role_name?.toLowerCase() !== 'admin') {
+  console.error(`${email} is not configured as an administrator.`)
   process.exit(1)
 }
 
-// Report what the old stored hash was (helps diagnose "password not working").
-const oldHash = admin.passwordHash || ''
-const matchesAdmin123 = await bcrypt.compare('admin123', oldHash)
-console.log(`Admin account: ${admin.name} <${admin.email}>`)
-console.log(`Stored password was "admin123": ${matchesAdmin123 ? 'yes' : 'no'}`)
-
-admin.passwordHash = await bcrypt.hash(newPassword, 12)
-delete admin.resetTokenHash
-delete admin.resetTokenExpiresAt
-
-fs.writeFileSync(databasePath, JSON.stringify(database, null, 2) + '\n')
-
-const verified = await bcrypt.compare(newPassword, admin.passwordHash)
-if (!verified) {
-  console.error('Something went wrong: the new hash could not be verified.')
+const { error: authError } = await supabase.auth.admin.updateUserById(profile.auth_user_id, {
+  password: newPassword,
+  email_confirm: true
+})
+if (authError) {
+  console.error('Supabase could not update the administrator password:', authError.message)
   process.exit(1)
 }
-console.log(`New password set and verified for ${admin.email}.`)
-console.log('Restart your server (npm run server) and log in with the new password.')
+
+const { error: profileError } = await supabase
+  .from('users')
+  .update({ auth_version: Number(profile.auth_version || 0) + 1 })
+  .eq('id', profile.id)
+if (profileError) {
+  console.error('Password updated, but existing app sessions could not be invalidated:', profileError.message)
+  process.exit(1)
+}
+
+console.log(`Supabase Auth password updated for ${email}. Existing FitPulse sessions have expired.`)

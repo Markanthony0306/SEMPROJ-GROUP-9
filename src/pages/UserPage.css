@@ -1,0 +1,423 @@
+/* Keep member layouts independent of the shared admin dashboard. */
+.member-app {
+  color-scheme: light;
+  --member-shadow: rgba(64, 92, 135, 0.18);
+  --member-highlight: rgba(255, 255, 255, 0.5);
+  --member-inset: rgba(64, 92, 135, 0.1);
+  grid-template-columns: 232px minmax(0, 1fr);
+  gap: 28px;
+  padding: 24px;
+}
+[data-theme='dark'] .member-app {
+  color-scheme: dark;
+  --member-shadow: rgba(0, 0, 0, 0.3);
+  --member-highlight: rgba(130, 180, 220, 0.08);
+  --member-inset: rgba(0, 0, 0, 0.2);
+}
+.member-app .clay {
+  border: 1px solid var(--id);
+  box-shadow:
+    6px 6px 18px var(--member-shadow),
+    -3px -3px 10px var(--member-highlight),
+    inset 2px 2px 4px var(--member-highlight),
+    inset -2px -2px 6px var(--member-inset);
+}
+.member-app main {
+  width: 100%;
+  max-width: 1440px;
+  margin-inline: auto;
+}
+.member-app #nav {
+  overflow-x: hidden;
+  padding: 6px;
+  margin-inline: -6px;
+}
+.member-app .nav {
+  min-width: 0;
+  flex-shrink: 0;
+}
+.member-app .nav:hover {
+  transform: none;
+}
+.member-app header {
+  min-height: 84px;
+}
+.member-app header h1 {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.member-app header .ib,
+.member-app .av {
+  flex-shrink: 0;
+}
+.member-app .chip {
+  min-width: 0;
+}
+.member-app .chip div {
+  min-width: 0;
+}
+.member-app .chip b {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.member-app #view {
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+.member-app .card {
+  padding: 26px;
+}
+.member-app .card h2 {
+  font-size: 18px;
+  margin: 0;
+}
+.member-app .btn {
+  min-height: 44px;
+  box-shadow:
+    3px 3px 8px var(--member-shadow),
+    inset 2px 2px 4px var(--member-highlight);
+}
+.member-app button:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 4px;
+}
+.member-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.member-app .stat {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px;
+}
+.member-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 15px;
+  background: var(--card2);
+  color: var(--orange);
+  box-shadow:
+    inset 1px 1px 3px var(--member-highlight),
+    inset -2px -2px 4px var(--member-inset);
+}
+.member-app .stat > div {
+  min-width: 0;
+}
+.member-app .stat small {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.member-app .stat b {
+  display: block;
+  font-size: clamp(22px, 2vw, 30px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.member-app .stat p {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.member-overview {
+  grid-template-columns: minmax(0, 1fr);
+}
+.member-card-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.member-card-heading > svg {
+  color: var(--muted);
+}
+.member-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: var(--card2);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+.member-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--muted);
+}
+.member-status.is-active::before {
+  background: #2a9d5c;
+}
+.member-status.is-expired::before {
+  background: var(--red);
+}
+.member-details {
+  display: grid;
+  gap: 0;
+}
+.member-details > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--id);
+  font-size: 14px;
+}
+.member-details dt {
+  color: var(--muted);
+}
+.member-details dd {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.member-id {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+.member-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--card2);
+  border-radius: 14px;
+  padding: 14px;
+  margin: 18px 0 8px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.member-note svg {
+  margin-top: 2px;
+  color: var(--orange);
+}
+.member-text-button {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-weight: 700;
+  font-size: 12px;
+  min-height: 44px;
+  padding: 4px 0;
+  cursor: pointer;
+}
+.member-text-button:hover {
+  color: var(--orange);
+}
+.member-app .wrap {
+  min-width: 0;
+}
+.member-app table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.member-app th,
+.member-app td {
+  padding: 16px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--id);
+  overflow-wrap: anywhere;
+}
+.member-app th {
+  color: var(--muted);
+  font-size: 12px;
+}
+.member-app .member-empty {
+  padding: 28px 12px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.member-app .mf {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 22px;
+}
+.member-app .field {
+  min-width: 0;
+}
+.member-app .field input {
+  font-size: 16px;
+  color: var(--text);
+  -webkit-text-fill-color: var(--text);
+  caret-color: var(--text);
+}
+.member-app .field input:autofill,
+.member-app .field input:-webkit-autofill {
+  -webkit-text-fill-color: var(--text);
+  box-shadow: inset 0 0 0 1000px var(--bg);
+}
+.member-app .info {
+  overflow-wrap: anywhere;
+}
+.member-app .item {
+  padding: 18px;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: 22px;
+}
+.member-feedback {
+  padding: 14px 18px;
+  border: 1px solid var(--id);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  overflow-wrap: anywhere;
+}
+.member-qr-page {
+  width: min(560px, 100%);
+  margin-inline: auto;
+}
+.member-qr-empty {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 28px 16px;
+  border: 1px dashed var(--id);
+  border-radius: 18px;
+  text-align: center;
+  color: var(--muted);
+}
+.member-qr-empty h3 {
+  color: var(--text);
+  font-size: 16px;
+}
+.member-qr-empty p {
+  font-size: 13px;
+  line-height: 1.6;
+}
+.member-feedback.is-error {
+  border-color: var(--red);
+}
+.member-feedback button {
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 22px;
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+}
+@media (max-width: 1200px) {
+  .member-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .member-app .stat {
+    flex-direction: row;
+  }
+}
+@media (max-width: 1000px) {
+  .member-app {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 16px;
+  }
+  .member-app aside {
+    width: min(280px, calc(100vw - 32px));
+  }
+}
+@media (max-width: 760px) {
+  .member-overview,
+  .member-app .g2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .member-app {
+    padding: 12px;
+  }
+  .member-app header {
+    min-height: 72px;
+    gap: 10px;
+    top: 12px;
+  }
+  .member-app .card {
+    padding: 20px;
+    border-radius: 22px;
+  }
+  .member-app .stat {
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+    border-radius: 20px;
+  }
+  .member-app .stat b {
+    font-size: 22px;
+  }
+  .member-app .stat small {
+    line-height: 1.5;
+  }
+  .member-app #view,
+  .member-app .grid {
+    gap: 16px;
+  }
+  .member-details > div {
+    grid-template-columns: 90px minmax(0, 1fr);
+    gap: 10px;
+    font-size: 13px;
+  }
+  .member-app table,
+  .member-app tbody,
+  .member-app tr {
+    display: block;
+  }
+  .member-app thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .member-app tbody tr {
+    padding-block: 12px;
+    border-bottom: 1px solid var(--id);
+  }
+  .member-app td {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 12px;
+    padding: 8px 0;
+    border: 0;
+  }
+  .member-app td[data-label]::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .member-app td.member-empty {
+    display: block;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .member-app *,
+  .member-app *::after {
+    animation: none;
+    transition: none;
+  }
+}

@@ -65,3 +65,516 @@ PASS - payments reject negative amounts
 PASS - forgot-password is rate limited
 PASS - reset-password rejects unknown tokens
 24/24 checks passed
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - member can record their own check-in
+PASS - member sees only their payments
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - forgot-password is rate limited
+PASS - reset-password rejects unknown tokens
+24/24 checks passed
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - member can record their own check-in
+PASS - member sees only their payments
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - forgot-password is rate limited
+PASS - reset-password rejects unknown tokens
+24/24 checks passed
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - member login includes stored membership dates without password hashes
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - member can record their own check-in
+PASS - member sees only their payments
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - forgot-password is rate limited
+PASS - reset-password rejects unknown tokens
+25/25 checks passed
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - member login includes stored membership dates without password hashes
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - members cannot bypass the physical scanner with a web self-check-in
+PASS - member sees only their payments
+PASS - active member receives a real temporary QR image
+PASS - QR generation requires login
+PASS - staff cannot generate a member entrance QR
+PASS - members missing expiry dates cannot generate entrance QR
+PASS - scanner rejects a wrong device credential
+PASS - scanner rejects a missing device credential
+PASS - scanner rejects a different device ID
+PASS - scanner rejects invalid request IDs
+PASS - web session tokens cannot be used as entrance QR codes
+PASS - scanner rejects a tampered QR signature
+PASS - scanner rejects expired QR tokens
+PASS - ESP32-CAM verifies active membership and records attendance
+PASS - retries return the same attendance ID without duplicates
+PASS - QR replay under another request ID is denied
+PASS - recent check-ins cannot be duplicated with a fresh QR
+PASS - request IDs cannot be reused for a different QR
+PASS - scans appear only in the member records and hide QR metadata
+PASS - membership expiry is rechecked after QR generation
+PASS - staff manual check-in also rejects expired memberships
+PASS - suspended members cannot use an already issued QR
+PASS - memberships that have not started cannot check in
+PASS - entrance QR tokens cannot authenticate a web session
+PASS - signed-in members can upload a validated profile photo
+PASS - profile photos are retrievable only with authorization
+PASS - another member cannot retrieve the uploaded photo
+PASS - profile uploads reject disguised SVG content
+PASS - profile uploads enforce server-side size limits
+PASS - replacing photos updates the stored account
+PASS - payment CSV escapes formulas, commas, and quotes
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - forgot-password is rate limited
+PASS - reset-password rejects unknown tokens
+54/54 checks passed
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - member login includes stored membership dates without password hashes
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - members cannot bypass the physical scanner with a web self-check-in
+PASS - member sees only their payments
+PASS - active member receives a real temporary QR image
+PASS - QR generation requires login
+PASS - staff cannot generate a member entrance QR
+PASS - members missing expiry dates cannot generate entrance QR
+PASS - scanner rejects a wrong device credential
+PASS - scanner rejects a missing device credential
+PASS - scanner rejects a different device ID
+PASS - scanner rejects invalid request IDs
+PASS - web session tokens cannot be used as entrance QR codes
+PASS - scanner rejects a tampered QR signature
+PASS - scanner rejects expired QR tokens
+PASS - ESP32-CAM verifies active membership and records attendance
+PASS - retries return the same attendance ID without duplicates
+PASS - QR replay under another request ID is denied
+PASS - recent check-ins cannot be duplicated with a fresh QR
+PASS - request IDs cannot be reused for a different QR
+PASS - scans appear only in the member records and hide QR metadata
+PASS - membership expiry is rechecked after QR generation
+PASS - staff manual check-in also rejects expired memberships
+PASS - suspended members cannot use an already issued QR
+PASS - memberships that have not started cannot check in
+PASS - entrance QR tokens cannot authenticate a web session
+PASS - signed-in members can upload a validated profile photo
+PASS - profile photos are retrievable only with authorization
+PASS - another member cannot retrieve the uploaded photo
+PASS - staff can retrieve member photos for entrance verification
+PASS - members cannot access other members through staff photo routes
+PASS - profile uploads reject disguised SVG content
+PASS - profile uploads enforce server-side size limits
+PASS - replacing photos updates the stored account
+PASS - payment CSV escapes formulas, commas, and quotes
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - forgot-password is rate limited
+PASS - reset-password rejects unknown tokens
+56/56 checks passed
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - member login includes stored membership dates without password hashes
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - members cannot bypass the physical scanner with a web self-check-in
+PASS - member sees only their payments
+PASS - active member receives a real temporary QR image
+PASS - QR generation requires login
+PASS - staff cannot generate a member entrance QR
+PASS - members missing expiry dates cannot generate entrance QR
+PASS - scanner rejects a wrong device credential
+PASS - scanner rejects a missing device credential
+PASS - scanner rejects a different device ID
+PASS - scanner rejects invalid request IDs
+PASS - web session tokens cannot be used as entrance QR codes
+PASS - scanner rejects a tampered QR signature
+PASS - scanner rejects expired QR tokens
+PASS - ESP32-CAM verifies active membership and records attendance
+PASS - retries return the same attendance ID without duplicates
+PASS - QR replay under another request ID is denied
+PASS - recent check-ins cannot be duplicated with a fresh QR
+PASS - request IDs cannot be reused for a different QR
+PASS - scans appear only in the member records and hide QR metadata
+PASS - membership expiry is rechecked after QR generation
+PASS - staff manual check-in also rejects expired memberships
+PASS - suspended members cannot use an already issued QR
+PASS - memberships that have not started cannot check in
+PASS - entrance QR tokens cannot authenticate a web session
+PASS - signed-in members can upload a validated profile photo
+PASS - profile photos are retrievable only with authorization
+PASS - another member cannot retrieve the uploaded photo
+PASS - staff can retrieve member photos for entrance verification
+PASS - members cannot access other members through staff photo routes
+PASS - profile uploads reject disguised SVG content
+PASS - profile uploads enforce server-side size limits
+PASS - replacing photos updates the stored account
+PASS - payment CSV escapes formulas, commas, and quotes
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - invalid renewal amounts and methods do not change membership records
+PASS - payment records accept only Cash or GCash
+PASS - member registration rejects unsupported payment methods before saving
+PASS - repair notes and equipment conditions are stored together
+PASS - equipment rejects invalid conditions and oversized repair notes
+PASS - members cannot modify equipment records
+PASS - disabled email reminders cannot send email
+PASS - membership labels distinguish expired, missing dates, upcoming, and suspended
+PASS - reminders include only near-expiry and expired memberships
+PASS - inspection reminders use the 30-day threshold and include missing dates
+PASS - active and expired reports exclude incomplete and inactive memberships
+PASS - renewal reports include only recorded renewal transactions
+PASS - changing passwords requires the correct current password
+PASS - changing passwords rejects mismatched confirmation
+PASS - changing passwords rejects short and truncated multibyte passwords
+PASS - changing passwords rejects the unchanged password
+PASS - admin password updates return a fresh authenticated session
+PASS - admin login accepts the new password and rejects the old password
+PASS - changing an admin password invalidates older admin sessions only
+PASS - member password updates preserve the member role and refresh the session
+PASS - member login accepts the new password and rejects the old password
+PASS - forgot-password is rate limited
+PASS - reset-password rejects unknown tokens
+77/77 checks passed
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - member login includes stored membership dates without password hashes
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - members cannot bypass the physical scanner with a web self-check-in
+PASS - member sees only their payments
+PASS - active member receives a real temporary QR image
+PASS - QR generation requires login
+PASS - staff cannot generate a member entrance QR
+PASS - members missing expiry dates cannot generate entrance QR
+PASS - scanner rejects a wrong device credential
+PASS - scanner rejects a missing device credential
+PASS - scanner rejects a different device ID
+PASS - scanner rejects invalid request IDs
+PASS - web session tokens cannot be used as entrance QR codes
+PASS - scanner rejects a tampered QR signature
+PASS - scanner rejects expired QR tokens
+PASS - ESP32-CAM verifies active membership and records attendance
+PASS - retries return the same attendance ID without duplicates
+PASS - QR replay under another request ID is denied
+PASS - recent check-ins cannot be duplicated with a fresh QR
+PASS - request IDs cannot be reused for a different QR
+PASS - scans appear only in the member records and hide QR metadata
+PASS - membership expiry is rechecked after QR generation
+PASS - staff manual check-in also rejects expired memberships
+PASS - suspended members cannot use an already issued QR
+PASS - memberships that have not started cannot check in
+PASS - entrance QR tokens cannot authenticate a web session
+PASS - signed-in members can upload a validated profile photo
+PASS - profile photos are retrievable only with authorization
+PASS - another member cannot retrieve the uploaded photo
+PASS - staff can retrieve member photos for entrance verification
+PASS - members cannot access other members through staff photo routes
+PASS - profile uploads reject disguised SVG content
+PASS - profile uploads enforce server-side size limits
+PASS - replacing photos updates the stored account
+PASS - payment CSV escapes formulas, commas, and quotes
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - invalid renewal amounts and methods do not change membership records
+PASS - payment records accept only Cash or GCash
+PASS - member registration rejects unsupported payment methods before saving
+PASS - repair notes and equipment conditions are stored together
+PASS - equipment rejects invalid conditions and oversized repair notes
+PASS - members cannot modify equipment records
+PASS - disabled email reminders cannot send email
+PASS - staff can create a member without inventing a payment record
+PASS - membership labels distinguish expired, missing dates, upcoming, and suspended
+PASS - reminders include only near-expiry and expired memberships
+PASS - inspection reminders use the 30-day threshold and include missing dates
+PASS - active and expired reports exclude incomplete and inactive memberships
+PASS - renewal reports include only recorded renewal transactions
+PASS - changing passwords requires the correct current password
+PASS - changing passwords rejects mismatched confirmation
+PASS - changing passwords rejects short and truncated multibyte passwords
+PASS - changing passwords rejects the unchanged password
+PASS - admin password updates return a fresh authenticated session
+PASS - admin login accepts the new password and rejects the old password
+PASS - changing an admin password invalidates older admin sessions only
+PASS - member password updates preserve the member role and refresh the session
+PASS - member login accepts the new password and rejects the old password
+PASS - admin recovery preserves a complete backup before changing the password
+PASS - admin recovery enables the new login and expires older admin sessions
+FAIL - forgot-password is rate limited
+PASS - reset-password rejects unknown tokens
+79/80 checks passed
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - member login includes stored membership dates without password hashes
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - members cannot bypass the physical scanner with a web self-check-in
+PASS - member sees only their payments
+PASS - active member receives a real temporary QR image
+PASS - QR generation requires login
+PASS - staff cannot generate a member entrance QR
+PASS - members missing expiry dates cannot generate entrance QR
+PASS - scanner rejects a wrong device credential
+PASS - scanner rejects a missing device credential
+PASS - scanner rejects a different device ID
+PASS - scanner rejects invalid request IDs
+PASS - web session tokens cannot be used as entrance QR codes
+PASS - scanner rejects a tampered QR signature
+PASS - scanner rejects expired QR tokens
+PASS - ESP32-CAM verifies active membership and records attendance
+PASS - retries return the same attendance ID without duplicates
+PASS - QR replay under another request ID is denied
+PASS - recent check-ins cannot be duplicated with a fresh QR
+PASS - request IDs cannot be reused for a different QR
+PASS - scans appear only in the member records and hide QR metadata
+PASS - membership expiry is rechecked after QR generation
+PASS - staff manual check-in also rejects expired memberships
+PASS - suspended members cannot use an already issued QR
+PASS - memberships that have not started cannot check in
+PASS - entrance QR tokens cannot authenticate a web session
+PASS - signed-in members can upload a validated profile photo
+PASS - profile photos are retrievable only with authorization
+PASS - another member cannot retrieve the uploaded photo
+PASS - staff can retrieve member photos for entrance verification
+PASS - members cannot access other members through staff photo routes
+PASS - profile uploads reject disguised SVG content
+PASS - profile uploads enforce server-side size limits
+PASS - replacing photos updates the stored account
+PASS - payment CSV escapes formulas, commas, and quotes
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - invalid renewal amounts and methods do not change membership records
+PASS - payment records accept only Cash or GCash
+PASS - member registration rejects unsupported payment methods before saving
+PASS - repair notes and equipment conditions are stored together
+PASS - equipment rejects invalid conditions and oversized repair notes
+PASS - members cannot modify equipment records
+PASS - disabled email reminders cannot send email
+PASS - staff can create a member without inventing a payment record
+PASS - membership labels distinguish expired, missing dates, upcoming, and suspended
+PASS - reminders include only near-expiry and expired memberships
+PASS - inspection reminders use the 30-day threshold and include missing dates
+PASS - active and expired reports exclude incomplete and inactive memberships
+PASS - renewal reports include only recorded renewal transactions
+PASS - changing passwords requires the correct current password
+PASS - changing passwords rejects mismatched confirmation
+PASS - changing passwords rejects short and truncated multibyte passwords
+PASS - changing passwords rejects the unchanged password
+PASS - admin password updates return a fresh authenticated session
+PASS - admin login accepts the new password and rejects the old password
+PASS - changing an admin password invalidates older admin sessions only
+PASS - member password updates preserve the member role and refresh the session
+PASS - member login accepts the new password and rejects the old password
+PASS - admin recovery preserves a complete backup before changing the password
+PASS - admin recovery enables the new login and expires older admin sessions
+PASS - forgot-password is rate limited (HTTP 429)
+PASS - reset-password rejects unknown tokens
+80/80 checks passed
+PASS - development demo shortcuts verify their default passwords
+PASS - demo lookup never returns saved passwords, hashes, or reset tokens
+PASS - demo account information is unavailable in production
+PASS - register creates an account
+PASS - duplicate registration is rejected
+PASS - register rejects short passwords
+PASS - register rejects invalid emails
+PASS - admin can log in
+PASS - demo member can log in
+PASS - me returns the signed-in user
+PASS - me requires a token
+PASS - members endpoint is staff-only
+PASS - staff can list members without password hashes
+PASS - staff can create a member account with a membership
+PASS - member login includes stored membership dates without password hashes
+PASS - staff can edit a member account
+PASS - staff can renew a membership
+PASS - staff can add equipment
+PASS - staff can inspect equipment and change its condition
+PASS - staff can save gym settings
+PASS - member sees only their attendance
+PASS - members cannot bypass the physical scanner with a web self-check-in
+PASS - member sees only their payments
+PASS - active member receives a real temporary QR image
+PASS - QR generation requires login
+PASS - staff cannot generate a member entrance QR
+PASS - members missing expiry dates cannot generate entrance QR
+PASS - scanner rejects a wrong device credential
+PASS - scanner rejects a missing device credential
+PASS - scanner rejects a different device ID
+PASS - scanner rejects invalid request IDs
+PASS - web session tokens cannot be used as entrance QR codes
+PASS - scanner rejects a tampered QR signature
+PASS - scanner rejects expired QR tokens
+PASS - ESP32-CAM verifies active membership and records attendance
+PASS - retries return the same attendance ID without duplicates
+PASS - QR replay under another request ID is denied
+PASS - recent check-ins cannot be duplicated with a fresh QR
+PASS - request IDs cannot be reused for a different QR
+PASS - scans appear only in the member records and hide QR metadata
+PASS - membership expiry is rechecked after QR generation
+PASS - staff manual check-in also rejects expired memberships
+PASS - suspended members cannot use an already issued QR
+PASS - memberships that have not started cannot check in
+PASS - entrance QR tokens cannot authenticate a web session
+PASS - signed-in members can upload a validated profile photo
+PASS - profile photos are retrievable only with authorization
+PASS - another member cannot retrieve the uploaded photo
+PASS - staff can retrieve member photos for entrance verification
+PASS - members cannot access other members through staff photo routes
+PASS - profile uploads reject disguised SVG content
+PASS - profile uploads enforce server-side size limits
+PASS - replacing photos updates the stored account
+PASS - payment CSV escapes formulas, commas, and quotes
+PASS - staff can record attendance
+PASS - staff can record a payment
+PASS - payments reject negative amounts
+PASS - invalid renewal amounts and methods do not change membership records
+PASS - payment records accept only Cash or GCash
+PASS - member registration rejects unsupported payment methods before saving
+PASS - repair notes and equipment conditions are stored together
+PASS - equipment rejects invalid conditions and oversized repair notes
+PASS - members cannot modify equipment records
+PASS - disabled email reminders cannot send email
+PASS - staff can create a member without inventing a payment record
+PASS - membership labels distinguish expired, missing dates, upcoming, and suspended
+PASS - reminders include only near-expiry and expired memberships
+PASS - inspection reminders use the 30-day threshold and include missing dates
+PASS - active and expired reports exclude incomplete and inactive memberships
+PASS - renewal reports include only recorded renewal transactions
+PASS - changing passwords requires the correct current password
+PASS - changing passwords rejects mismatched confirmation
+PASS - changing passwords rejects short and truncated multibyte passwords
+PASS - changing passwords rejects the unchanged password
+PASS - changed admin passwords stop offering the invalid default without affecting member demos
+PASS - admin password updates return a fresh authenticated session
+PASS - admin login accepts the new password and rejects the old password
+PASS - changing an admin password invalidates older admin sessions only
+PASS - member password updates preserve the member role and refresh the session
+PASS - member login accepts the new password and rejects the old password
+PASS - admin recovery preserves a complete backup before changing the password
+PASS - admin recovery enables the new login and expires older admin sessions
+PASS - forgot-password is rate limited (HTTP 429)
+PASS - reset-password rejects unknown tokens
+84/84 checks passed
