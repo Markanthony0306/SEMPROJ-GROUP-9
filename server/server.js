@@ -5,12 +5,17 @@ import { fileURLToPath } from 'node:url'
 import cors from 'cors'
 import express from 'express'
 import jwt from 'jsonwebtoken'
-import nodemailer from 'nodemailer'
-import { scannerRoutes, membershipFailure } from './routes/scanner.js'
+import { createEmailDelivery, emailConfiguration } from './services/emailDelivery.js'
+import { accountRoutes } from './routes/accounts.js'
+import { scannerRoutes } from './routes/scanner.js'
 import { avatarRoutes } from './routes/avatar.js'
 import { demoAccountRoutes } from './routes/demo-accounts.js'
 import { reportRoutes } from './routes/reports.js'
-import { welcomeEmail, expiryEmail } from './services/emailTemplates.js'
+import { notificationRoutes } from './routes/notifications.js'
+import { createAdminNotificationService } from './services/adminNotifications.js'
+import { EQUIPMENT_CATEGORIES } from '../shared/equipmentCategories.js'
+import { welcomeEmail } from './services/emailTemplates.js'
+import { createMembershipReminderService, startMembershipReminders } from './services/membershipReminders.js'
 import { sendPasswordRecovery } from './services/passwordRecovery.js'
 import { passwordLoginHandler } from './routes/passwordLogin.js'
 import { authenticatePassword, PasswordAuthenticationError } from './services/passwordAuthentication.js'
@@ -93,23 +98,25 @@ const corsOrigins = (
 app.use(cors({ origin: corsOrigins }))
 app.use(express.json({ limit: '100kb' }))
 
-const smtpConfigured = Boolean(
-  process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS
-)
-const mailer = smtpConfigured
-  ? nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-  })
-  : null
+const emailConfig = emailConfiguration()
+const smtpConfigured = emailConfig.configured
+const mailer = createEmailDelivery(emailConfig)
 
 // ---------------------------------------------------------------- database
 
 const loadDatabase = (sections) => loadSupabaseDatabase(supabase, sections)
 const loadAccount = (id) => loadSupabaseAccount(supabase, id)
 const saveDatabase = (database) => saveSupabaseDatabase(supabase, database)
+const membershipReminders = createMembershipReminderService({
+  supabase,
+  loadDatabase,
+  mailer,
+  from: emailConfig.from,
+  loginUrl: clientUrl
+})
+const adminNotifications = createAdminNotificationService({
+  supabase, loadDatabase, smtpConfigured, reminders: membershipReminders
+})
 
 function publicAccount(account) {
   const { authUserId, authVersion, subscriptionId, subscriptionCreatedAt, planId, ...safe } = account
@@ -279,7 +286,15 @@ function rateLimit({ windowMs = 15 * 60 * 1000, max = 10 } = {}) {
 
 // ---------------------------------------------------------------- routes
 
+app.use('/api', accountRoutes({
+  authenticate, requireRole, rateLimit, loadAccount, supabase,
+  createAuthClient: createSupabaseAuthClient, mailer, from: emailConfig.from, clientUrl
+}))
 app.use('/api', reportRoutes({ authenticate, requireRole, loadDatabase, supabase, rateLimit }))
+app.use('/api', notificationRoutes({
+  authenticate, requireRole, rateLimit, notifications: adminNotifications,
+  reminders: membershipReminders, mailer
+}))
 
 app.use('/api', demoAccountRoutes({
   isProduction,
@@ -563,7 +578,7 @@ app.post('/api/auth/forgot-password', rateLimit({ max: 5 }), async (req, res) =>
       supabaseAdmin: supabase, supabaseAuth: createSupabaseAuthClient(), mailer,
       email: profile.email, name: profile.name,
       redirectTo: `${clientUrl}/reset-password`,
-      from: process.env.SMTP_FROM || 'FitPulse <no-reply@fitpulse.local>'
+      from: emailConfig.from
     })
 
     return res.json(response)
@@ -779,12 +794,6 @@ app.post(
     let profileId = null
 
     try {
-      if (!mailer) {
-        return res.status(503).json({
-          message: 'Email delivery is unavailable. Configure SMTP before creating member accounts.'
-        })
-      }
-
       const input = validAccountInput(req.body)
 
       if (input.error) {
@@ -918,12 +927,6 @@ app.post(
 
       profileId = profile.id
 
-      await mailer.sendMail({
-        from: process.env.SMTP_FROM || 'FitPulse <no-reply@fitpulse.local>',
-        to: input.email,
-        ...welcomeEmail({ name: input.name, email: input.email, temporaryPassword, loginUrl: clientUrl })
-      })
-
       const member = {
         id: profile.id,
         authUserId,
@@ -963,7 +966,27 @@ app.post(
 
       await saveDatabase(database)
 
+      // Commit the member and membership first. A mail outage must never undo
+      // a valid account or send credentials for a membership that failed to save.
+      let emailSent = false
+      if (mailer) {
+        try {
+          await mailer.sendMail({
+            from: emailConfig.from,
+            to: input.email,
+            ...welcomeEmail({ name: input.name, email: input.email, temporaryPassword, loginUrl: clientUrl })
+          })
+          emailSent = true
+        } catch (error) {
+          console.error('Member welcome email failed:', error.code || 'SMTP_ERROR')
+        }
+      }
+
       return res.status(201).json({
+        emailSent,
+        message: emailSent
+          ? 'Member created. Welcome email accepted by the mail server.'
+          : 'Member created, but the welcome email was not sent. Use Send sign-in link after checking SMTP.',
         member: {
           ...publicAccount(member),
           memberCode: profile.member_code,
@@ -1236,11 +1259,13 @@ app.get('/api/admin/equipment', authenticate, requireRole('admin', 'staff'), asy
 app.post('/api/admin/equipment', authenticate, requireRole('admin', 'staff'), async (req, res) => {
   const name = typeof req.body.name === 'string' ? req.body.name.trim() : ''
   if (!name) return res.status(400).json({ message: 'Equipment name is required.' })
+  if (!EQUIPMENT_CATEGORIES.includes(req.body.category))
+    return res.status(400).json({ message: 'Choose a valid equipment category.' })
   const database = await loadDatabase(['equipment', 'maintenance'])
   const equipment = {
     id: crypto.randomUUID(),
     name,
-    category: typeof req.body.category === 'string' ? req.body.category : 'Other',
+    category: req.body.category,
     condition: 'Good',
     lastInspected: new Date().toISOString()
   }
@@ -1252,6 +1277,8 @@ app.patch('/api/admin/equipment/:id', authenticate, requireRole('admin', 'staff'
   const database = await loadDatabase(['equipment', 'maintenance'])
   const equipment = database.equipment.find((item) => item.id === req.params.id)
   if (!equipment) return res.status(404).json({ message: 'Equipment not found.' })
+  if (req.body.category !== undefined && !EQUIPMENT_CATEGORIES.includes(req.body.category))
+    return res.status(400).json({ message: 'Choose a valid equipment category.' })
   if (
     req.body.condition !== undefined &&
     !['Good', 'Needs Maintenance', 'Out of Service'].includes(req.body.condition)
@@ -1260,6 +1287,7 @@ app.patch('/api/admin/equipment/:id', authenticate, requireRole('admin', 'staff'
   const note = typeof req.body.maintenanceNote === 'string' ? req.body.maintenanceNote.trim() : ''
   if (req.body.maintenanceNote !== undefined && (!note || note.length > 500))
     return res.status(400).json({ message: 'Use a maintenance note of 1–500 characters.' })
+  if (req.body.category !== undefined) equipment.category = req.body.category
   if (req.body.condition !== undefined) {
     equipment.condition = req.body.condition
     if (!note)
@@ -1304,6 +1332,11 @@ app.patch('/api/admin/settings', authenticate, requireRole('admin', 'staff'), as
     database.settings.remind = req.body.remind
   if (typeof req.body.emailOn === 'boolean') database.settings.emailOn = req.body.emailOn
   await saveDatabase(database)
+  if (database.settings.emailOn) {
+    void membershipReminders.runDue().catch(() =>
+      console.error('Reminder check failed after settings update. Apply migration 005_admin_notifications.sql.')
+    )
+  }
   res.json({ settings: database.settings })
 })
 app.post(
@@ -1330,19 +1363,12 @@ app.post(
       return res
         .status(503)
         .json({ message: 'Email delivery is unavailable. Configure SMTP on the server.' })
-    const expiryDate = new Date(end).toLocaleDateString('en-PH', {
-      timeZone: 'Asia/Manila',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    const sent = await membershipReminders.sendReminder(member, database.settings)
+    res.json({
+      message: sent
+        ? `Expiry email sent to ${member.email}.`
+        : 'No email sent. This reminder was already sent, is being processed, or is no longer due.'
     })
-    const expired = end <= Date.now()
-    await mailer.sendMail({
-      from: process.env.SMTP_FROM || 'FitPulse <no-reply@fitpulse.local>',
-      to: member.email,
-      ...expiryEmail({ name: member.name, plan: member.plan, expiryDate, expired, loginUrl: clientUrl })
-    })
-    res.json({ message: `Expiry email sent to ${member.email}.` })
   }
 )
 
@@ -1608,7 +1634,7 @@ app.get('/api/attendance', authenticate, async (req, res) => {
 app.post('/api/attendance/check-in', authenticate, (req, res) => {
   res
     .status(403)
-    .json({ message: 'Check-in must be recorded by the entrance scanner or gym staff.' })
+    .json({ message: 'Check-in must be recorded by the entrance scanner.' })
 })
 
 app.get('/api/payments', authenticate, async (req, res) => {
@@ -1620,23 +1646,8 @@ app.get('/api/payments', authenticate, async (req, res) => {
   res.json({ payments })
 })
 
-app.post('/api/admin/attendance', authenticate, requireRole('admin', 'staff'), async (req, res) => {
-  const memberId = typeof req.body.memberId === 'string' ? req.body.memberId.trim() : ''
-  const database = await loadDatabase(['accounts', 'attendance'])
-  const member = database.accounts.find((account) => account.id === memberId)
-  if (!member) return res.status(400).json({ message: 'Unknown member id.' })
-  if (membershipFailure(member))
-    return res.status(403).json({ message: 'An active membership with valid dates is required.' })
-  const attendance = {
-    id: crypto.randomUUID(),
-    memberId,
-    memberName: member.name,
-    source: 'Staff',
-    date: new Date().toISOString()
-  }
-  database.attendance.push(attendance)
-  await saveDatabase(database)
-  res.status(201).json({ attendance })
+app.post('/api/admin/attendance', authenticate, requireRole('admin', 'staff'), (req, res) => {
+  res.status(403).json({ message: 'Check-in must be recorded by the entrance scanner.' })
 })
 
 app.post('/api/admin/payments', authenticate, requireRole('admin', 'staff'), async (req, res) => {
@@ -1821,7 +1832,13 @@ app.use((error, req, res, next) => {
 })
 
 export const serverReady = ensureSeedData()
-  .then(() => app.listen(port, () => console.log(`FitPulse API listening on ${port}`)))
+  .then(() => {
+    const server = app.listen(port, () => console.log(`FitPulse API listening on ${port}`))
+    const stopReminders = startMembershipReminders({ runDue: membershipReminders.runDue })
+    server.once('close', stopReminders)
+    if (!smtpConfigured) console.warn('Automatic membership reminders are paused: configure SMTP to enable delivery.')
+    return server
+  })
   .catch((error) => {
     console.error('Failed to start FitPulse API:', error.message)
     process.exit(1)

@@ -201,7 +201,11 @@ export async function loadDatabase(supabase, sections = [
       date: row.date
     })),
     settings: settingsRow.data
-      ? { gym: settingsRow.data.gym_name, remind: settingsRow.data.reminder_days, emailOn: settingsRow.data.email_enabled }
+      ? {
+          gym: settingsRow.data.gym_name,
+          remind: settingsRow.data.reminder_days,
+          emailOn: settingsRow.data.email_enabled ?? settingsRow.data.email_notifications ?? false
+        }
       : { gym: 'FitPulse Gym', remind: 7, emailOn: true }
   }
 
@@ -210,7 +214,12 @@ export async function loadDatabase(supabase, sections = [
     roleIdByName,
     planIdByName,
     paymentMethodIdByName,
-    subscriptionByUserId
+    subscriptionByUserId,
+    emailPreferenceColumn:
+      settingsRow.data && !Object.hasOwn(settingsRow.data, 'email_enabled') &&
+      Object.hasOwn(settingsRow.data, 'email_notifications')
+        ? 'email_notifications'
+        : 'email_enabled'
   })
   return database
 }
@@ -219,7 +228,9 @@ export async function saveDatabase(supabase, database) {
   const snapshot = snapshots.get(database)
   if (!snapshot) throw new Error('Database snapshot is missing; reload before saving.')
   const before = snapshot.database
-  const { roleIdByName, planIdByName, paymentMethodIdByName } = snapshot
+  const {
+    roleIdByName, planIdByName, paymentMethodIdByName, emailPreferenceColumn = 'email_enabled'
+  } = snapshot
   const oldAccounts = byId(before.accounts)
   const usersToSave = database.accounts.filter((account) => !same(account, oldAccounts.get(account.id)))
 
@@ -351,7 +362,7 @@ export async function saveDatabase(supabase, database) {
       id: 1,
       gym_name: database.settings.gym,
       reminder_days: database.settings.remind,
-      email_enabled: database.settings.emailOn
+      [emailPreferenceColumn]: database.settings.emailOn
     }, { onConflict: 'id' })
     fail(error, 'gym_settings')
   }
@@ -361,6 +372,7 @@ export async function saveDatabase(supabase, database) {
     roleIdByName,
     planIdByName,
     paymentMethodIdByName,
+    emailPreferenceColumn,
     subscriptionByUserId: latestSubscriptions([
       ...snapshot.subscriptionByUserId.values(),
       ...changedSubscriptions.map((row) => ({ ...row, user_id: row.user_id }))

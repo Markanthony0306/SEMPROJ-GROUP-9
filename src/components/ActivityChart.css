@@ -222,13 +222,13 @@
   }
 }
 @media (max-width: 560px) {
-  .activity-controls {
+  .app:not(.admin-app) .activity-controls {
     gap: 8px;
   }
-  .clay-segment button {
+  .app:not(.admin-app) .clay-segment button {
     padding: 9px 11px;
   }
-  .activity-plot {
+  .app:not(.admin-app) .activity-plot {
     height: 195px;
     gap: 8px;
   }

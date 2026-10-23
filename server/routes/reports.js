@@ -27,6 +27,8 @@ export function reportRoutes({ authenticate, requireRole, loadDatabase, supabase
   })
 
   async function writeRecord(req, res) {
+    if (req.params.kind === 'attendance' && !req.params.id)
+      return res.status(403).json({ message: 'Check-in must be recorded by the entrance scanner.' })
     const { table, key, sections } = req.reportCollection
     const database = await loadDatabase(sections)
     const existing = req.params.id
@@ -63,6 +65,28 @@ export function reportRoutes({ authenticate, requireRole, loadDatabase, supabase
   }
   router.post('/admin/reports/:kind', writeRecord)
   router.patch('/admin/reports/:kind/:id', writeRecord)
+  router.delete('/admin/reports/:kind', requireRole('admin'), async (req, res) => {
+    const category = req.body?.category
+    const allowed = req.params.kind === 'payments' ? ['payments', 'renewals'] : [req.params.kind]
+    if (!allowed.includes(category) || req.body?.confirmation !== 'CLEAR')
+      return res
+        .status(400)
+        .json({ message: 'Choose a report category and type CLEAR to confirm.' })
+
+    const { data, error } = await supabase.rpc('clear_fitpulse_report_records', {
+      p_category: category
+    })
+    if (error) {
+      console.error('Report category clear failed:', error.code || 'DATABASE_ERROR')
+      return res.status(503).json({
+        message:
+          error.code === 'PGRST202'
+            ? 'Report clearing is unavailable. Ask your administrator to apply the report clearing migration.'
+            : 'Report clearing could not be confirmed. Reload the page to check the latest records before trying again.'
+      })
+    }
+    res.json({ deleted: data, category, message: 'Report records cleared.' })
+  })
   router.delete('/admin/reports/:kind/:id', requireRole('admin'), async (req, res) => {
     const { table, key } = req.reportCollection
     const { data, error } = await supabase.from(table).delete().eq(key, req.params.id).select(key)

@@ -75,20 +75,11 @@ export function reportRecordInput(
   }
 
   if (kind === 'attendance') {
-    if (
-      !existing &&
-      (member.status !== 'active' ||
-        !member.membershipStart ||
-        !member.membershipEnd ||
-        timestamp < Date.parse(member.membershipStart) ||
-        timestamp >= Date.parse(member.membershipEnd))
-    )
-      invalid('The check-in date must fall within this member’s active membership.')
+    if (!existing) invalid('Check-in must be recorded by the entrance scanner.')
     return {
       user_id: member.id,
       member_name: member.name,
-      check_in_time: recordedAt,
-      ...(!existing ? { entry_type: 'Staff' } : {})
+      check_in_time: recordedAt
     }
   }
   invalid('Unsupported report type.')

@@ -7,6 +7,7 @@ import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
 import { REPORT_TYPES, buildReport } from '../utils/reports'
 import { downloadCsvRows } from '../utils/paymentExport'
+import RecordDeleteDialog, { RecordDeleteButton } from './RecordDeleteControls'
 
 function localDateTime(value = new Date()) {
   const date = new Date(value)
@@ -121,7 +122,7 @@ function RecordForm({ kind, record, data, busy, onSubmit, onClose }) {
             ? 'This records money already received. It does not charge a member or extend their membership.'
             : maintenance
               ? 'This updates the maintenance history. Equipment condition is managed on the Equipment page.'
-              : 'Staff entries must fall within the member’s active membership. Scanner details stay attached when correcting a record.'}
+              : 'You are correcting an existing check-in. Scanner details stay attached to the record.'}
         </p>
         <div className="ma">
           <button className="btn ghost" type="button" onClick={onClose}>
@@ -140,6 +141,7 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
   const { token, role } = useAuth()
   const [kind, setKind] = useState('active')
   const [dialog, setDialog] = useState(null)
+  const [deletion, setDeletion] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -157,6 +159,7 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
     : null
   const open = (mode, record, index) => {
     setError('')
+    setNotice('')
     setDialog({ mode, record, index })
   }
   const save = async (event) => {
@@ -166,21 +169,20 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
     setBusy(true)
     setError('')
     try {
-      const deleting = dialog.mode === 'delete'
-      const input = deleting ? null : Object.fromEntries(new FormData(event.currentTarget))
-      if (input) input.date = new Date(input.date).toISOString()
+      const input = Object.fromEntries(new FormData(event.currentTarget))
+      input.date = new Date(input.date).toISOString()
       await apiRequest(
         `/admin/reports/${collection}${dialog.record ? `/${dialog.record.id}` : ''}`,
         {
           token,
-          method: deleting ? 'DELETE' : dialog.record ? 'PATCH' : 'POST',
-          ...(input ? { body: JSON.stringify(input) } : {})
+          method: dialog.record ? 'PATCH' : 'POST',
+          body: JSON.stringify(input)
         }
       )
       setDialog(null)
       const refreshed = await onChanged()
       setNotice(
-        `${deleting ? 'Record deleted.' : 'Record saved.'} ${
+        `Record saved. ${
           refreshed === false
             ? 'The refresh failed. Use Retry above to reload the latest records.'
             : 'Reports and dashboard totals have been refreshed.'
@@ -196,6 +198,32 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
   return (
     <article className="card clay reports-card">
       <div className="report-heading">
+        <div className="report-tabs" role="group" aria-label="Report type">
+          {REPORT_TYPES.map(([value, label]) => (
+            <button
+              type="button"
+              key={value}
+              title={label}
+              aria-pressed={kind === value}
+              onClick={() => {
+                setKind(value)
+                setNotice('')
+              }}
+            >
+              {
+                {
+                  active: 'Active',
+                  expired: 'Expired',
+                  attendance: 'Attendance',
+                  payments: 'Payment',
+                  renewals: 'Renewal',
+                  maintenance: 'Maintenance'
+                }[value]
+              }
+              <span>{reports[value].rows.length}</span>
+            </button>
+          ))}
+        </div>
         <div className="report-heading-actions">
           <button
             className="btn ghost"
@@ -205,52 +233,27 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
           >
             Export CSV
           </button>
-          <button
-            className="btn"
-            type="button"
-            disabled={busy}
-            onClick={() =>
-              membership
-                ? onMemberAction('create')
-                : kind === 'renewals'
-                  ? open('renew')
-                  : open('edit')
-            }
-          >
-            +{' '}
-            {membership
-              ? 'Create account'
-              : kind === 'renewals'
-                ? 'Renew membership'
-                : 'Add record'}
-          </button>
+          {!membership && kind !== 'attendance' && (
+            <button
+              className="btn"
+              type="button"
+              disabled={busy}
+              onClick={() => (kind === 'renewals' ? open('renew') : open('edit'))}
+            >
+              + {kind === 'renewals' ? 'Renew membership' : 'Add record'}
+            </button>
+          )}
+          {!membership && role === 'admin' && (
+            <RecordDeleteButton
+              all
+              label={`Clear all ${title.toLowerCase()} records`}
+              disabled={busy || !report.records.length}
+              onClick={() =>
+                setDeletion({ all: true, category: kind, count: report.records.length })
+              }
+            />
+          )}
         </div>
-      </div>
-      <div className="report-tabs" role="group" aria-label="Report type">
-        {REPORT_TYPES.map(([value, label]) => (
-          <button
-            type="button"
-            key={value}
-            title={label}
-            aria-pressed={kind === value}
-            onClick={() => {
-              setKind(value)
-              setNotice('')
-            }}
-          >
-            {
-              {
-                active: 'Active',
-                expired: 'Expired',
-                attendance: 'Attendance',
-                payments: 'Payment',
-                renewals: 'Renewal',
-                maintenance: 'Maintenance'
-              }[value]
-            }
-            <span>{reports[value].rows.length}</span>
-          </button>
-        ))}
       </div>
       {notice && (
         <p className="report-notice" role="status">
@@ -296,15 +299,13 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
                 <Icon name="edit" size={18} />
               </button>
               {!membership && role === 'admin' && (
-                <button
-                  className="report-icon-button is-danger"
-                  type="button"
-                  title="Delete record"
-                  aria-label={`Delete ${row[0]} record`}
-                  onClick={() => open('delete', report.records[index], index)}
-                >
-                  <Icon name="trash" size={18} />
-                </button>
+                <RecordDeleteButton
+                  label={`Delete ${row[0]} record`}
+                  disabled={busy}
+                  onClick={() =>
+                    setDeletion({ category: kind, id: report.records[index].id, label: row[0] })
+                  }
+                />
               )}
               {membership && (
                 <button
@@ -331,18 +332,24 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
             : 'Changes update the source records, including dashboard totals.'}
         </small>
       </div>
+      {deletion && (
+        <RecordDeleteDialog
+          target={deletion}
+          onClose={() => setDeletion(null)}
+          onChanged={onChanged}
+          onNotice={setNotice}
+        />
+      )}
       {dialog && (
         <Dialog
           title={
-            dialog.mode === 'delete'
-              ? 'Delete this record?'
-              : dialog.mode === 'view'
-                ? title
-                : dialog.mode === 'renew'
-                  ? 'Renew a membership'
-                  : dialog.record
-                    ? 'Edit record'
-                    : 'Add a record'
+            dialog.mode === 'view'
+              ? title
+              : dialog.mode === 'renew'
+                ? 'Renew a membership'
+                : dialog.record
+                  ? 'Edit record'
+                  : 'Add a record'
           }
           busy={busy}
           onClose={() => setDialog(null)}
@@ -368,33 +375,6 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
                 </button>
               </div>
             </>
-          ) : dialog.mode === 'delete' ? (
-            <form onSubmit={save}>
-              <p className="modal-copy">
-                Delete the{' '}
-                {collection === 'payments'
-                  ? 'payment'
-                  : collection === 'attendance'
-                    ? 'attendance entry'
-                    : 'maintenance note'}{' '}
-                for <strong>{report.rows[dialog.index]?.[0]}</strong>? This cannot be undone.
-                {collection === 'payments' &&
-                  ' Membership dates stay unchanged; recorded revenue will decrease.'}
-              </p>
-              <div className="ma">
-                <button
-                  className="btn ghost"
-                  type="button"
-                  disabled={busy}
-                  onClick={() => setDialog(null)}
-                >
-                  Keep record
-                </button>
-                <button className="btn danger" type="submit" disabled={busy}>
-                  {busy ? 'Deleting…' : 'Delete record'}
-                </button>
-              </div>
-            </form>
           ) : dialog.mode === 'renew' ? (
             <form
               className="mf"

@@ -12,6 +12,10 @@ import FaceCapture from '../components/FaceCapture'
 import AdminReports from '../components/AdminReports'
 import ActivityChart from '../components/ActivityChart'
 import Dialog from '../components/Dialog'
+import RecordDeleteDialog, { RecordDeleteButton } from '../components/RecordDeleteControls'
+import EquipmentCategorySelect from '../components/EquipmentCategorySelect'
+import AdminNotifications from '../components/AdminNotifications'
+import AccountDeleteDialog from '../components/AccountDeleteDialog'
 import { membershipState, reminderMembers, inspectionDue } from '../utils/membership'
 import './AdminStaffPage.css'
 
@@ -151,28 +155,45 @@ export default function AdminStaffPage({ user, onSignOut }) {
     payments: [],
     equipment: [],
     maintenance: [],
+    notificationState: { notifications: [], email: {}, canDismiss: false },
     settings: { gym: 'FitPulse Gym', remind: 7, emailOn: true }
   })
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [modal, setModal] = useState(null)
+  const [deletion, setDeletion] = useState(null)
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState(false)
   const actionLock = useRef(false)
+  const canDeleteHistory = currentUser?.role === 'admin'
   const load = useCallback(
     async (signal) => {
       try {
-        const [members, membershipPlans, attendance, payments, equipment, settings, profile] =
-          await Promise.all([
-            apiRequest('/members', { token, signal }),
-            apiRequest('/admin/membership-plans', { token, signal }),
-            apiRequest('/attendance', { token, signal }),
-            apiRequest('/payments', { token, signal }),
-            apiRequest('/admin/equipment', { token, signal }),
-            apiRequest('/admin/settings', { token, signal }),
-            apiRequest('/me', { token, signal })
-          ])
+        const [
+          members,
+          membershipPlans,
+          attendance,
+          payments,
+          equipment,
+          settings,
+          profile,
+          notifications
+        ] = await Promise.all([
+          apiRequest('/members', { token, signal }),
+          apiRequest('/admin/membership-plans', { token, signal }),
+          apiRequest('/attendance', { token, signal }),
+          apiRequest('/payments', { token, signal }),
+          apiRequest('/admin/equipment', { token, signal }),
+          apiRequest('/admin/settings', { token, signal }),
+          apiRequest('/me', { token, signal }),
+          apiRequest('/admin/notifications', { token, signal }).catch((cause) => ({
+            notifications: [],
+            email: {},
+            canDismiss: false,
+            issue: cause.message
+          }))
+        ])
         if (signal?.aborted) return
         setCurrentUser(profile.user)
         setData({
@@ -181,7 +202,8 @@ export default function AdminStaffPage({ user, onSignOut }) {
           ...attendance,
           ...payments,
           ...equipment,
-          ...settings
+          ...settings,
+          notificationState: notifications
         })
         setError('')
         return true
@@ -208,6 +230,27 @@ export default function AdminStaffPage({ user, onSignOut }) {
       controller.abort()
     }
   }, [section, load])
+  useEffect(() => {
+    if (section !== 'Notifications') return
+    const controller = new AbortController()
+    const refresh = async () => {
+      try {
+        const notificationState = await apiRequest('/admin/notifications', {
+          token,
+          signal: controller.signal
+        })
+        if (!controller.signal.aborted) setData((previous) => ({ ...previous, notificationState }))
+      } catch (cause) {
+        if (!controller.signal.aborted) setError(cause.message)
+      }
+    }
+    void refresh()
+    const timer = window.setInterval(refresh, 15000)
+    return () => {
+      controller.abort()
+      window.clearInterval(timer)
+    }
+  }, [section, token])
   const act = async (path, options, message, onSuccess) => {
     if (actionLock.current) return false
     actionLock.current = true
@@ -216,7 +259,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
     setNotice('')
     try {
       const result = await apiRequest(path, { token, ...options })
-      setNotice(message)
+      setNotice(result.message || message)
       setModal(null)
       await load()
       onSuccess?.(result)
@@ -236,7 +279,6 @@ export default function AdminStaffPage({ user, onSignOut }) {
   const active = members.filter((member) => membershipState(member).status === 'active').length
   const expiredMembers = members.filter((member) => membershipState(member).status === 'expired')
   const reminderList = reminderMembers(members, data.settings.remind)
-  const equipmentDue = data.equipment.filter((item) => inspectionDue(item))
   const renewals = data.payments.filter((payment) => payment.type === 'Renewal')
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
   const revenue = data.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
@@ -489,55 +531,65 @@ export default function AdminStaffPage({ user, onSignOut }) {
                   >
                     <Icon name="edit" size={18} />
                   </button>
+                  <button
+                    className="report-icon-button"
+                    type="button"
+                    title={`Send sign-in link to ${member.name}`}
+                    aria-label={`Send sign-in link to ${member.name}`}
+                    disabled={pending || member.accountStatus !== 'active'}
+                    onClick={() =>
+                      act(
+                        `/admin/members/${member.id}/send-access`,
+                        { method: 'POST' },
+                        'Sign-in link accepted by the mail server.'
+                      )
+                    }
+                  >
+                    <Icon name="mail" size={18} />
+                  </button>
+                  {currentUser?.role === 'admin' && (
+                    <RecordDeleteButton
+                      label={`Delete account for ${member.name}`}
+                      disabled={pending}
+                      onClick={() => setModal({ kind: 'delete-account', member })}
+                    />
+                  )}
                 </td>
               </tr>
             ))}
         </DataTable>
       </article>
     ),
-    Memberships: (
-      <article className="card clay">
-        <h2>Memberships</h2>
-        <DataTable headings={['ID', 'Member', 'Plan', 'Start', 'Expiry', 'Status', 'Action']}>
-          {members.map((member) => (
-            <tr key={member.id}>
-              <td className="record-id">{member.memberCode || member.id}</td>
-              <td>
-                <div className="member-table-person">
-                  <ProfileAvatar user={member} memberId={member.id} />
-                  <span>{member.name}</span>
-                </div>
-              </td>
-              <td>{member.plan}</td>
-              <td>{date(member.membershipStart || member.joined)}</td>
-              <td>{date(member.membershipEnd)}</td>
-              <td>
-                <Pill status={memberBadge(member)} />
-              </td>
-              <td>
-                <button className="btn sm" onClick={() => setModal({ kind: 'renew', member })}>
-                  Renew
-                </button>
-              </td>
-            </tr>
-          ))}
-        </DataTable>
-      </article>
-    ),
     Equipment: (
       <>
         <article className="card clay">
-          <div className="bar">
+          <div className="record-section-heading">
             <h2>Equipment Monitoring</h2>
             <button className="btn" onClick={() => setModal({ kind: 'equipment' })}>
               Add Equipment
             </button>
           </div>
-          <DataTable headings={['Name', 'Category', 'Condition', 'Last inspection', 'Action']}>
+          <DataTable headings={['Name', 'Category', 'Condition', 'Last inspection', 'Actions']}>
             {data.equipment.map((item) => (
               <tr key={item.id}>
                 <td>{item.name}</td>
-                <td>{item.category}</td>
+                <td>
+                  <EquipmentCategorySelect
+                    value={item.category || ''}
+                    aria-label={`Category for ${item.name}`}
+                    disabled={loading || pending}
+                    onChange={(event) =>
+                      act(
+                        `/admin/equipment/${item.id}`,
+                        {
+                          method: 'PATCH',
+                          body: JSON.stringify({ category: event.target.value })
+                        },
+                        'Category updated.'
+                      )
+                    }
+                  />
+                </td>
                 <td>
                   <select
                     className="clay-in"
@@ -562,9 +614,11 @@ export default function AdminStaffPage({ user, onSignOut }) {
                   {date(item.lastInspected)}
                   {inspectionDue(item) && <small className="table-secondary">Inspection due</small>}
                 </td>
-                <td>
+                <td className="acts">
                   <button
                     className="btn sm"
+                    type="button"
+                    disabled={loading || pending}
                     onClick={() =>
                       act(
                         `/admin/equipment/${item.id}`,
@@ -578,6 +632,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
                   <button
                     className="btn sm ghost"
                     type="button"
+                    disabled={loading || pending}
                     onClick={() => setModal({ kind: 'maintenance', item })}
                   >
                     Log repair
@@ -588,13 +643,42 @@ export default function AdminStaffPage({ user, onSignOut }) {
           </DataTable>
         </article>
         <article className="card clay">
-          <h2>Maintenance & Repair Log</h2>
-          <DataTable headings={['Equipment', 'Note', 'Date']}>
+          <div className="record-section-heading">
+            <h2>Maintenance & Repair Log</h2>
+            {canDeleteHistory && (
+              <RecordDeleteButton
+                all
+                label="Clear all maintenance records"
+                disabled={loading || pending || !data.maintenance.length}
+                onClick={() =>
+                  setDeletion({
+                    all: true,
+                    category: 'maintenance',
+                    count: data.maintenance.length
+                  })
+                }
+              />
+            )}
+          </div>
+          <DataTable
+            headings={['Equipment', 'Note', 'Date', ...(canDeleteHistory ? ['Actions'] : [])]}
+          >
             {data.maintenance.map((item) => (
               <tr key={item.id}>
                 <td>{item.item}</td>
                 <td>{item.note}</td>
                 <td>{date(item.date)}</td>
+                {canDeleteHistory && (
+                  <td className="acts">
+                    <RecordDeleteButton
+                      label={`Delete maintenance record for ${item.item}`}
+                      disabled={loading || pending}
+                      onClick={() =>
+                        setDeletion({ category: 'maintenance', id: item.id, label: item.item })
+                      }
+                    />
+                  </td>
+                )}
               </tr>
             ))}
           </DataTable>
@@ -603,48 +687,30 @@ export default function AdminStaffPage({ user, onSignOut }) {
     ),
     Attendance: (
       <article className="card clay">
-        <div className="illustrated-heading">
+        <div className="record-section-heading">
           <div>
             <h2>Entrance check-ins</h2>
-            <p>
-              ESP32-CAM scans appear here automatically. Staff can also record verified entries.
-            </p>
+            <p>ESP32-CAM scans appear here automatically when members scan their QR passes.</p>
           </div>
-          <FitnessSculpture variant="scanner" />
+          {canDeleteHistory && (
+            <RecordDeleteButton
+              all
+              label="Clear all attendance records"
+              disabled={loading || pending || !data.attendance.length}
+              onClick={() =>
+                setDeletion({ all: true, category: 'attendance', count: data.attendance.length })
+              }
+            />
+          )}
         </div>
-        <form
-          className="bar"
-          onSubmit={(event) => {
-            event.preventDefault()
-            const id = new FormData(event.currentTarget).get('memberId')
-            act(
-              '/admin/attendance',
-              { method: 'POST', body: JSON.stringify({ memberId: id }) },
-              'Check-in recorded.'
-            )
-          }}
+        <DataTable
+          headings={[
+            'Member',
+            'Date & Time',
+            'Recorded by',
+            ...(canDeleteHistory ? ['Actions'] : [])
+          ]}
         >
-          <select className="clay-in" name="memberId" required disabled={loading || pending}>
-            {members
-              .filter((member) => membershipState(member).status === 'active')
-              .map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name}
-                </option>
-              ))}
-          </select>
-          <button
-            className="btn"
-            disabled={
-              pending ||
-              loading ||
-              !members.some((member) => membershipState(member).status === 'active')
-            }
-          >
-            {pending ? 'Recording...' : 'Record staff check-in'}
-          </button>
-        </form>
-        <DataTable headings={['Member', 'Date & Time', 'Recorded by']}>
           {data.attendance.map((item) => (
             <tr key={item.id}>
               <td>
@@ -658,6 +724,17 @@ export default function AdminStaffPage({ user, onSignOut }) {
               </td>
               <td>{dateTime(item.date)}</td>
               <td>{item.source || 'Staff'}</td>
+              {canDeleteHistory && (
+                <td className="acts">
+                  <RecordDeleteButton
+                    label={`Delete attendance record for ${item.memberName}`}
+                    disabled={loading || pending}
+                    onClick={() =>
+                      setDeletion({ category: 'attendance', id: item.id, label: item.memberName })
+                    }
+                  />
+                </td>
+              )}
             </tr>
           ))}
         </DataTable>
@@ -665,9 +742,9 @@ export default function AdminStaffPage({ user, onSignOut }) {
     ),
     Payments: (
       <article className="card clay">
-        <div className="bar">
+        <div className="record-section-heading">
           <h2>Payment History</h2>
-          <div className="payment-actions">
+          <div className="record-section-actions">
             <button
               className="btn ghost"
               type="button"
@@ -679,9 +756,29 @@ export default function AdminStaffPage({ user, onSignOut }) {
             <button className="btn" onClick={() => setModal({ kind: 'payment' })}>
               Record Payment
             </button>
+            {canDeleteHistory && (
+              <RecordDeleteButton
+                all
+                label="Clear all payment records"
+                disabled={loading || pending || !data.payments.length}
+                onClick={() =>
+                  setDeletion({ all: true, category: 'payments', count: data.payments.length })
+                }
+              />
+            )}
           </div>
         </div>
-        <DataTable headings={['Member', 'Plan', 'Payment', 'Amount', 'Method', 'Date']}>
+        <DataTable
+          headings={[
+            'Member',
+            'Plan',
+            'Payment',
+            'Amount',
+            'Method',
+            'Date',
+            ...(canDeleteHistory ? ['Actions'] : [])
+          ]}
+        >
           {data.payments.map((item) => (
             <tr key={item.id}>
               <td>{item.memberName}</td>
@@ -692,89 +789,48 @@ export default function AdminStaffPage({ user, onSignOut }) {
                 <Pill status={item.method} />
               </td>
               <td>{date(item.date)}</td>
+              {canDeleteHistory && (
+                <td className="acts">
+                  <RecordDeleteButton
+                    label={`Delete payment record for ${item.memberName}`}
+                    disabled={loading || pending}
+                    onClick={() =>
+                      setDeletion({ category: 'payments', id: item.id, label: item.memberName })
+                    }
+                  />
+                </td>
+              )}
             </tr>
           ))}
         </DataTable>
       </article>
     ),
     Notifications: (
-      <section className="grid g2">
-        <article className="card clay">
-          <div className="admin-card-heading">
-            <h2>Membership reminders</h2>
-            <Icon name="bell" />
-          </div>
-          <p className="form-help">
-            Expired memberships and those ending within {data.settings.remind} days.
-          </p>
-          {reminderList.length ? (
-            <ul className="admin-list">
-              {reminderList.map((member) => (
-                <li key={member.id}>
-                  <div>
-                    <strong>{member.name}</strong>
-                    <small>{member.email}</small>
-                    <small>
-                      {membershipState(member).label} &middot; expires {date(member.membershipEnd)}
-                    </small>
-                  </div>
-                  <button
-                    className="btn"
-                    type="button"
-                    disabled={pending || !data.settings.emailOn || !data.emailConfigured}
-                    onClick={() =>
-                      act(
-                        `/admin/members/${member.id}/expiry-email`,
-                        { method: 'POST' },
-                        `Reminder email sent to ${member.name}.`
-                      )
-                    }
-                  >
-                    Send email
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="admin-empty">No members are due for a reminder.</p>
-          )}
-          {!data.settings.emailOn && (
-            <p className="form-help">Email reminders are disabled in Gym Preferences.</p>
-          )}
-          {!data.emailConfigured && (
-            <p className="form-help">Email delivery is unavailable. Contact your administrator.</p>
-          )}
-        </article>
-        <article className="card clay">
-          <div className="admin-card-heading">
-            <h2>Equipment inspection reminders</h2>
-            <Icon name="dumbbell" />
-          </div>
-          <p className="form-help">Equipment is due 30 days after its last inspection.</p>
-          {equipmentDue.length ? (
-            <ul className="admin-list">
-              {equipmentDue.map((item) => (
-                <li key={item.id}>
-                  <div>
-                    <strong>{item.name}</strong>
-                    <small>Last inspected: {date(item.lastInspected)}</small>
-                    <small>{item.condition}</small>
-                  </div>
-                  <button
-                    className="btn ghost"
-                    type="button"
-                    onClick={() => setSection('Equipment')}
-                  >
-                    Review
-                  </button>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="admin-empty">No equipment is currently due for inspection.</p>
-          )}
-        </article>
-      </section>
+      <AdminNotifications
+        state={data.notificationState}
+        canManage={canDeleteHistory}
+        busy={pending || loading}
+        onDelete={setDeletion}
+        onCheck={() =>
+          act(
+            '/admin/notifications/check-email',
+            { method: 'POST' },
+            'Reminder check completed.',
+            (result) =>
+              setNotice(
+                `${result.sent} reminder email(s) accepted by SMTP; ${result.failed} failed. Check each delivery status below.`
+              )
+          )
+        }
+        onVerify={() =>
+          act(
+            '/admin/notifications/check-smtp',
+            { method: 'POST' },
+            'SMTP connection and authentication verified. No test email was sent.'
+          )
+        }
+        onReview={() => setSection('Equipment')}
+      />
     ),
     Reports: (
       <AdminReports
@@ -835,9 +891,12 @@ export default function AdminStaffPage({ user, onSignOut }) {
               </select>
             </label>
             <label className="set">
-              Send email reminders
+              Send automatic email reminders
               <input name="emailOn" type="checkbox" defaultChecked={data.settings.emailOn} />
             </label>
+            <p className="form-help">
+              Members receive one email within the selected reminder period and one after expiry.
+            </p>
             <button className="btn" disabled={pending || loading}>
               {pending ? 'Saving...' : 'Save preferences'}
             </button>
@@ -854,7 +913,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
       onSignOut={onSignOut}
       activeSection={section}
       onSectionChange={setSection}
-      notificationCount={loading ? 0 : reminderList.length + equipmentDue.length}
+      notificationCount={loading ? 0 : data.notificationState.notifications.length}
       loading={loading}
     >
       {loading && (
@@ -885,6 +944,27 @@ export default function AdminStaffPage({ user, onSignOut }) {
         </div>
       )}
       {content}
+      {modal?.kind === 'delete-account' && (
+        <AccountDeleteDialog
+          account={modal.member}
+          onClose={() => setModal(null)}
+          onDeleted={async () => {
+            setModal(null)
+            const refreshed = await load()
+            setNotice(
+              `Member account deleted. ${refreshed === false ? 'Refresh failed. Reload to see the latest records.' : 'Records refreshed.'}`
+            )
+          }}
+        />
+      )}
+      {deletion && (
+        <RecordDeleteDialog
+          target={deletion}
+          onClose={() => setDeletion(null)}
+          onChanged={load}
+          onNotice={setNotice}
+        />
+      )}
       {modal?.kind === 'view' && (
         <Modal
           busy={pending}
@@ -1235,7 +1315,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
             </label>
             <label className="field">
               Category
-              <input className="clay-in" name="category" required />
+              <EquipmentCategorySelect />
             </label>
             <div className="ma">
               <button className="btn">Add</button>

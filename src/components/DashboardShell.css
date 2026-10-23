@@ -78,7 +78,7 @@
     linear-gradient(90deg, #0a1f2ff2, #0a1f2fb8 45%, #0a1f2f14), var(--dashboard-night-image);
 }
 @media (max-width: 560px) {
-  .app .dashboard-overview {
+  .app:not(.admin-app) .dashboard-overview {
     background-position: 60% center;
   }
 }

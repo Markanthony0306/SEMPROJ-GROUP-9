@@ -11,6 +11,7 @@ import ActivityChart from '../components/ActivityChart'
 import { downloadPayments } from '../utils/paymentExport'
 import { getMemberQr } from '../utils/memberQr'
 import PasswordChangeForm from '../components/PasswordChangeForm'
+import AccountDeleteDialog from '../components/AccountDeleteDialog'
 import { membershipState } from '../utils/membership'
 
 const validDate = (value) => value && !Number.isNaN(new Date(value).getTime())
@@ -63,6 +64,7 @@ export default function UserPage({ user, onSignOut }) {
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(true)
   const [actionPending, setActionPending] = useState(false)
+  const [deletingAccount, setDeletingAccount] = useState(false)
   const load = useCallback(
     async (signal) => {
       try {
@@ -185,6 +187,18 @@ export default function UserPage({ user, onSignOut }) {
       <article className="card clay">
         <h2>Change Password</h2>
         <PasswordChangeForm />
+      </article>
+      <article className="card clay">
+        <h2>Delete account</h2>
+        <p className="form-help">
+          Permanently remove your login and all your gym records. This cannot be undone.
+        </p>
+        <button
+          className="btn danger" type="button" disabled={loading || actionPending}
+          onClick={() => setDeletingAccount(true)} aria-haspopup="dialog"
+        >
+          Delete my account
+        </button>
       </article>
     </section>
   )
@@ -408,6 +422,18 @@ export default function UserPage({ user, onSignOut }) {
         </div>
       )}
       {views[section]}
+      {deletingAccount && (
+        <AccountDeleteDialog
+          account={currentUser}
+          self
+          onClose={() => setDeletingAccount(false)}
+          onDeleted={() => {
+            localStorage.removeItem('fp_email')
+            localStorage.removeItem(`fitpulse-member-qr:${currentUser.id}`)
+            onSignOut()
+          }}
+        />
+      )}
     </DashboardShell>
   )
 }

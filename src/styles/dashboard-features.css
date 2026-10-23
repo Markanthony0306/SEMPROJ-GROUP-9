@@ -439,37 +439,37 @@
   outline-offset: 3px;
 }
 @media (max-width: 760px) {
-  .app .data-table table,
-  .app .data-table tbody,
-  .app .data-table tr {
+  .app:not(.admin-app) .data-table table,
+  .app:not(.admin-app) .data-table tbody,
+  .app:not(.admin-app) .data-table tr {
     display: block;
   }
-  .app .data-table thead {
+  .app:not(.admin-app) .data-table thead {
     position: absolute;
     width: 1px;
     height: 1px;
     overflow: hidden;
     clip-path: inset(50%);
   }
-  .app .data-table tbody tr {
+  .app:not(.admin-app) .data-table tbody tr {
     padding: 12px;
     border-bottom: 1px solid var(--id);
     border-radius: 12px;
   }
-  .app .data-table td {
+  .app:not(.admin-app) .data-table td {
     display: grid;
     grid-template-columns: minmax(0, 0.7fr) minmax(0, 1.3fr);
     gap: 12px;
     padding: 8px 0;
     border: 0;
   }
-  .app .data-table td[data-label]::before {
+  .app:not(.admin-app) .data-table td[data-label]::before {
     content: attr(data-label);
     color: var(--muted);
     font-size: 12px;
     font-weight: 700;
   }
-  .app .data-table td.table-empty {
+  .app:not(.admin-app) .data-table td.table-empty {
     display: block;
   }
 }

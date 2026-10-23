@@ -258,7 +258,7 @@ try {
 
   const createEquipment = await request('POST', '/admin/equipment', {
     token: adminToken,
-    body: { name: 'Smoke Treadmill', category: 'Treadmill' }
+    body: { name: 'Smoke Treadmill', category: 'Cardio Zone' }
   })
   check('staff can add equipment', createEquipment.status === 201)
   check(
@@ -407,7 +407,7 @@ try {
     (await scan(scanBody(freshQr.payload.qrToken))).payload.code === 'MEMBERSHIP_EXPIRED'
   )
   check(
-    'staff manual check-in also rejects expired memberships',
+    'manual check-in remains disabled for expired memberships',
     (
       await request('POST', '/admin/attendance', {
         token: adminToken,
@@ -529,8 +529,8 @@ try {
     body: { memberId: managedMember.id }
   })
   check(
-    'staff can record attendance',
-    addAttendance.status === 201 && addAttendance.payload.attendance?.memberId === managedMember.id
+    'manual attendance creation is disabled',
+    addAttendance.status === 403 && addAttendance.payload.message?.includes('scanner')
   )
 
   const addPayment = await request('POST', '/admin/payments', {

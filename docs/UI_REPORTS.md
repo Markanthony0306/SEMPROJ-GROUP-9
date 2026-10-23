@@ -35,8 +35,8 @@ potentially inconsistent copy of the same data.
 
 | Category         | Actions                                                 | Source                     |
 | ---------------- | ------------------------------------------------------- | -------------------------- |
-| Active / expired | View, create account, edit member details, renew        | Users and subscriptions    |
-| Attendance       | Create, view, edit, delete                              | `attendance_logs`          |
+| Active / expired | View, edit member details, renew                        | Users and subscriptions    |
+| Attendance       | View, correct existing entries, delete                 | `attendance_logs`          |
 | Payment          | Create, view, edit, delete                              | `payments`                 |
 | Renewal          | Renew membership; view, edit, delete its payment record | Subscriptions and payments |
 | Maintenance      | Create, view, edit, delete maintenance notes            | `gym_maintenance`          |
@@ -45,10 +45,17 @@ Membership reports use the existing member and renewal workflows. They do not
 delete member accounts. Deleting a payment does not cancel its subscription;
 deleting a maintenance note does not delete the equipment.
 
-`server/routes/reports.js` accepts GET/POST on
-`/api/admin/reports/{payments|attendance|maintenance}` and PATCH/DELETE on
-`/api/admin/reports/{kind}/{uuid}`. It uses the existing authentication and role
-middleware. Admins and staff can read/create/update; only admins can delete.
+New attendance is recorded through the authenticated entrance scanner. The manual
+member selector and staff check-in button have been removed from Attendance, and
+Reports has no attendance creation action. The legacy manual check-in endpoints
+and POST `/api/admin/reports/attendance` return 403, including for admins and staff.
+Existing attendance history is preserved.
+
+`server/routes/reports.js` accepts GET on
+`/api/admin/reports/{payments|attendance|maintenance}`, POST for payments and
+maintenance, and PATCH/DELETE on `/api/admin/reports/{kind}/{uuid}`. It uses the
+existing authentication and role middleware. Admins and staff can read/update;
+only admins can delete. Payment and maintenance creation remain available.
 `server/services/reportRecords.js` validates amounts, dates, members, methods, and
 equipment. The browser cannot choose arbitrary database tables or reassign the
 member/subscription of an existing payment. Editing a scanner entry preserves its

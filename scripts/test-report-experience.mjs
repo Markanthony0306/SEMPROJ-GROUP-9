@@ -82,11 +82,59 @@ const project = {
   gym_maintenance: []
 }
 let failNextWrite = false
+let missingClearMigration = false
+const clearCalls = []
 const supabase = createClient('https://isolated-project.test', 'fixture-key', {
   auth: { persistSession: false },
   global: {
     fetch: async (input, options = {}) => {
       const url = new URL(String(input))
+      if (url.pathname === '/rest/v1/rpc/clear_fitpulse_report_records') {
+        assert.equal(options.method, 'POST')
+        const { p_category: category } = JSON.parse(options.body)
+        clearCalls.push(category)
+        if (missingClearMigration)
+          return new Response(JSON.stringify({ code: 'PGRST202', message: 'Missing migration' }), {
+            status: 404,
+            headers: { 'Content-Type': 'application/json' }
+          })
+        if (failNextWrite) {
+          failNextWrite = false
+          return new Response(
+            JSON.stringify({ code: 'fixture_failure', message: 'Synthetic database failure' }),
+            {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' }
+            }
+          )
+        }
+        const table = {
+          attendance: 'attendance_logs',
+          payments: 'payments',
+          renewals: 'payments',
+          maintenance: 'gym_maintenance'
+        }[category]
+        assert.ok(table, 'Only supported history categories may be cleared.')
+        const isRenewal = (payment) => {
+          const subscription = project.subscriptions.find(
+            (row) => row.subscription_id === payment.subscription_id
+          )
+          return (
+            subscription &&
+            project.subscriptions.some(
+              (earlier) =>
+                earlier.user_id === subscription.user_id &&
+                Date.parse(earlier.created_at || earlier.start_date) <
+                  Date.parse(subscription.created_at || subscription.start_date)
+            )
+          )
+        }
+        const deleted = project[table].filter((row) => category !== 'renewals' || isRenewal(row))
+        project[table] = project[table].filter((row) => !deleted.includes(row))
+        return new Response(JSON.stringify(deleted.length), {
+          headers: { 'Content-Type': 'application/json' }
+        })
+      }
       const table = url.pathname.split('/').pop()
       assert.ok(Object.hasOwn(project, table), `Unexpected table: ${table}`)
       const method = options.method || 'GET'
@@ -244,7 +292,7 @@ try {
     assert.equal(project.payments.length, 0)
   })
 
-  await test('Attendance CRUD preserves scanner provenance and hides scanner credentials', async () => {
+  await test('Attendance reports allow corrections but reject manual creation', async () => {
     const read = await request('attendance')
     assert.equal(read.body.records[0].qrTokenId, undefined)
     assert.equal(read.body.records[0].scannerRequestId, undefined)
@@ -255,16 +303,21 @@ try {
     )
     assert.equal(project.attendance_logs[0].entry_type, 'ESP32-CAM')
     assert.equal(project.attendance_logs[0].request_id, 'private-request')
-    const created = await request('attendance', {
-      method: 'POST',
-      body: { memberId, date: iso(-1) }
-    })
-    assert.equal(created.status, 201)
-    assert.equal((await request('attendance')).body.records.length, 2)
-    assert.equal((await request(`attendance/${created.body.id}`, { method: 'DELETE' })).status, 200)
-    assert.equal(
-      (await request('attendance', { method: 'POST', body: { memberId, date: iso(-90) } })).status,
-      400
+    const before = structuredClone(project.attendance_logs)
+    for (const role of ['admin', 'staff']) {
+      const result = await request('attendance', {
+        method: 'POST',
+        role,
+        body: { memberId, date: iso(-1) }
+      })
+      assert.equal(result.status, 403)
+      assert.match(result.body.message, /scanner/)
+    }
+    assert.deepEqual(project.attendance_logs, before)
+    const database = await loadDatabase(supabase, ['accounts', 'attendance'])
+    assert.throws(
+      () => reportRecordInput('attendance', { memberId, date: iso(-1) }, database),
+      /scanner/
     )
   })
 
@@ -306,6 +359,142 @@ try {
     })
     assert.equal(result.status, 500)
     assert.equal(project.payments.length, 0)
+  })
+
+  await test('Bulk clearing requires an admin, an allowed category, and explicit confirmation', async () => {
+    const callsBefore = clearCalls.length
+    for (const [role, status] of [
+      [null, 401],
+      ['member', 403],
+      ['staff', 403]
+    ]) {
+      assert.equal(
+        (
+          await request('payments', {
+            method: 'DELETE',
+            role,
+            body: { category: 'payments', confirmation: 'CLEAR' }
+          })
+        ).status,
+        status
+      )
+    }
+    for (const body of [
+      undefined,
+      [],
+      {},
+      { category: 'payments' },
+      { category: 'payments', confirmation: 'clear' },
+      { category: 'attendance', confirmation: 'CLEAR' },
+      { category: 'users', confirmation: 'CLEAR' }
+    ]) {
+      assert.equal((await request('payments', { method: 'DELETE', body })).status, 400)
+    }
+    for (const kind of ['active', 'expired', 'users', 'subscriptions', '__proto__']) {
+      assert.equal(
+        (
+          await request(kind, {
+            method: 'DELETE',
+            body: { category: kind, confirmation: 'CLEAR' }
+          })
+        ).status,
+        404
+      )
+    }
+    assert.equal(clearCalls.length, callsBefore)
+  })
+
+  await test('Bulk clear affects only the selected category and preserves accounts, plans and equipment', async () => {
+    const preserved = structuredClone({
+      users: project.users,
+      subscriptions: project.subscriptions,
+      equipment: project.gym_equipment
+    })
+    project.payments.push(
+      {
+        payment_id: randomUUID(),
+        subscription_id: originalSubscription,
+        method_id: 1,
+        amount_paid: 800,
+        created_at: iso(-50)
+      },
+      {
+        payment_id: randomUUID(),
+        subscription_id: renewalSubscription,
+        method_id: 1,
+        amount_paid: 900,
+        created_at: iso(-1)
+      }
+    )
+    project.gym_maintenance.push({
+      id: randomUUID(),
+      equipment_id: equipmentId,
+      item: 'Treadmill',
+      note: 'Fixture inspection',
+      date: iso(-1)
+    })
+    const attendanceCount = project.attendance_logs.length
+    const clear = (kind, category = kind) =>
+      request(kind, {
+        method: 'DELETE',
+        body: { category, confirmation: 'CLEAR' }
+      })
+    const renewals = await clear('payments', 'renewals')
+    assert.equal(renewals.status, 200)
+    assert.equal(renewals.body.deleted, 1)
+    assert.equal(renewals.body.category, 'renewals')
+    assert.equal(project.payments.length, 1)
+    assert.equal(project.payments[0].subscription_id, originalSubscription)
+    assert.equal(project.attendance_logs.length, attendanceCount)
+    assert.equal(project.gym_maintenance.length, 1)
+
+    const payments = await clear('payments')
+    assert.equal(payments.body.deleted, 1)
+    assert.equal((await request('payments')).body.records.length, 0)
+    assert.equal(project.attendance_logs.length, attendanceCount)
+    assert.equal(project.gym_maintenance.length, 1)
+
+    assert.equal((await clear('attendance')).body.deleted, attendanceCount)
+    assert.equal(project.attendance_logs.length, 0)
+    assert.equal(project.gym_maintenance.length, 1)
+    assert.equal((await clear('maintenance')).body.deleted, 1)
+    assert.equal(project.gym_maintenance.length, 0)
+    assert.equal((await clear('maintenance')).body.deleted, 0)
+    assert.deepEqual(
+      {
+        users: project.users,
+        subscriptions: project.subscriptions,
+        equipment: project.gym_equipment
+      },
+      preserved
+    )
+  })
+
+  await test('A failed bulk operation or missing migration cannot clear fixture records', async () => {
+    project.payments.push({
+      payment_id: randomUUID(),
+      subscription_id: originalSubscription,
+      amount_paid: 800,
+      method_id: 1,
+      created_at: iso(-50)
+    })
+    const before = structuredClone(project.payments)
+    failNextWrite = true
+    const failed = await request('payments', {
+      method: 'DELETE',
+      body: { category: 'payments', confirmation: 'CLEAR' }
+    })
+    assert.equal(failed.status, 503)
+    assert.deepEqual(project.payments, before)
+    missingClearMigration = true
+    const missing = await request('payments', {
+      method: 'DELETE',
+      body: { category: 'payments', confirmation: 'CLEAR' }
+    })
+    missingClearMigration = false
+    assert.equal(missing.status, 503)
+    assert.match(missing.body.message, /migration/)
+    assert.deepEqual(project.payments, before)
   })
 
   await test('Charts use Manila calendar boundaries, ignore future/invalid data, and sum real amounts', () => {
@@ -397,6 +586,7 @@ try {
       mailer: {
         sendMail: async (email) => {
           delivered = email
+          return { accepted: [email.to], rejected: [], messageId: 'isolated-recovery-fixture' }
         }
       }
     })

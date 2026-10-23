@@ -8,6 +8,7 @@ import { once } from 'node:events'
 import { test } from 'node:test'
 import jwt from 'jsonwebtoken'
 import nodemailer from 'nodemailer'
+import { EQUIPMENT_CATEGORIES } from '../shared/equipmentCategories.js'
 
 const providerOrigin = 'https://login-fixture.test'
 const now = Date.now()
@@ -24,6 +25,7 @@ const credentials = new Map()
 const tokens = new Map()
 const recoveryLinks = new Map()
 const sentEmails = []
+let emailFailure = null
 const project = {
   roles,
   users: [],
@@ -35,6 +37,7 @@ const project = {
   payments: [],
   attendance_logs: [],
   face_enrollments: [],
+  membership_reminders: [],
   gym_equipment: [],
   gym_maintenance: [],
   gym_settings: []
@@ -131,8 +134,8 @@ Object.assign(process.env, {
   SMTP_FROM: 'FitPulse <no-reply@fixture.test>',
   CLIENT_URL: 'https://app.fixture.test',
   ADMIN_PASSWORD: 'Fixture-before-reset-123!',
-  SCANNER_API_KEY: '',
-  SCANNER_DEVICE_ID: ''
+  SCANNER_API_KEY: 'scanner-only-fixture-key-at-least-32-characters',
+  SCANNER_DEVICE_ID: 'scanner-only-fixture-device'
 })
 fs.readFileSync = function (file, ...options) {
   if (path.resolve(String(file)) === path.resolve('.env')) return ''
@@ -140,8 +143,14 @@ fs.readFileSync = function (file, ...options) {
 }
 nodemailer.createTransport = () => ({
   sendMail: async (mail) => {
+    if (mail.subject.startsWith('Welcome to FitPulse')) {
+      const profile = project.users.find((item) => item.email === mail.to)
+      assert.ok(project.subscriptions.some((item) => item.user_id === profile?.id),
+        'Welcome emails must be sent only after membership persistence.')
+    }
+    if (emailFailure) throw emailFailure
     sentEmails.push(mail)
-    return { messageId: 'fixture' }
+    return { messageId: 'fixture', accepted: [mail.to], rejected: [] }
   }
 })
 
@@ -159,6 +168,14 @@ globalThis.fetch = async (input, options = {}) => {
     if (!saved || body.password !== saved.password) return providerError('invalid_credentials')
     if (!saved.user.email_confirmed_at) return providerError('email_not_confirmed')
     return response(session(saved.user))
+  }
+  if (url.pathname === '/auth/v1/admin/users' && method === 'POST') {
+    const user = {
+      id: crypto.randomUUID(), email: body.email, aud: 'authenticated', role: 'authenticated',
+      email_confirmed_at: iso(0), user_metadata: body.user_metadata || {}
+    }
+    credentials.set(body.email, { user, password: body.password })
+    return response(user)
   }
   if (url.pathname === '/auth/v1/user') {
     const saved = tokens.get(headers.get('authorization')?.replace(/^Bearer\s+/i, ''))
@@ -195,6 +212,32 @@ globalThis.fetch = async (input, options = {}) => {
     if (method === 'PUT' && body.password) saved.password = body.password
     return response(saved.user)
   }
+  if (url.pathname === '/rest/v1/rpc/claim_membership_reminder') {
+    assert.equal(body.p_subscription_id, '00000000-0000-0000-0000-000000000000')
+    assert.equal(body.p_membership_end, '1970-01-01T00:00:00.000Z')
+    return response(false)
+  }
+  if (url.pathname === '/rest/v1/rpc/record_fitpulse_checkin') {
+    assert.equal(headers.get('apikey'), 'fixture-admin-key')
+    assert.equal(body.p_source, 'ESP32-CAM')
+    const prior = project.attendance_logs.find(
+      (row) => row.device_id === body.p_device_id && row.request_id === body.p_request_id
+    )
+    if (prior)
+      return response([{ result_code: 'ALREADY_RECORDED', attendance_id: prior.attendance_id }])
+    const row = {
+      attendance_id: crypto.randomUUID(),
+      user_id: body.p_member_id,
+      member_name: body.p_member_name,
+      check_in_time: body.p_date,
+      entry_type: body.p_source,
+      device_id: body.p_device_id,
+      request_id: body.p_request_id,
+      qr_token_id: body.p_qr_token_id
+    }
+    project.attendance_logs.push(row)
+    return response([{ result_code: 'CHECK_IN_RECORDED', attendance_id: row.attendance_id }])
+  }
   if (url.pathname.startsWith('/rest/v1/')) {
     assert.equal(headers.get('apikey'), 'fixture-admin-key')
     const table = url.pathname.split('/').pop()
@@ -229,14 +272,15 @@ try {
   if (!server.listening) await once(server, 'listening')
   apiOrigin = `http://127.0.0.1:${server.address().port}`
   let sequence = 0
-  const request = async (route, body, token) => {
+  const request = async (route, body, token, headers = {}, method = 'POST') => {
     const result = await fetch(
       `${apiOrigin}/api${route}${route.includes('?') ? '&' : '?'}fixture=${++sequence}`,
       {
-        method: 'POST',
+        method,
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...headers
         },
         body: JSON.stringify(body)
       }
@@ -244,6 +288,7 @@ try {
     return { status: result.status, body: await result.json() }
   }
   const login = (email, password) => request('/auth/login', { email, password })
+  const applicationTokens = new Map()
 
   await test('Admin, member, staff, and another member can sign in with their own credentials', async () => {
     for (const account of [administrator, member, staff, otherMember]) {
@@ -251,7 +296,170 @@ try {
       assert.equal(result.status, 200)
       assert.equal(result.body.user.id, account.id)
       assert.ok(result.body.token)
+      applicationTokens.set(account.id, result.body.token)
     }
+  })
+
+  await test('Equipment categories create, update, and reload for administrators and staff', async () => {
+    const maintenanceBefore = structuredClone(project.gym_maintenance)
+    for (const [index, category] of EQUIPMENT_CATEGORIES.entries()) {
+      const actor = index % 2 ? staff : administrator
+      const token = applicationTokens.get(actor.id)
+      const created = await request(
+        '/admin/equipment',
+        { name: `Fixture equipment ${index}`, category },
+        token
+      )
+      assert.equal(created.status, 201)
+      assert.equal(created.body.equipment.category, category)
+      const id = created.body.equipment.id
+      const inspected = created.body.equipment.lastInspected
+      const nextCategory = EQUIPMENT_CATEGORIES[(index + 1) % EQUIPMENT_CATEGORIES.length]
+      const updated = await request(
+        `/admin/equipment/${id}`,
+        { category: nextCategory },
+        token,
+        {},
+        'PATCH'
+      )
+      assert.equal(updated.status, 200)
+      const reloaded = await request('/admin/equipment', undefined, token, {}, 'GET')
+      assert.equal(reloaded.status, 200)
+      const equipment = reloaded.body.equipment.find((item) => item.id === id)
+      assert.equal(equipment.category, nextCategory)
+      assert.equal(equipment.lastInspected, inspected)
+      assert.equal(project.gym_equipment.find((item) => item.id === id).category, nextCategory)
+    }
+    assert.deepEqual(project.gym_maintenance, maintenanceBefore)
+  })
+
+  await test('Invalid equipment categories and unauthorized edits never change equipment', async () => {
+    const token = applicationTokens.get(administrator.id)
+    const id = project.gym_equipment[0].id
+    const before = structuredClone(project.gym_equipment)
+    for (const category of [undefined, '', 'Treadmill', null, 42, {}, []]) {
+      const created = await request(
+        '/admin/equipment',
+        { name: 'Invalid fixture', category },
+        token
+      )
+      assert.equal(created.status, 400)
+      if (category === undefined) continue
+      const updated = await request(
+        `/admin/equipment/${id}`,
+        { category, condition: 'Out of Service' },
+        token,
+        {},
+        'PATCH'
+      )
+      assert.equal(updated.status, 400)
+    }
+    for (const [actorToken, status] of [
+      [undefined, 401],
+      [applicationTokens.get(member.id), 403]
+    ]) {
+      for (const [route, method] of [
+        ['/admin/equipment', 'POST'],
+        [`/admin/equipment/${id}`, 'PATCH']
+      ]) {
+        const result = await request(
+          route,
+          { name: 'Denied fixture', category: 'Cardio Zone' },
+          actorToken,
+          {},
+          method
+        )
+        assert.equal(result.status, status)
+      }
+    }
+    assert.deepEqual(project.gym_equipment, before)
+  })
+
+  await test('Legacy equipment categories survive condition edits until a new area is selected', async () => {
+    const id = crypto.randomUUID()
+    const token = applicationTokens.get(staff.id)
+    project.gym_equipment.push({
+      id,
+      name: 'Legacy treadmill',
+      category: 'Treadmill',
+      condition: 'Good',
+      last_inspected: iso(-1)
+    })
+    const edited = await request(
+      `/admin/equipment/${id}`,
+      { condition: 'Needs Maintenance' },
+      token,
+      {},
+      'PATCH'
+    )
+    assert.equal(edited.status, 200)
+    assert.equal(edited.body.equipment.category, 'Treadmill')
+    const categorized = await request(
+      `/admin/equipment/${id}`,
+      { category: 'Cardio Zone' },
+      token,
+      {},
+      'PATCH'
+    )
+    assert.equal(categorized.status, 200)
+    assert.equal(categorized.body.equipment.category, 'Cardio Zone')
+    assert.equal(categorized.body.equipment.condition, 'Needs Maintenance')
+    assert.equal(categorized.body.equipment.lastInspected, iso(-1))
+  })
+
+  await test('Manual check-in endpoints reject logged-in users without changing attendance', async () => {
+    const before = structuredClone(project.attendance_logs)
+    for (const account of [administrator, staff, member]) {
+      for (const route of [
+        '/admin/attendance',
+        '/attendance/check-in',
+        '/admin/reports/attendance'
+      ]) {
+        const result = await request(
+          route,
+          { memberId: member.id, date: iso(-1) },
+          applicationTokens.get(account.id)
+        )
+        assert.equal(result.status, 403)
+      }
+    }
+    for (const route of [
+      '/admin/attendance',
+      '/attendance/check-in',
+      '/admin/reports/attendance'
+    ]) {
+      assert.equal((await request(route, { memberId: member.id })).status, 401)
+    }
+    assert.deepEqual(project.attendance_logs, before)
+  })
+
+  await test('An authenticated QR scanner can still record a member visit and retry safely', async () => {
+    const token = applicationTokens.get(member.id)
+    const qrResponse = await fetch(`${apiOrigin}/api/me/qr`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    assert.equal(qrResponse.status, 200)
+    const qr = await qrResponse.json()
+    const body = {
+      qrToken: qr.qrToken,
+      requestId: crypto.randomUUID(),
+      deviceId: process.env.SCANNER_DEVICE_ID
+    }
+    const before = project.attendance_logs.length
+    const unauthorized = await request('/scanner/check-in', body, token)
+    assert.equal(unauthorized.status, 401)
+    assert.equal(project.attendance_logs.length, before)
+    const headers = { 'X-Scanner-Key': process.env.SCANNER_API_KEY }
+    const recorded = await request('/scanner/check-in', body, undefined, headers)
+    assert.equal(recorded.status, 201)
+    assert.equal(recorded.body.allowed, true)
+    assert.equal(project.attendance_logs.length, before + 1)
+    assert.equal(project.attendance_logs.at(-1).entry_type, 'ESP32-CAM')
+    assert.equal(project.attendance_logs.at(-1).user_id, member.id)
+    const retried = await request('/scanner/check-in', body, undefined, headers)
+    assert.equal(retried.status, 200)
+    assert.equal(retried.body.code, 'ALREADY_RECORDED')
+    assert.equal(project.attendance_logs.length, before + 1)
   })
   await test('Wrong passwords are rejected without weakening authentication', async () => {
     const result = await login(member.email, 'wrong-fixture-password')
@@ -358,6 +566,38 @@ try {
     assert.equal(result.body.requiresFaceVerification, true)
     assert.ok(result.body.challengeToken)
     assert.equal(result.body.token, undefined)
+  })
+  await test('Welcome email failure preserves the member, subscription, payment, and a working access-email retry', async () => {
+    const email = 'welcome-retry@fixture.test'
+    emailFailure = Object.assign(new Error('Synthetic SMTP outage'), { code: 'ETIMEDOUT' })
+    const created = await request('/admin/members', {
+      name: 'Welcome Retry', email, plan: 'Unlimited Monthly', recordPayment: true, method: 'Cash'
+    }, applicationTokens.get(administrator.id))
+    emailFailure = null
+    assert.equal(created.status, 201)
+    assert.equal(created.body.emailSent, false)
+    assert.match(created.body.message, /welcome email was not sent/)
+    assert.equal(created.body.temporaryPassword, undefined)
+    const profile = project.users.find((item) => item.email === email)
+    assert.ok(profile)
+    assert.ok(credentials.has(email))
+    const subscription = project.subscriptions.find((item) => item.user_id === profile.id)
+    assert.ok(subscription)
+    assert.ok(project.payments.some((item) => item.subscription_id === subscription.subscription_id))
+    const retry = await request(`/admin/members/${profile.id}/send-access`, {}, applicationTokens.get(administrator.id))
+    assert.equal(retry.status, 200)
+    assert.equal(sentEmails.at(-1).to, email)
+    assert.ok(sentEmails.at(-1).subject.includes('Reset your FitPulse password'))
+  })
+  await test('Welcome email is accepted after the complete membership has been saved', async () => {
+    const email = 'welcome-accepted@fixture.test'
+    const created = await request('/admin/members', {
+      name: 'Welcome Accepted', email, plan: 'Unlimited Monthly'
+    }, applicationTokens.get(administrator.id))
+    assert.equal(created.status, 201)
+    assert.equal(created.body.emailSent, true)
+    assert.equal(sentEmails.at(-1).to, email)
+    assert.equal(created.body.temporaryPassword, undefined)
   })
 } finally {
   if (server) {

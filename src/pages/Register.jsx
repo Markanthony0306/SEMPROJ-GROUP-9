@@ -35,14 +35,14 @@ export default function Register({ navigate }) {
     try {
       const values = Object.fromEntries(new FormData(form))
       values.recordPayment = new FormData(form).get('recordPayment') === 'on'
-      await apiRequest('/admin/members', {
+      const result = await apiRequest('/admin/members', {
         method: 'POST',
         token,
         body: JSON.stringify(values)
       })
       form.reset()
       setSelectedPlan('')
-      setMessage('Member account created.')
+      setMessage(result.message || 'Member account created.')
     } catch (cause) {
       setError(cause.message)
     } finally {

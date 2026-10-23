@@ -1,4 +1,5 @@
 import { recoveryEmail } from './emailTemplates.js'
+import { assertEmailAccepted } from './emailDelivery.js'
 
 export async function sendPasswordRecovery({
   supabaseAdmin,
@@ -22,5 +23,7 @@ export async function sendPasswordRecovery({
   if (error) throw error
   const recoveryUrl = data?.properties?.action_link
   if (!recoveryUrl) throw new Error('No recovery link returned by the provider.')
-  await mailer.sendMail({ from, to: email, ...recoveryEmail({ name, recoveryUrl }) })
+  assertEmailAccepted(
+    await mailer.sendMail({ from, to: email, ...recoveryEmail({ name, recoveryUrl }) })
+  )
 }

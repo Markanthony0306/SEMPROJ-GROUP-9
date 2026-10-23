@@ -968,3 +968,8 @@ h2,
   display: grid;
   gap: 1rem;
 }
+#login .lwrap.verification-layout {
+  width: min(640px, 100%);
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+}

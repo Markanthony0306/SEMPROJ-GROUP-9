@@ -1,11 +1,66 @@
 /* Match the member dashboard's restrained clay surfaces and spacing. */
 .admin-app {
+  min-width: 1280px;
   --admin-shadow: rgba(64, 92, 135, 0.18);
   --admin-highlight: rgba(255, 255, 255, 0.5);
   --admin-inset: rgba(64, 92, 135, 0.1);
   grid-template-columns: 232px minmax(0, 1fr);
   gap: 28px;
   padding: 24px;
+}
+.admin-app .g2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.notification-system-status {
+  display: grid;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.notification-list li {
+  align-items: flex-start;
+  gap: 18px;
+}
+.notification-list .record-delete-button {
+  margin-top: 2px;
+}
+.notification-row-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 10px;
+}
+.notification-delivery {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 10px;
+  border: 1px solid var(--id);
+  border-radius: 8px;
+  color: var(--text);
+  background: var(--card2);
+  font-size: 12px;
+  font-weight: 700;
+}
+.notification-delivery[data-state='sent'] {
+  color: #14643d;
+  background: #e0f4e9;
+  border-color: #8abfa5;
+}
+.notification-delivery[data-state='failed'] {
+  color: #8d202b;
+  background: #ffe9e9;
+  border-color: #e6a0a8;
+}
+[data-theme='dark'] .notification-delivery[data-state='sent'] {
+  color: #c4f5da;
+  background: #164432;
+  border-color: #568f73;
+}
+[data-theme='dark'] .notification-delivery[data-state='failed'] {
+  color: #ffced6;
+  background: #562331;
+  border-color: #b9657a;
 }
 [data-theme='dark'] .admin-app {
   --admin-shadow: rgba(0, 0, 0, 0.3);
@@ -139,6 +194,38 @@
 .admin-app .admin-card-heading h2 {
   margin: 0;
 }
+.admin-app .record-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 22px;
+}
+.admin-app .record-section-heading h2 {
+  margin: 0;
+}
+.record-section-heading > div:first-child {
+  min-width: 0;
+}
+.record-section-heading p {
+  max-width: 560px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.record-section-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: auto;
+}
+.record-section-heading > .report-clear-button {
+  margin-left: auto;
+}
 .admin-card-heading > svg {
   color: var(--orange);
 }
@@ -266,6 +353,17 @@
   gap: 16px;
   flex-wrap: wrap;
 }
+.admin-app .membership-reminder-status {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--id);
+}
+.admin-app .membership-reminder-status .form-help {
+  margin: 0;
+  line-height: 1.6;
+}
 .admin-app .report-toolbar .field {
   flex: 1;
   max-width: 400px;
@@ -350,54 +448,6 @@
 }
 .face-enrollment-form .ma {
   margin-top: 4px;
-}
-@media (max-width: 1200px) {
-  .admin-app .admin-stats {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .admin-app .admin-stats .stat {
-    flex-direction: row;
-  }
-}
-@media (max-width: 1000px) {
-  .admin-app {
-    grid-template-columns: minmax(0, 1fr);
-    padding: 16px;
-  }
-  .admin-app aside {
-    width: min(280px, calc(100vw - 32px));
-  }
-}
-@media (max-width: 760px) {
-  .admin-app .g2 {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .admin-list li {
-    flex-wrap: wrap;
-  }
-}
-@media (max-width: 560px) {
-  .admin-app {
-    padding: 12px;
-  }
-  .admin-app header {
-    min-height: 72px;
-    top: 12px;
-    gap: 10px;
-  }
-  .admin-app .card {
-    padding: 20px;
-    border-radius: 22px;
-  }
-  .admin-app .admin-stats .stat {
-    flex-direction: column;
-    padding: 16px;
-    border-radius: 20px;
-  }
-  .admin-app #view,
-  .admin-app .grid {
-    gap: 16px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   .admin-app *,

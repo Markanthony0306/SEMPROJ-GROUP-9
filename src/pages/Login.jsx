@@ -300,31 +300,33 @@ export default function Login({ onLogin }) {
       >
         <Icon name={dark ? 'sun' : 'moon'} />
       </button>
-      <div className="lwrap">
-        <section className="hero clay">
-          <div className="brandbar">
-            <Brand />
-          </div>
-          <div className="hbody">
-            <Dumbbell />
-            <h1>Make every session count.</h1>
-            <p>Your membership, check-ins, and progress in one place.</p>
-            <div className="feats">
-              <span className="feat">
-                <Icon name="qr" size={16} />
-                QR check-in
-              </span>
-              <span className="feat">
-                <Icon name="bell" size={16} />
-                Expiry reminders
-              </span>
-              <span className="feat">
-                <Icon name="wallet" size={16} />
-                Payment records
-              </span>
+      <div className={`lwrap${faceChallenge ? ' verification-layout' : ''}`}>
+        {!faceChallenge && (
+          <section className="hero clay">
+            <div className="brandbar">
+              <Brand />
             </div>
-          </div>
-        </section>
+            <div className="hbody">
+              <Dumbbell />
+              <h1>Make every session count.</h1>
+              <p>Your membership, check-ins, and progress in one place.</p>
+              <div className="feats">
+                <span className="feat">
+                  <Icon name="qr" size={16} />
+                  QR check-in
+                </span>
+                <span className="feat">
+                  <Icon name="bell" size={16} />
+                  Expiry reminders
+                </span>
+                <span className="feat">
+                  <Icon name="wallet" size={16} />
+                  Payment records
+                </span>
+              </div>
+            </div>
+          </section>
+        )}
         <section
           className={`lform clay${shaking ? ' shake' : ''}`}
           onAnimationEnd={() => setShaking(false)}

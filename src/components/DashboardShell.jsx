@@ -14,7 +14,6 @@ const bannerStyles = {
 const ADMIN_NAVIGATION = [
   ['Dashboard', 'home'],
   ['Members', 'users'],
-  ['Memberships', 'card'],
   ['Equipment', 'dumbbell'],
   ['Attendance', 'qr'],
   ['Payments', 'wallet'],
@@ -31,6 +30,12 @@ const MEMBER_NAVIGATION = [
   ['Settings', 'sliders']
 ]
 const PATHS = {
+  mail: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 6 9 7 9-7" />
+    </>
+  ),
   eye: (
     <>
       <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
@@ -46,6 +51,25 @@ const PATHS = {
   trash: (
     <>
       <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+    </>
+  ),
+  'delete-data': (
+    <>
+      <path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15" />
+      <path d="m10 11 4 5m0-5-4 5" strokeWidth="1.7" />
+    </>
+  ),
+  'clear-data': (
+    <>
+      <path d="M10 20H3V3h18v8M3 6h18M8 10h9M8 13h5M8 16h3" strokeWidth="1.5" />
+      <path d="M3 3h18v3H3z" fill="currentColor" stroke="none" />
+      <path d="M5.5 10h.1m-.1 3h.1m-.1 3h.1" />
+      <path
+        d="M23.5 18a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0Z M16 15l2 2 2-2 1 1-2 2 2 2-1 1-2-2-2 2-1-1 2-2-2-2Z"
+        fill="currentColor"
+        fillRule="evenodd"
+        stroke="none"
+      />
     </>
   ),
   file: (

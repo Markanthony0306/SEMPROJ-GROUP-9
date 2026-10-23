@@ -6,10 +6,13 @@
 | Temporary member passwords | Account creation shows a generated password once. Passwords are hashed, and members must change the temporary password before accessing other features.        |
 | Short member codes         | Member records show a readable `FP-` code while UUIDs continue linking attendance, payments, photos, and membership records.                                   |
 | Welcome email              | When SMTP is configured, new members receive their temporary sign-in details. The admin can still deliver the one-time password if email delivery fails.       |
+| Automatic expiry reminders | The running API checks hourly and emails members once before expiry and once after expiry, using Gym Preferences and a private Supabase delivery log.         |
 | Password recovery          | Verified one-use recovery links let account owners choose and confirm a new password. Old FitPulse sessions are invalidated.                                   |
 | QR pass download           | Members can save a branded PNG of their existing QR. The pass shows status and exact Manila expiry; downloading does not issue a new QR or extend access.      |
 | Membership-bound QR        | Weekly is ₱200 for 7 days. Other plans use their own duration. The entrance API rejects expired, inactive, suspended, and password-change-pending memberships. |
+| Scanner check-ins          | New attendance is recorded by the authenticated entrance scanner. Admin and staff can review history and correct existing records through Reports.            |
 | Clearer record tables      | One member search, sortable headers, row-count controls, readable status labels, icon view actions, and mobile card layouts simplify record review.            |
+| Report category cleanup    | Administrators can clear the selected history category after typed confirmation. Renewal cleanup preserves initial payments, member accounts, and plan dates. |
 | Dashboard shortcuts        | Real counts, renewal/inspection reminders, first-login status, and recent check-ins lead directly to the relevant admin sections.                              |
 | Payment monitoring         | Staff record Cash/GCash transactions and export CSV files. FitPulse records payments already made; it does not process online payments.                        |
 

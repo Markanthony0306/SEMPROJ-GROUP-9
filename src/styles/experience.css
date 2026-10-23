@@ -161,11 +161,8 @@
   border-radius: 12px;
 }
 .report-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
   gap: 20px;
-  flex-wrap: wrap;
 }
 .app .report-heading h2 {
   font-size: 23px;
@@ -175,13 +172,46 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  flex-shrink: 0;
   margin-left: auto;
+  align-items: center;
+  justify-content: flex-end;
 }
 .report-tabs {
   display: flex;
-  gap: 12px;
+  flex: 1 1 600px;
+  min-width: 0;
+  gap: 10px;
   flex-wrap: wrap;
-  margin: 26px 0;
+  margin: 0;
+}
+.app .reports-card .data-table {
+  margin-top: 24px;
+}
+.app .reports-card .table-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 240px) auto;
+  align-items: end;
+  gap: 16px;
+}
+.app .reports-card .table-toolbar label {
+  width: auto;
+  min-width: 0;
+}
+.app .reports-card .table-record-count {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+.app .reports-card .table-cell-actions {
+  width: max-content;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+.app .reports-card .report-icon-button {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
 }
 .report-tabs button {
   display: flex;
@@ -251,6 +281,42 @@
 .report-icon-button.is-danger:hover {
   color: var(--red);
 }
+.app .record-delete-button {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: var(--red);
+}
+.record-delete-button:focus-visible {
+  outline: 3px solid var(--red);
+  outline-offset: 3px;
+}
+.record-delete-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+[data-theme='dark'] .app .record-delete-button {
+  color: #ffdae1;
+  background: #652536;
+  border: 1px solid #e790a4;
+  box-shadow: 0 3px 8px #0005;
+}
+[data-theme='dark'] .app .record-delete-button:hover:not(:disabled) {
+  color: #fff;
+  background: #9c334d;
+  border-color: #ffc0cf;
+}
+[data-theme='dark'] .app .record-delete-button:focus-visible {
+  outline-color: #ffc0cf;
+}
+[data-theme='dark'] .app .btn.danger {
+  background: #ac3049;
+  color: #fff;
+}
+[data-theme='dark'] .app .form-error {
+  color: #ffb9c4;
+}
 .report-total {
   display: flex;
   justify-content: space-between;
@@ -305,34 +371,85 @@
 .app .btn.danger {
   background: var(--red);
 }
+.app .btn.report-clear-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 112px;
+  min-height: 44px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  background: linear-gradient(105deg, var(--orange), var(--red));
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  white-space: nowrap;
+  box-shadow: 0 5px 12px #00192d3d;
+}
+.app .btn.report-clear-button::after {
+  display: block;
+  left: -75%;
+  width: 45%;
+  background: linear-gradient(100deg, transparent, #ffffff99, transparent);
+  transition: left 0.65s ease;
+}
+.app .btn.report-clear-button:hover:not(:disabled)::after {
+  left: 135%;
+}
+.app .btn.report-clear-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 14px #00192d4d;
+}
+.app .btn.report-clear-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px #00192d33;
+}
+.app .btn.report-clear-button:focus-visible {
+  outline: 3px solid var(--text);
+  outline-offset: 4px;
+}
+.app .btn.report-clear-button:disabled {
+  box-shadow: 0 2px 6px #00192d1a;
+}
+@media (min-width: 761px) {
+  .app .reports-card .data-table th {
+    padding: 10px 16px;
+  }
+  .app .reports-card .data-table td {
+    padding: 14px 16px;
+  }
+  .app .reports-card .data-table th:last-child {
+    width: 184px;
+    min-width: 184px;
+  }
+}
 @media (min-width: 1100px) {
   .app .reports-card .data-table th:first-child {
     width: 23%;
   }
-  .app .reports-card .data-table th:last-child {
-    width: 160px;
-  }
 }
 @media (max-width: 760px) {
-  .app .table-wrap {
+  .app:not(.admin-app) .table-wrap {
     overflow: visible;
     border: 0;
     border-radius: 0;
   }
-  .app .data-table table {
+  .app:not(.admin-app) .data-table table {
     min-width: 0;
   }
-  .app .data-table tbody tr {
+  .app:not(.admin-app) .data-table tbody tr {
     margin-bottom: 12px;
     padding: 12px 16px;
     border: 1px solid var(--id);
     border-radius: 18px;
     background: var(--card2);
   }
-  .app .data-table td,
-  .app .data-table td:first-child,
-  .app .data-table td:last-child,
-  .app .data-table tbody tr:nth-child(even) td {
+  .app:not(.admin-app) .data-table td,
+  .app:not(.admin-app) .data-table td:first-child,
+  .app:not(.admin-app) .data-table td:last-child,
+  .app:not(.admin-app) .data-table tbody tr:nth-child(even) td {
     border-radius: 0;
     padding: 9px 0;
     background: transparent;
@@ -342,35 +459,65 @@
     text-align: left;
     white-space: normal;
   }
-  .app .data-table td + td {
+  .app:not(.admin-app) .data-table td + td {
     border-top: 1px solid var(--id);
   }
-  .app .data-table .table-cell-actions {
+  .app:not(.admin-app) .data-table .table-cell-actions {
     justify-content: flex-start;
   }
-  .app .data-table tbody tr:hover td {
+  .app:not(.admin-app) .data-table tbody tr:hover td {
     background: transparent;
   }
-  .app .experience-dialog {
+  .app:not(.admin-app) .experience-dialog {
     padding: 22px;
   }
-  .report-heading-actions {
+  .app:not(.admin-app) .report-heading-actions {
     width: 100%;
   }
-  .report-tabs {
-    gap: 9px;
+  .app:not(.admin-app) .report-heading-actions .btn {
+    flex: 1 1 150px;
   }
-  .report-tabs button {
+  .app:not(.admin-app) .report-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .app:not(.admin-app) .reports-card .table-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+  .app:not(.admin-app) .reports-card .table-toolbar > label:first-child {
+    grid-column: 1 / -1;
+  }
+  .app:not(.admin-app) .reports-card .data-table td.acts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .app:not(.admin-app) .report-tabs button {
+    justify-content: center;
     padding: 9px 12px;
   }
 }
+@media (max-width: 480px) {
+  .app:not(.admin-app) .report-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 @media (max-width: 420px) {
-  .report-record-details > div {
+  .app:not(.admin-app) .report-record-details > div {
     grid-template-columns: 1fr;
     gap: 4px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .app .btn.report-clear-button::after {
+    display: none;
+  }
+  .app .btn.report-clear-button,
+  .app .btn.report-clear-button:hover {
+    transition: none;
+    transform: none;
+  }
   .app .stat,
   .report-tabs button,
   .report-icon-button,
