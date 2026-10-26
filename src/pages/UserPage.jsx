@@ -11,8 +11,8 @@ import ActivityChart from '../components/ActivityChart'
 import { downloadPayments } from '../utils/paymentExport'
 import { getMemberQr } from '../utils/memberQr'
 import PasswordChangeForm from '../components/PasswordChangeForm'
-import AccountDeleteDialog from '../components/AccountDeleteDialog'
 import { membershipState } from '../utils/membership'
+import { ACCOUNT_DELETION_GRACE_DAYS, accountDeletionDeadline } from '../../shared/membershipExpiry'
 
 const validDate = (value) => value && !Number.isNaN(new Date(value).getTime())
 const date = (value) =>
@@ -64,7 +64,6 @@ export default function UserPage({ user, onSignOut }) {
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(true)
   const [actionPending, setActionPending] = useState(false)
-  const [deletingAccount, setDeletingAccount] = useState(false)
   const load = useCallback(
     async (signal) => {
       try {
@@ -141,7 +140,14 @@ export default function UserPage({ user, onSignOut }) {
         : expiry <= 7
           ? `Your membership expires in ${expiry} day(s). Visit the front desk to renew.`
           : `Your membership is valid until ${date(currentUser.membershipEnd)}.`
-  const notifications = currentUser ? [{ id: 'membership', message: membershipNote }] : []
+  const deletionDeadline = accountDeletionDeadline(currentUser)
+  const expiryNotice =
+    expired && deletionDeadline !== null
+      ? deletionDeadline <= Date.now()
+        ? `Your membership expired at least ${ACCOUNT_DELETION_GRACE_DAYS} days ago. Your account is scheduled for automatic deletion. Contact the gym administrator immediately if you need to renew.`
+        : `Your membership has expired. Your account will be automatically deleted ${ACCOUNT_DELETION_GRACE_DAYS} days after expiry, on ${date(deletionDeadline)}, unless you renew. Visit the front desk to renew your membership.`
+      : membershipNote
+  const notifications = currentUser ? [{ id: 'membership', message: expiryNotice }] : []
   const settings = (
     <section className="grid g2">
       <article className="card clay">
@@ -187,18 +193,6 @@ export default function UserPage({ user, onSignOut }) {
       <article className="card clay">
         <h2>Change Password</h2>
         <PasswordChangeForm />
-      </article>
-      <article className="card clay">
-        <h2>Delete account</h2>
-        <p className="form-help">
-          Permanently remove your login and all your gym records. This cannot be undone.
-        </p>
-        <button
-          className="btn danger" type="button" disabled={loading || actionPending}
-          onClick={() => setDeletingAccount(true)} aria-haspopup="dialog"
-        >
-          Delete my account
-        </button>
       </article>
     </section>
   )
@@ -422,18 +416,6 @@ export default function UserPage({ user, onSignOut }) {
         </div>
       )}
       {views[section]}
-      {deletingAccount && (
-        <AccountDeleteDialog
-          account={currentUser}
-          self
-          onClose={() => setDeletingAccount(false)}
-          onDeleted={() => {
-            localStorage.removeItem('fp_email')
-            localStorage.removeItem(`fitpulse-member-qr:${currentUser.id}`)
-            onSignOut()
-          }}
-        />
-      )}
     </DashboardShell>
   )
 }

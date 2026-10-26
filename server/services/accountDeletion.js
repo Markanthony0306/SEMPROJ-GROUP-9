@@ -2,7 +2,7 @@ function deletionError(message, status = 503) {
   return Object.assign(new Error(message), { status })
 }
 
-export async function deleteMemberAccount({ supabase, account }) {
+export async function deleteMemberAccount({ supabase, account, beforeDelete }) {
   if (!['user', 'member'].includes(account.role))
     throw deletionError('Administrator and staff accounts cannot be deleted here.', 403)
   if (!account.authUserId)
@@ -26,6 +26,9 @@ export async function deleteMemberAccount({ supabase, account }) {
       409
     )
 
+  // Scheduled cleanup rechecks expiry so a renewed membership is preserved.
+  await beforeDelete?.(account)
+
   // Auth refuses deletion for users who own Storage objects. Remove this
   // member's private avatar folder first, including abandoned older uploads.
   const bucket = supabase.storage.from('avatars')
@@ -41,12 +44,15 @@ export async function deleteMemberAccount({ supabase, account }) {
     if (!files || files.length < 100) break
   }
   for (let index = 0; index < paths.length; index += 100) {
+    // A renewal may arrive while Storage.list is loading several pages.
+    await beforeDelete?.(account)
     const { error } = await bucket.remove(paths.slice(index, index + 100))
     if (error) throw deletionError('Unable to remove the member photos. Please try again.')
   }
 
   // The Auth -> profile cascade and migration 006 cleanup run in one database
   // transaction. If a related delete fails, Auth and the profile remain intact.
+  await beforeDelete?.(account)
   const { error } = await supabase.auth.admin.deleteUser(account.authUserId)
   if (error) throw deletionError('Unable to delete the member login. Please try again.')
 }

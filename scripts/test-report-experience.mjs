@@ -494,6 +494,7 @@ try {
     missingClearMigration = false
     assert.equal(missing.status, 503)
     assert.match(missing.body.message, /migration/)
+    assert.match(missing.body.message, /supabase\/migrations\/004_clear_report_records\.sql/)
     assert.deepEqual(project.payments, before)
   })
 

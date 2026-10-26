@@ -245,11 +245,11 @@ try {
   const AccountDeleteDialog = await load('components/AccountDeleteDialog')
   const accountDeletion = render(AccountDeleteDialog, {
     account: { id: 'member-id', name: 'Test <Member>', email: 'member@fixture.test' },
-    self: true,
     onClose: () => {},
     onDeleted: () => {}
-  }, 'member')
+  })
   assert.ok(accountDeletion.includes('role="dialog"'))
+  assert.ok(accountDeletion.includes('Delete member account?'))
   assert.ok(accountDeletion.includes('Test &lt;Member&gt;'))
   assert.ok(accountDeletion.includes('type="password"'))
   assert.ok(accountDeletion.includes('pattern="DELETE"'))

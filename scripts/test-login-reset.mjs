@@ -300,6 +300,41 @@ try {
     }
   })
 
+  await test('Public visitors, members, and staff cannot create accounts through either API', async () => {
+    const before = structuredClone(project)
+    const credentialsBefore = [...credentials.keys()]
+    const body = {
+      name: 'Denied Account', email: 'denied-account@fixture.test',
+      password: 'Fixture-registration-123!', plan: 'Unlimited Monthly'
+    }
+    for (const [actorToken, status] of [
+      [undefined, 401],
+      [applicationTokens.get(member.id), 403],
+      [applicationTokens.get(staff.id), 403]
+    ]) {
+      for (const route of ['/auth/register', '/admin/members'])
+        assert.equal((await request(route, body, actorToken)).status, status)
+    }
+    assert.deepEqual(project, before)
+    assert.deepEqual([...credentials.keys()], credentialsBefore)
+  })
+
+  await test('Administrators retain the existing registration API and its input validation', async () => {
+    const token = applicationTokens.get(administrator.id)
+    const body = {
+      name: 'Admin-created Member', email: 'admin-registration@fixture.test',
+      password: 'Fixture-registration-123!'
+    }
+    assert.equal((await request('/auth/register', { ...body, password: 'short' }, token)).status, 400)
+    assert.equal((await request('/auth/register', { ...body, email: 'invalid' }, token)).status, 400)
+    assert.equal(credentials.has(body.email), false)
+    assert.equal((await request('/auth/register', body, token)).status, 201)
+    const profile = project.users.find((item) => item.email === body.email)
+    assert.equal(profile.role_id, 2)
+    assert.ok(project.subscriptions.some((item) => item.user_id === profile.id))
+    assert.equal((await login(body.email, body.password)).status, 200)
+  })
+
   await test('Equipment categories create, update, and reload for administrators and staff', async () => {
     const maintenanceBefore = structuredClone(project.gym_maintenance)
     for (const [index, category] of EQUIPMENT_CATEGORIES.entries()) {

@@ -3,7 +3,7 @@ import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
 import Dialog from './Dialog'
 
-export default function AccountDeleteDialog({ account, self = false, onClose, onDeleted }) {
+export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
   const { token } = useAuth()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
@@ -21,7 +21,7 @@ export default function AccountDeleteDialog({ account, self = false, onClose, on
     setBusy(true)
     setError('')
     try {
-      await apiRequest(self ? '/profile' : `/admin/members/${account.id}`, {
+      await apiRequest(`/admin/members/${account.id}`, {
         token,
         method: 'DELETE',
         body: JSON.stringify({
@@ -42,7 +42,7 @@ export default function AccountDeleteDialog({ account, self = false, onClose, on
 
   return (
     <Dialog
-      title={self ? 'Delete your account?' : 'Delete member account?'}
+      title="Delete member account?"
       busy={busy}
       onClose={onClose}
     >
@@ -50,7 +50,7 @@ export default function AccountDeleteDialog({ account, self = false, onClose, on
         <p className="modal-copy">
           Permanently delete <strong>{account.name}</strong> ({account.email}), including the login,
           profile photos, saved face data, membership, payments, and attendance history. This cannot
-          be undone. {self && 'You will be signed out and your gym pass will stop working.'}
+          be undone.
         </p>
         <label className="field">
           Your current password

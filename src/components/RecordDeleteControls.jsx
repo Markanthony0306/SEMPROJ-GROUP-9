@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
 import Dialog from './Dialog'
@@ -51,6 +51,8 @@ export default function RecordDeleteDialog({ target, onClose, onChanged, onNotic
   const { token } = useAuth()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [confirmation, setConfirmation] = useState('')
+  const confirmationHelpId = useId()
   const actionLock = useRef(false)
   const all = target.all === true
   const details = CATEGORIES[target.category]
@@ -58,8 +60,11 @@ export default function RecordDeleteDialog({ target, onClose, onChanged, onNotic
   const remove = async (event) => {
     event.preventDefault()
     if (actionLock.current) return
-    const confirmation = new FormData(event.currentTarget).get('confirmation')
-    if (all && confirmation !== 'CLEAR') return
+    const confirmed = new FormData(event.currentTarget).get('confirmation')
+    if (all && confirmed !== 'CLEAR') {
+      setError('Type CLEAR exactly to enable clearing these records.')
+      return
+    }
     actionLock.current = true
     setBusy(true)
     setError('')
@@ -74,7 +79,11 @@ export default function RecordDeleteDialog({ target, onClose, onChanged, onNotic
         method: 'DELETE',
         ...(all
           ? {
-              body: JSON.stringify({ category: target.category, group: target.group, confirmation })
+              body: JSON.stringify({
+                category: target.category,
+                group: target.group,
+                confirmation: confirmed
+              })
             }
           : {})
       })
@@ -137,20 +146,30 @@ export default function RecordDeleteDialog({ target, onClose, onChanged, onNotic
             <input
               className="clay-in"
               name="confirmation"
+              value={confirmation}
+              onChange={(event) => setConfirmation(event.target.value)}
               required
               pattern="CLEAR"
+              aria-describedby={confirmationHelpId}
               autoComplete="off"
               spellCheck={false}
               disabled={busy}
               data-autofocus
             />
+            <small id={confirmationHelpId} className="form-help">
+              The clear button is enabled after you type CLEAR in capital letters.
+            </small>
           </label>
         )}
         <div className="ma">
           <button className="btn ghost" type="button" disabled={busy} onClick={onClose}>
             Cancel
           </button>
-          <button className="btn danger" type="submit" disabled={busy}>
+          <button
+            className="btn danger"
+            type="submit"
+            disabled={busy || (all && confirmation !== 'CLEAR')}
+          >
             <Icon name={all ? 'clear-data' : 'delete-data'} size={19} />
             {busy ? 'Deleting…' : all ? 'Clear all data' : 'Delete record'}
           </button>

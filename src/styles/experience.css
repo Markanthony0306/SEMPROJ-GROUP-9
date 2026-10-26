@@ -417,12 +417,8 @@
   .app .reports-card .data-table th {
     padding: 10px 16px;
   }
-  .app .reports-card .data-table td {
+  .app .reports-card .data-table td:not(.acts) {
     padding: 14px 16px;
-  }
-  .app .reports-card .data-table th:last-child {
-    width: 184px;
-    min-width: 184px;
   }
 }
 @media (min-width: 1100px) {

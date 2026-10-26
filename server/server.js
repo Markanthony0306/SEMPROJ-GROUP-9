@@ -16,11 +16,13 @@ import { createAdminNotificationService } from './services/adminNotifications.js
 import { EQUIPMENT_CATEGORIES } from '../shared/equipmentCategories.js'
 import { welcomeEmail } from './services/emailTemplates.js'
 import { createMembershipReminderService, startMembershipReminders } from './services/membershipReminders.js'
+import { createExpiredAccountCleanupService, startExpiredAccountCleanup } from './services/expiredAccountCleanup.js'
 import { sendPasswordRecovery } from './services/passwordRecovery.js'
 import { passwordLoginHandler } from './routes/passwordLogin.js'
 import { authenticatePassword, PasswordAuthenticationError } from './services/passwordAuthentication.js'
 import { createSupabaseAuthClient } from './lib/authClient.js'
 import { supabase } from './lib/supabase.js'
+import { withMemberAccountLock } from './lib/memberAccountLock.js'
 import {
   decryptFaceDescriptor,
   encryptFaceDescriptor,
@@ -116,6 +118,9 @@ const membershipReminders = createMembershipReminderService({
 })
 const adminNotifications = createAdminNotificationService({
   supabase, loadDatabase, smtpConfigured, reminders: membershipReminders
+})
+const expiredAccountCleanup = createExpiredAccountCleanupService({
+  supabase, loadDatabase, loadAccount
 })
 
 function publicAccount(account) {
@@ -311,7 +316,7 @@ app.use(
   avatarRoutes({ supabase, authenticate, requireRole, rateLimit })
 )
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authenticate, requireRole('admin'), async (req, res) => {
   const name = typeof req.body.name === 'string' ? req.body.name.trim() : ''
   const email = typeof req.body.email === 'string' ? req.body.email.trim().toLowerCase() : ''
   const password = typeof req.body.password === 'string' ? req.body.password : ''
@@ -788,7 +793,7 @@ app.get('/api/admin/membership-plans', authenticate, requireRole('admin', 'staff
 app.post(
   '/api/admin/members',
   authenticate,
-  requireRole('admin', 'staff'),
+  requireRole('admin'),
   async (req, res) => {
     let authUserId = null
     let profileId = null
@@ -1200,7 +1205,7 @@ app.post(
   '/api/admin/members/:id/renew',
   authenticate,
   requireRole('admin', 'staff'),
-  async (req, res) => {
+  async (req, res) => withMemberAccountLock(req.params.id, async () => {
     const database = await loadDatabase(['accounts', 'payments'])
     const member = database.accounts.find(
       (account) => account.id === req.params.id && !['admin', 'staff'].includes(account.role)
@@ -1249,7 +1254,7 @@ app.post(
     database.payments.push(payment)
     await saveDatabase(database)
     res.json({ member: publicAccount(member), payment })
-  }
+  })
 )
 
 app.get('/api/admin/equipment', authenticate, requireRole('admin', 'staff'), async (req, res) => {
@@ -1835,7 +1840,9 @@ export const serverReady = ensureSeedData()
   .then(() => {
     const server = app.listen(port, () => console.log(`FitPulse API listening on ${port}`))
     const stopReminders = startMembershipReminders({ runDue: membershipReminders.runDue })
+    const stopExpiredAccountCleanup = startExpiredAccountCleanup({ runDue: expiredAccountCleanup.runDue })
     server.once('close', stopReminders)
+    server.once('close', stopExpiredAccountCleanup)
     if (!smtpConfigured) console.warn('Automatic membership reminders are paused: configure SMTP to enable delivery.')
     return server
   })

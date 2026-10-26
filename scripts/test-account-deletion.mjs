@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import express from 'express'
 import { accountRoutes } from '../server/routes/accounts.js'
+import { deleteMemberAccount } from '../server/services/accountDeletion.js'
 
 async function fixture(run) {
   const member = {
@@ -113,7 +114,7 @@ async function fixture(run) {
   )
   const server = app.listen(0, '127.0.0.1')
   await new Promise((resolve) => server.once('listening', resolve))
-  const request = async (actor = 'member', route = '/profile', body = {}, method = 'DELETE') => {
+  const request = async (actor = 'admin', route = '/admin/members/member', body = {}, method = 'DELETE') => {
     const response = await fetch(`http://127.0.0.1:${server.address().port}/api${route}`, {
       method,
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${actor}` },
@@ -126,20 +127,38 @@ async function fixture(run) {
     return { status: response.status, body: await response.json() }
   }
   try {
-    await run({ state, request, member, admin, staff })
+    await run({ state, request, member, admin, staff, supabase })
   } finally {
     server.closeAllConnections()
     await new Promise((resolve) => server.close(resolve))
   }
 }
 
-test('members delete only their own account and an old session loses access', () =>
+test('only an admin deletes a member and the deleted member loses session access', () =>
   fixture(async ({ state, request }) => {
     assert.equal((await request()).status, 200)
     assert.deepEqual(state.deleted, ['auth-member'])
     assert.deepEqual(state.removed, ['member/profile.jpg'])
-    assert.equal((await request()).status, 401)
+    assert.equal((await request('member', '/profile')).status, 401)
+    assert.equal((await request()).status, 404)
     assert.equal(state.accounts.size, 2)
+  }))
+
+test('self-deletion is denied without changing accounts, photos, or Auth', () =>
+  fixture(async ({ state, request, member }) => {
+    for (const role of ['user', 'member']) {
+      member.role = role
+      const denied = await request('member', '/profile')
+      assert.equal(denied.status, 403)
+      assert.match(denied.body.message, /Only an administrator/)
+    }
+    for (const actor of ['admin', 'staff'])
+      assert.equal((await request(actor, '/profile')).status, 403)
+    assert.equal((await request('unknown', '/profile')).status, 401)
+    assert.equal(state.accounts.size, 3)
+    assert.deepEqual(state.rpcCalls, [])
+    assert.deepEqual(state.removed, [])
+    assert.deepEqual(state.deleted, [])
   }))
 
 test('admin can delete a member; staff and other members cannot', () =>
@@ -157,9 +176,9 @@ test('admin can delete a member; staff and other members cannot', () =>
 
 test('confirmation, current password, and linked Auth identity are required', () =>
   fixture(async ({ state, request }) => {
-    assert.equal((await request('member', '/profile', { confirmation: 'delete' })).status, 400)
-    assert.equal((await request('member', '/profile', { currentPassword: '' })).status, 400)
-    assert.equal((await request('member', '/profile', { currentPassword: 'wrong' })).status, 401)
+    assert.equal((await request('admin', '/admin/members/member', { confirmation: 'delete' })).status, 400)
+    assert.equal((await request('admin', '/admin/members/member', { currentPassword: '' })).status, 400)
+    assert.equal((await request('admin', '/admin/members/member', { currentPassword: 'wrong' })).status, 401)
     state.verifiedId = 'some-other-login'
     assert.equal((await request()).status, 401)
     assert.deepEqual(state.rpcCalls, [])
@@ -197,6 +216,42 @@ test('Storage failures preserve the login; Auth failures do not report success',
     state.authError = { message: 'Database constraint failure' }
     assert.equal((await request()).status, 503)
     assert.ok(state.accounts.has('member'))
+  }))
+
+test('a renewed membership can stop scheduled deletion before photos change', () =>
+  fixture(async ({ state, member, supabase }) => {
+    await assert.rejects(
+      deleteMemberAccount({
+        supabase,
+        account: member,
+        beforeDelete: async (account) => {
+          assert.equal(account.id, member.id)
+          throw Object.assign(new Error('Membership was renewed.'), { status: 409 })
+        }
+      }),
+      { status: 409 }
+    )
+    assert.deepEqual(state.removed, [])
+    assert.deepEqual(state.deleted, [])
+    assert.ok(state.accounts.has(member.id))
+  }))
+
+test('scheduled deletion rechecks a membership immediately before removing its login', () =>
+  fixture(async ({ state, member, supabase }) => {
+    await assert.rejects(
+      deleteMemberAccount({
+        supabase,
+        account: member,
+        beforeDelete: async () => {
+          if (state.removed.length)
+            throw Object.assign(new Error('Membership was renewed during cleanup.'), { status: 409 })
+        }
+      }),
+      { status: 409 }
+    )
+    assert.deepEqual(state.removed, ['member/profile.jpg'])
+    assert.deepEqual(state.deleted, [])
+    assert.ok(state.accounts.has(member.id))
   }))
 
 test('only gym staff can resend access; rejected email is a failure', () =>

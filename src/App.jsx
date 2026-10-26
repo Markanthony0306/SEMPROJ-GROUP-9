@@ -68,7 +68,7 @@ export default function App() {
     'forgot-password': <ForgotPassword navigate={navigate} />,
     'reset-password': <ResetPassword navigate={navigate} />,
     register: (
-      <ProtectedRoute navigate={navigate} roles={['admin', 'staff']}>
+      <ProtectedRoute navigate={navigate} roles={['admin']}>
         <Register navigate={navigate} />
       </ProtectedRoute>
     ),

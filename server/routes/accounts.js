@@ -34,7 +34,7 @@ export function accountRoutes({
       })
       if (verified.id !== actor.authUserId)
         return res.status(401).json({ message: 'Your login could not be verified.' })
-      const account = req.params.id ? await loadAccount(req.params.id) : actor
+      const account = await loadAccount(req.params.id)
       if (!account) return res.status(404).json({ message: 'Member account not found.' })
       await deleteMemberAccount({ supabase, account })
       return res.json({ message: 'Member account permanently deleted.' })
@@ -50,9 +50,9 @@ export function accountRoutes({
   router.delete(
     '/profile',
     authenticate,
-    requireRole('user', 'member'),
-    rateLimit({ max: 5 }),
-    remove
+    (_req, res) => res.status(403).json({
+      message: 'Only an administrator can delete member accounts. Please contact the gym.'
+    })
   )
   router.delete(
     '/admin/members/:id',

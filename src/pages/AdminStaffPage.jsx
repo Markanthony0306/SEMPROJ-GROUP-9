@@ -361,10 +361,12 @@ export default function AdminStaffPage({ user, onSignOut }) {
               is moving.
             </p>
             <div className="dashboard-quick-actions">
-              <button className="btn" type="button" onClick={() => setModal({ kind: 'create' })}>
-                <Icon name="users" size={16} />
-                Add a member
-              </button>
+              {currentUser?.role === 'admin' && (
+                <button className="btn" type="button" onClick={() => setModal({ kind: 'create' })}>
+                  <Icon name="users" size={16} />
+                  Add a member
+                </button>
+              )}
               <button className="btn ghost" type="button" onClick={() => setSection('Reports')}>
                 <Icon name="chart" size={16} />
                 Explore reports
@@ -482,9 +484,11 @@ export default function AdminStaffPage({ user, onSignOut }) {
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-          <button className="btn" onClick={() => setModal({ kind: 'create' })}>
-            Create Account
-          </button>
+          {currentUser?.role === 'admin' && (
+            <button className="btn" onClick={() => setModal({ kind: 'create' })}>
+              Create Account
+            </button>
+          )}
         </div>
         <DataTable
           searchable={false}
@@ -514,7 +518,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
                 <td>
                   <Pill status={memberBadge(member)} />
                 </td>
-                <td className="acts">
+                <td className="acts member-record-actions">
                   <button
                     className="report-icon-button"
                     type="button"
@@ -532,7 +536,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
                     <Icon name="edit" size={18} />
                   </button>
                   <button
-                    className="report-icon-button"
+                    className="report-icon-button member-mail-button"
                     type="button"
                     title={`Send sign-in link to ${member.name}`}
                     aria-label={`Send sign-in link to ${member.name}`}
@@ -642,7 +646,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
             ))}
           </DataTable>
         </article>
-        <article className="card clay">
+        <article className="card clay maintenance-log">
           <div className="record-section-heading">
             <h2>Maintenance & Repair Log</h2>
             {canDeleteHistory && (
@@ -944,7 +948,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
         </div>
       )}
       {content}
-      {modal?.kind === 'delete-account' && (
+      {modal?.kind === 'delete-account' && currentUser?.role === 'admin' && (
         <AccountDeleteDialog
           account={modal.member}
           onClose={() => setModal(null)}
@@ -1097,7 +1101,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
           </form>
         </Modal>
       )}
-      {modal?.kind === 'create' && (
+      {modal?.kind === 'create' && currentUser?.role === 'admin' && (
         <Modal
           busy={pending}
           error={error}

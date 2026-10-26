@@ -45,4 +45,7 @@ revoke all on function public.clear_fitpulse_report_records(text)
   from public, anon, authenticated;
 grant execute on function public.clear_fitpulse_report_records(text) to service_role;
 
+-- Publish the function and its signature to the Data API after commit.
+notify pgrst, 'reload schema';
+
 commit;

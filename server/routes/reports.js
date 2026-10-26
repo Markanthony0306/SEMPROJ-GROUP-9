@@ -81,7 +81,7 @@ export function reportRoutes({ authenticate, requireRole, loadDatabase, supabase
       return res.status(503).json({
         message:
           error.code === 'PGRST202'
-            ? 'Report clearing is unavailable. Ask your administrator to apply the report clearing migration.'
+            ? 'Report clearing is unavailable. Apply supabase/migrations/004_clear_report_records.sql, then reload the page.'
             : 'Report clearing could not be confirmed. Reload the page to check the latest records before trying again.'
       })
     }
