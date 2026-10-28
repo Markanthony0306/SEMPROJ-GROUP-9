@@ -61,10 +61,17 @@ Report clearing is for historical entries. Members use account editing and statu
 
 The duplicate Memberships sidebar page was removed. Use **Members → View member → Renew membership**, or the renewal actions in Reports. Membership fields and the shared renewal dialog remain available.
 
-## Optional face matching prototype
+## Member account deletion
 
-For member account deletion and the current email setup/retry flow, see
+Expired memberships remain in the admin/staff pages for review and renewal. Accounts
+are not automatically deleted after 15 days; deletion requires administrator
+confirmation. Restart the API after updating the code to stop the previous cleanup
+worker. No database migration is required for this change.
+
+For manual member account deletion and the current email setup/retry flow, see
 [Account deletion and email delivery](../docs/ACCOUNT_AND_EMAIL_FIXES.md).
+
+## Optional face matching prototype
 
 Face enrollment uses face-api.js in the browser to produce a 128-number descriptor; it does not send or retain a camera image. The API encrypts the descriptor with AES-256-GCM before saving it in `face_enrollments`.
 

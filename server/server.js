@@ -16,7 +16,6 @@ import { createAdminNotificationService } from './services/adminNotifications.js
 import { EQUIPMENT_CATEGORIES } from '../shared/equipmentCategories.js'
 import { welcomeEmail } from './services/emailTemplates.js'
 import { createMembershipReminderService, startMembershipReminders } from './services/membershipReminders.js'
-import { createExpiredAccountCleanupService, startExpiredAccountCleanup } from './services/expiredAccountCleanup.js'
 import { sendPasswordRecovery } from './services/passwordRecovery.js'
 import { passwordLoginHandler } from './routes/passwordLogin.js'
 import { authenticatePassword, PasswordAuthenticationError } from './services/passwordAuthentication.js'
@@ -118,9 +117,6 @@ const membershipReminders = createMembershipReminderService({
 })
 const adminNotifications = createAdminNotificationService({
   supabase, loadDatabase, smtpConfigured, reminders: membershipReminders
-})
-const expiredAccountCleanup = createExpiredAccountCleanupService({
-  supabase, loadDatabase, loadAccount
 })
 
 function publicAccount(account) {
@@ -1840,9 +1836,7 @@ export const serverReady = ensureSeedData()
   .then(() => {
     const server = app.listen(port, () => console.log(`FitPulse API listening on ${port}`))
     const stopReminders = startMembershipReminders({ runDue: membershipReminders.runDue })
-    const stopExpiredAccountCleanup = startExpiredAccountCleanup({ runDue: expiredAccountCleanup.runDue })
     server.once('close', stopReminders)
-    server.once('close', stopExpiredAccountCleanup)
     if (!smtpConfigured) console.warn('Automatic membership reminders are paused: configure SMTP to enable delivery.')
     return server
   })

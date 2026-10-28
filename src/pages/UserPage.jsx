@@ -12,7 +12,6 @@ import { downloadPayments } from '../utils/paymentExport'
 import { getMemberQr } from '../utils/memberQr'
 import PasswordChangeForm from '../components/PasswordChangeForm'
 import { membershipState } from '../utils/membership'
-import { ACCOUNT_DELETION_GRACE_DAYS, accountDeletionDeadline } from '../../shared/membershipExpiry'
 
 const validDate = (value) => value && !Number.isNaN(new Date(value).getTime())
 const date = (value) =>
@@ -140,14 +139,7 @@ export default function UserPage({ user, onSignOut }) {
         : expiry <= 7
           ? `Your membership expires in ${expiry} day(s). Visit the front desk to renew.`
           : `Your membership is valid until ${date(currentUser.membershipEnd)}.`
-  const deletionDeadline = accountDeletionDeadline(currentUser)
-  const expiryNotice =
-    expired && deletionDeadline !== null
-      ? deletionDeadline <= Date.now()
-        ? `Your membership expired at least ${ACCOUNT_DELETION_GRACE_DAYS} days ago. Your account is scheduled for automatic deletion. Contact the gym administrator immediately if you need to renew.`
-        : `Your membership has expired. Your account will be automatically deleted ${ACCOUNT_DELETION_GRACE_DAYS} days after expiry, on ${date(deletionDeadline)}, unless you renew. Visit the front desk to renew your membership.`
-      : membershipNote
-  const notifications = currentUser ? [{ id: 'membership', message: expiryNotice }] : []
+  const notifications = currentUser ? [{ id: 'membership', message: membershipNote }] : []
   const settings = (
     <section className="grid g2">
       <article className="card clay">

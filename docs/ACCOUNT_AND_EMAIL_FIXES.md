@@ -51,24 +51,18 @@ because owned Storage objects can prevent Auth deletion. If Auth deletion fails
 after that step, the login and database records remain, but photos may need to be
 uploaded again. The API reports failure and allows a retry.
 
-## Automatic deletion after membership expiry
+## Membership expiry keeps the account
 
-The API checks at startup and every hour after the previous check finishes. A
-member account becomes eligible 15 elapsed days after its recorded membership
-expiry. The notification shows that deadline in Asia/Manila time and explains
-that renewing prevents deletion. An account without a valid expiry, subscription,
-or linked Auth user is skipped. Admin and staff accounts are excluded.
+Membership expiry does not automatically delete accounts, including accounts that
+have been expired for 15 days or longer. The API no longer starts the expired-account
+cleanup worker. Expired members remain available in the admin/staff pages for
+review and renewal, and member notifications direct them to the front desk.
+Automatic membership reminder emails continue to use the existing email settings.
 
-The cleanup reads the current membership again before deleting photos or the
-login. Renewal and automatic deletion share a per-member lock in one API process.
-Failures are retried on the next check. Migration 006 must be installed; missing
-setup stops that account's deletion before photos or Auth are changed.
-
-The API must remain running for hourly checks; an offline host catches up after
-restart. Deployments with multiple API processes need database-level coordination
-between renewal and deletion before enabling multiple cleanup workers. Storage
-and Auth remain separate operations, so a later Auth failure can leave the login
-intact after photos have already been removed.
+Restart the API after updating the code to stop the old startup/hourly cleanup
+worker. No database migration is needed: migration 006 cleans up related records
+only when an account is explicitly deleted; it does not schedule expiry-based
+deletion. Account deletion remains an administrator-confirmed action.
 
 Deleting a member removes their payment and attendance history, so the gym's
 totals change. Export any records the gym needs to retain before confirming.
