@@ -77,12 +77,11 @@ export function reportRoutes({ authenticate, requireRole, loadDatabase, supabase
       p_category: category
     })
     if (error) {
-      console.error('Report category clear failed:', error.code || 'DATABASE_ERROR')
-      return res.status(503).json({
-        message:
-          error.code === 'PGRST202'
-            ? 'Report clearing is unavailable. Apply supabase/migrations/004_clear_report_records.sql, then reload the page.'
-            : 'Report clearing could not be confirmed. Reload the page to check the latest records before trying again.'
+      console.error('Report category clear failed:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
       })
     }
     res.json({ deleted: data, category, message: 'Report records cleared.' })

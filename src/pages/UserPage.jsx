@@ -56,6 +56,7 @@ function StatCard({ label, value, hint, icon }) {
 export default function UserPage({ user, onSignOut }) {
   const { token } = useAuth()
   const [section, setSection] = useState('Dashboard')
+  const [notificationsRead, setNotificationsRead] = useState(false)
   const [attendance, setAttendance] = useState([])
   const [payments, setPayments] = useState([])
   const [currentUser, setCurrentUser] = useState(user)
@@ -84,6 +85,17 @@ export default function UserPage({ user, onSignOut }) {
     },
     [token]
   )
+  const refreshAttendance = useCallback(
+    async (signal) => {
+      try {
+        const result = await apiRequest('/attendance', { token, signal })
+        if (!signal?.aborted) setAttendance(latestFirst(result.attendance))
+      } catch (cause) {
+        if (!signal?.aborted) setError(cause.message)
+      }
+    },
+    [token]
+  )
   useEffect(() => {
     const controller = new AbortController()
     load(controller.signal)
@@ -101,14 +113,19 @@ export default function UserPage({ user, onSignOut }) {
     token
   ])
   useEffect(() => {
-    if (section !== 'My QR') return
     const controller = new AbortController()
-    const timer = window.setInterval(() => load(controller.signal), 10000)
+    if (!['Dashboard', 'Attendance'].includes(section)) return () => controller.abort()
+    const refresh = () => {
+      if (document.visibilityState === 'visible') refreshAttendance(controller.signal)
+    }
+    const timer = window.setInterval(refresh, 5000)
+    window.addEventListener('focus', refresh)
     return () => {
       window.clearInterval(timer)
+      window.removeEventListener('focus', refresh)
       controller.abort()
     }
-  }, [section, load])
+  }, [section, refreshAttendance])
   const action = async (path, options, message) => {
     if (actionPending) return false
     setActionPending(true)
@@ -140,6 +157,7 @@ export default function UserPage({ user, onSignOut }) {
           ? `Your membership expires in ${expiry} day(s). Visit the front desk to renew.`
           : `Your membership is valid until ${date(currentUser.membershipEnd)}.`
   const notifications = currentUser ? [{ id: 'membership', message: membershipNote }] : []
+  const unreadNotificationCount = notificationsRead ? 0 : notifications.length
   const settings = (
     <section className="grid g2">
       <article className="card clay">
@@ -376,8 +394,11 @@ export default function UserPage({ user, onSignOut }) {
       user={currentUser}
       onSignOut={onSignOut}
       activeSection={section}
-      onSectionChange={setSection}
-      notificationCount={loading ? 0 : notifications.length}
+      onSectionChange={(nextSection) => {
+        if (nextSection === 'Notifications') setNotificationsRead(true)
+        setSection(nextSection)
+      }}
+      notificationCount={loading ? 0 : unreadNotificationCount}
       loading={loading}
     >
       {loading && (
