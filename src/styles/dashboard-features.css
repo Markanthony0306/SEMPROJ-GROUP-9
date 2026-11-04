@@ -127,6 +127,9 @@
 .app .table-toolbar .table-sort {
   width: min(220px, 100%);
 }
+.app .table-toolbar .table-sort-order {
+  width: min(180px, 100%);
+}
 .app .table-toolbar select {
   min-height: 44px;
   border: 1px solid var(--id);

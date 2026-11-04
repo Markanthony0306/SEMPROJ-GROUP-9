@@ -17,6 +17,8 @@ export default function DataTable({
   searchable = true
 }) {
   const searchId = useId()
+  const sortFieldId = useId()
+  const sortOrderId = useId()
   const [query, setQuery] = useState('')
   const [page, setPage] = useState(0)
   const [sort, setSort] = useState({ index: null, ascending: true })
@@ -67,32 +69,44 @@ export default function DataTable({
             />
           </label>
         )}
-        <label className="table-sort">
-          Sort records
+        <label className="table-sort table-sort-field" htmlFor={sortFieldId}>
+          Records
           <select
-            value={sort.index === null ? 'original' : `${sort.index}:${sort.ascending}`}
+            id={sortFieldId}
+            value={sort.index === null ? 'original' : sort.index}
             onChange={(event) => {
-              const [index, ascending] = event.target.value.split(':')
               setSort({
-                index: index === 'original' ? null : Number(index),
-                ascending: ascending !== 'false'
+                index: event.target.value === 'original' ? null : Number(event.target.value),
+                ascending: sort.ascending
               })
               setPage(0)
             }}
           >
             <option value="original">Original order</option>
-            {headings.flatMap((heading, index) =>
-              /^actions?$/i.test(heading)
-                ? []
-                : [
-                    <option key={`${index}-asc`} value={`${index}:true`}>
-                      {heading}: ascending
-                    </option>,
-                    <option key={`${index}-desc`} value={`${index}:false`}>
-                      {heading}: descending
-                    </option>
-                  ]
+            {headings.map((heading, index) =>
+              /^actions?$/i.test(heading) ? null : (
+                <option key={index} value={index}>
+                  {heading}
+                </option>
+              )
             )}
+          </select>
+        </label>
+        <label className="table-sort table-sort-order" htmlFor={sortOrderId}>
+          Sort by:
+          <select
+            id={sortOrderId}
+            value={sort.ascending ? 'ascending' : 'descending'}
+            onChange={(event) => {
+              setSort((current) => ({
+                ...current,
+                ascending: event.target.value === 'ascending'
+              }))
+              setPage(0)
+            }}
+          >
+            <option value="ascending">Ascending</option>
+            <option value="descending">Descending</option>
           </select>
         </label>
         <span className="table-record-count" role="status">

@@ -190,7 +190,7 @@
 }
 .app .reports-card .table-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(180px, 240px) auto;
+  grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px) minmax(140px, 180px) auto;
   align-items: end;
   gap: 16px;
 }
@@ -479,7 +479,7 @@
     gap: 8px;
   }
   .app:not(.admin-app) .reports-card .table-toolbar {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 12px;
   }
   .app:not(.admin-app) .reports-card .table-toolbar > label:first-child {

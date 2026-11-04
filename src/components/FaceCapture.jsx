@@ -25,6 +25,9 @@ export default function FaceCapture({
   const [needsReload, setNeedsReload] = useState(false)
   const [phase, setPhase] = useState('idle')
   const [showTips, setShowTips] = useState(false)
+  const [motionDetected, setMotionDetected] = useState(false)
+  const [faceInFrame, setFaceInFrame] = useState(false)
+  const canCapture = cameraReady && motionDetected && faceInFrame
 
   useEffect(
     () => () => {
@@ -34,12 +37,93 @@ export default function FaceCapture({
     []
   )
 
+  useEffect(() => {
+    if (!cameraReady || busy || disabled || phase === 'success') return undefined
+
+    let stopped = false
+    let detecting = false
+    let previousFrame = null
+    let motionTimeout
+    const canvas = document.createElement('canvas')
+    canvas.width = 96
+    canvas.height = 72
+    const context = canvas.getContext('2d', { willReadFrequently: true })
+    let faceapi
+
+    const monitor = async () => {
+      if (stopped || detecting || !videoRef.current || videoRef.current.readyState < 2) return
+      detecting = true
+      try {
+        faceapi ||= await loadFaceApi()
+        if (stopped) return
+
+        context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height)
+        const frame = context.getImageData(0, 0, canvas.width, canvas.height).data
+        const faces = await faceapi.detectAllFaces(
+          videoRef.current,
+          new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.55 })
+        )
+        if (stopped) return
+        const hasOneFace = faces.length === 1
+        setFaceInFrame(hasOneFace)
+
+        if (previousFrame) {
+          const face = hasOneFace ? faces[0].box : null
+          const scaleX = canvas.width / videoRef.current.videoWidth
+          const scaleY = canvas.height / videoRef.current.videoHeight
+          const left = face ? Math.max(0, Math.floor(face.x * scaleX)) : 0
+          const top = face ? Math.max(0, Math.floor(face.y * scaleY)) : 0
+          const right = face
+            ? Math.min(canvas.width, Math.ceil((face.x + face.width) * scaleX))
+            : canvas.width
+          const bottom = face
+            ? Math.min(canvas.height, Math.ceil((face.y + face.height) * scaleY))
+            : canvas.height
+          let changedPixels = 0
+          let totalPixels = 0
+          for (let y = top; y < bottom; y += 1) {
+            for (let x = left; x < right; x += 1) {
+              const index = (y * canvas.width + x) * 4
+              const difference = Math.max(
+                Math.abs(frame[index] - previousFrame[index]),
+                Math.abs(frame[index + 1] - previousFrame[index + 1]),
+                Math.abs(frame[index + 2] - previousFrame[index + 2])
+              )
+              if (difference > 18) changedPixels += 1
+              totalPixels += 1
+            }
+          }
+          if (totalPixels && changedPixels / totalPixels > 0.008) {
+            setMotionDetected(true)
+            clearTimeout(motionTimeout)
+            motionTimeout = setTimeout(() => setMotionDetected(false), 1400)
+          }
+        }
+        previousFrame = frame
+      } catch {
+        // The explicit capture action reports model or camera errors to the user.
+      } finally {
+        detecting = false
+      }
+    }
+
+    const interval = window.setInterval(monitor, 180)
+    monitor()
+    return () => {
+      stopped = true
+      window.clearInterval(interval)
+      clearTimeout(motionTimeout)
+    }
+  }, [cameraReady, busy, disabled, phase])
+
   const startCamera = async () => {
     if (busy || disabled) return
     onReset?.()
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
     setCameraReady(false)
+    setMotionDetected(false)
+    setFaceInFrame(false)
     const operation = ++operationRef.current
     setBusy(true)
     setPhase('loading')
@@ -167,7 +251,12 @@ export default function FaceCapture({
             >
               <button
                 type="button"
-                disabled={busy || disabled || (index > 0 && !cameraReady)}
+                disabled={
+                  busy ||
+                  disabled ||
+                  (index > 0 && !cameraReady) ||
+                  (index === 2 && !canCapture)
+                }
                 aria-describedby={statusId}
                 onClick={index === 0 ? startCamera : index === 1 ? resetCapture : capture}
                 title={
@@ -202,6 +291,16 @@ export default function FaceCapture({
       </ol>
       <div className="face-viewport">
         <video ref={videoRef} autoPlay muted playsInline aria-label="Face camera preview" />
+        {cameraReady && !busy && (
+          <div className="face-live-status" aria-live="polite">
+            <span className={motionDetected ? 'is-detected' : ''}>
+              <i /> {motionDetected ? 'Movement detected' : 'Motion detector on'}
+            </span>
+            <span className={faceInFrame ? 'is-detected' : ''}>
+              <i /> {faceInFrame ? 'Face in frame' : 'Looking for one face'}
+            </span>
+          </div>
+        )}
         <div className="face-guide" aria-hidden="true">
           <span />
         </div>
@@ -261,10 +360,14 @@ export default function FaceCapture({
           >
             {busy ? 'Getting ready…' : error ? 'Try camera again' : 'Start camera'}
           </button>
-        ) : (
+        ) : canCapture ? (
           <button className="btn" type="button" disabled={busy || disabled} onClick={capture}>
             {busy ? 'Checking your face…' : actionLabel}
           </button>
+        ) : (
+          <p className="face-capture-requirements" role="status">
+            Move in front of the camera and keep one face in frame to continue.
+          </p>
         )}
       </div>
       <button
