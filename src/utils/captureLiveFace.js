@@ -24,11 +24,18 @@ export async function captureLiveFace({ video, faceapi, action, isCurrent, onPro
   canvas.height = FACE_FRAME_HEIGHT
   const context = canvas.getContext('2d', { willReadFrequently: true })
   const detector = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.55 })
-  const prompts = [
-    action === 'mouth' ? 'Face forward with your mouth closed.' : 'Face forward with both eyes open.',
-    action === 'mouth' ? 'Open your mouth and hold briefly.' : 'Close both eyes and hold briefly.',
-    action === 'mouth' ? 'Close your mouth again.' : 'Open your eyes again.'
-  ]
+  const prompts = {
+    blink: [
+      'Face forward with both eyes open.', 'Close both eyes and hold briefly.', 'Open your eyes again.'
+    ],
+    mouth: [
+      'Face forward with your mouth closed.', 'Open your mouth and hold briefly.', 'Close your mouth again.'
+    ],
+    turn: [
+      'Face forward.', 'Turn your head to either side and hold briefly.', 'Face forward again.'
+    ]
+  }[action]
+  if (!prompts) throw new Error('The live check is unavailable. Try again.')
   const frames = []
   let baseline
   const expiresAt = performance.now() + 20_000

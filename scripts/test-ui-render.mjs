@@ -47,6 +47,24 @@ try {
   assert.ok(!login.includes('member123'))
   console.log('PASS: Login renders without development credentials.')
 
+  const MemberIdWizard = await load('components/admin/MemberIdWizard')
+  const wizard = render(MemberIdWizard, { plans: [], planOptionLabel: (plan) => plan.plan_name })
+  assert.match(wizard, /Step 1 of 3/)
+  assert.match(wizard, /Member details and photo ID/)
+  assert.match(wizard, /Philippine passport/)
+  assert.match(wizard, /type="file" accept="image\/jpeg,image\/png" disabled=""/)
+  assert.match(wizard, /disabled="">Read ID and continue<\/button>/)
+  const CreatedMemberCredentials = await load('components/CreatedMemberCredentials')
+  const credentials = render(CreatedMemberCredentials, {
+    member: { name: 'Test Member', email: 'member@fixture.test' },
+    temporaryPassword: 'fixture-password',
+    onFaceSetup: () => {},
+    onDismiss: () => {}
+  })
+  assert.match(credentials, />Face setup<\/button>/)
+  assert.match(credentials, />Done<\/button>/)
+  console.log('PASS: Member creation shows the ID upload first and offers separate face setup.')
+
   for (const [path, role, heading] of [
     ['pages/AdminStaffPage', 'admin', 'Gym activity'],
     ['pages/UserPage', 'member', 'Your activity']

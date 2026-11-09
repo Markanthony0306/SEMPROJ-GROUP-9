@@ -18,6 +18,8 @@ import { isRetiredPlan } from '../shared/membershipPlans.js'
 import { generateTemporaryPassword } from './lib/temporaryPassword.js'
 import { createFaceChallenges } from './services/faceVerification.js'
 import { faceVerificationRoutes } from './routes/faceVerification.js'
+import { memberIdVerificationRoutes } from './routes/memberIdVerification.js'
+import { MemberIdError, requireMemberIdApproval } from './services/memberIdRecords.js'
 import { passwordLoginHandler } from './routes/passwordLogin.js'
 import { authenticatePassword, PasswordAuthenticationError } from './services/passwordAuthentication.js'
 import { createSupabaseAuthClient } from './lib/authClient.js'
@@ -72,6 +74,7 @@ if (!jwtSecret) {
 
 const faceLoginEnabled = process.env.FACE_LOGIN_ENABLED === 'true'
 const faceEncryptionKey = parseFaceEncryptionKey()
+const memberIdKey = parseFaceEncryptionKey(process.env.ID_VERIFICATION_KEY || process.env.FACE_ENCRYPTION_KEY)
 const configuredFaceThreshold = Number(process.env.FACE_MATCH_THRESHOLD || 0.5)
 if (faceLoginEnabled && !faceEncryptionKey) {
   throw new Error('FACE_ENCRYPTION_KEY must be a 64-character hex key when FACE_LOGIN_ENABLED=true.')
@@ -94,7 +97,7 @@ const corsOrigins = (
   .filter(Boolean)
 app.use(cors({ origin: corsOrigins }))
 app.use(
-  ['/api/auth/face-verify', '/api/admin/members/:id/face-enrollment'],
+  ['/api/auth/face-verify', '/api/admin/members/:id/face-enrollment', '/api/admin/id-verifications/:id/face'],
   express.json({ limit: '512kb' })
 )
 app.use(express.json({ limit: '100kb' }))
@@ -282,6 +285,7 @@ app.post('/api/auth/register', authenticate, requireRole('admin'), async (req, r
     })
   let authUserId = null
   try {
+    const idVerificationId = await requireMemberIdApproval(supabase, req.user, { name, email }, req.body.verificationId)
     const database = await loadDatabase(['accounts'])
     const planRecord = database.membershipPlans.find(
       (plan) => availablePlan(plan, 'Monthly')
@@ -319,6 +323,8 @@ app.post('/api/auth/register', authenticate, requireRole('admin'), async (req, r
       subscriptionId: crypto.randomUUID(),
       subscriptionCreatedAt: now,
       planId: planRecord.plan_id,
+      idVerificationId,
+      idVerificationActor: req.user.id,
       mustChangePassword: false,
       authVersion: 0
     }
@@ -327,6 +333,8 @@ app.post('/api/auth/register', authenticate, requireRole('admin'), async (req, r
     return res.status(201).json({ message: 'Account created. Please log in.' })
   } catch (error) {
     if (authUserId) await supabase.auth.admin.deleteUser(authUserId)
+    if (error instanceof MemberIdError)
+      return res.status(error.status).json({ message: error.message, code: error.code })
     console.error('Registration failed:', error.message)
     return res.status(503).json({ message: 'Unable to create the account. Please try again.' })
   }
@@ -345,6 +353,11 @@ app.use('/api', faceVerificationRoutes({
   supabase, authenticate, requireRole, rateLimit, loadAccount, createSession,
   enabled: faceLoginEnabled, key: faceEncryptionKey, threshold: faceMatchThreshold,
   challenges: faceChallenges, createAuthClient: createSupabaseAuthClient
+}))
+
+app.use('/api', memberIdVerificationRoutes({
+  supabase, authenticate, requireRole, rateLimit, validAccountInput,
+  key: memberIdKey, threshold: faceMatchThreshold
 }))
 
 app.delete(
@@ -648,7 +661,7 @@ app.get('/api/admin/membership-plans', authenticate, requireRole('admin', 'staff
 app.post(
   '/api/admin/members',
   authenticate,
-  requireRole('admin'),
+  requireRole('admin', 'staff'),
   async (req, res) => {
     let authUserId = null
     let profileId = null
@@ -659,6 +672,7 @@ app.post(
       if (input.error) {
         return res.status(400).json({ message: input.error })
       }
+      const idVerificationId = await requireMemberIdApproval(supabase, req.user, input, req.body.verificationId)
 
       const method = paymentMethod(req.body)
 
@@ -756,6 +770,8 @@ app.post(
           phone_number: input.phone || null,
           status: 'active',
           must_change_password: true,
+          id_verification_id: idVerificationId,
+          id_verification_actor: req.user.id,
           created_at: now
         })
         .select('id, member_code, name, email, phone_number, status, created_at')
@@ -779,6 +795,12 @@ app.post(
         }
 
         authUserId = null
+
+        if (['23505', '23514'].includes(profileError?.code)) {
+          return res.status(409).json({
+            message: 'The ID approval or account is no longer available. Review the verification and try again.'
+          })
+        }
 
         return res.status(500).json({
           message: 'Unable to create the member profile.'
@@ -804,6 +826,7 @@ app.post(
         subscriptionCreatedAt: now,
         planId: planRecord.plan_id,
         mustChangePassword: true,
+        idVerified: true,
         authVersion: 0
       }
 
@@ -838,6 +861,8 @@ app.post(
         }
       })
     } catch (error) {
+      if (error instanceof MemberIdError)
+        return res.status(error.status).json({ message: error.message, code: error.code })
       console.error('Unable to create member:', error.message)
 
       // Attempt cleanup if creation failed after creating the Auth user.

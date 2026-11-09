@@ -7,6 +7,8 @@ import Dialog from '../Dialog'
 import RecordDeleteDialog from '../RecordDeleteControls'
 import AccountDeleteDialog from '../AccountDeleteDialog'
 import EquipmentCategorySelect from '../EquipmentCategorySelect'
+import MemberIdWizard from './MemberIdWizard'
+import MemberIdReviews from './MemberIdReviews'
 import { membershipState } from '../../utils/membership'
 
 function Modal({ title, children, onClose, busy, error, className }) {
@@ -113,6 +115,7 @@ export default function AdminStaffDialogs({
   modal,
   setModal,
   currentUser,
+  token,
   pending,
   error,
   deletion,
@@ -171,6 +174,7 @@ export default function AdminStaffDialogs({
                 {modal.member.memberCode || modal.member.id}
               </span>
               <Pill status={memberBadge(modal.member)} />
+              {modal.member.idVerified && <span className="pill p-ok">ID verified</span>}
             </div>
           </div>
           <section className="member-profile-section" aria-label="Contact details">
@@ -287,68 +291,25 @@ export default function AdminStaffDialogs({
           </form>
         </Modal>
       )}
-      {modal?.kind === 'create' && currentUser?.role === 'admin' && (
-        <Modal
-          busy={pending}
+      {modal?.kind === 'create' && ['admin', 'staff'].includes(currentUser?.role) && (
+        <MemberIdWizard
+          token={token}
+          plans={data.membershipPlans}
+          planOptionLabel={planOptionLabel}
+          initialCase={modal.verification}
+          pending={pending}
           error={error}
-          title="Create Member Account"
           onClose={() => setModal(null)}
-        >
-          <form onSubmit={createMember} className="mf">
-            <label className="field">
-              Full name
-              <input className="clay-in" name="name" required />
-            </label>
-            <label className="field">
-              Contact number
-              <input className="clay-in" name="phone" />
-            </label>
-            <label className="field">
-              Email
-              <input className="clay-in" name="email" type="email" required />
-            </label>
-            <p className="form-help">
-              A temporary password will be shown once so you can give it to the member.
-            </p>
-            <label className="field">
-              Plan
-              <select className="clay-in" name="plan" defaultValue="" required>
-                <option value="" disabled>
-                  Select a membership plan
-                </option>
-                {data.membershipPlans.map((plan) => (
-                  <option key={plan.plan_id} value={plan.plan_name}>
-                    {planOptionLabel(plan)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="form-help">
-              Choose the Student plan to apply its configured student rate. Confirm eligibility
-              before selecting it.
-            </p>
-            <label className="field">
-              Payment
-              <select className="clay-in" name="method">
-                <option>Cash</option>
-                <option>GCash</option>
-              </select>
-            </label>
-            <label className="set">
-              Payment already received
-              <input type="checkbox" name="recordPayment" />
-            </label>
-            <p className="form-help">
-              Check this only after receiving the plan payment through Cash or GCash.
-            </p>
-            <div className="ma">
-              <button className="btn ghost" type="button" onClick={() => setModal(null)}>
-                Cancel
-              </button>
-              <button className="btn">Create</button>
-            </div>
-          </form>
-        </Modal>
+          onCreate={createMember}
+        />
+      )}
+      {modal?.kind === 'id-reviews' && ['admin', 'staff'].includes(currentUser?.role) && (
+        <MemberIdReviews
+          token={token}
+          isAdmin={currentUser.role === 'admin'}
+          onClose={() => setModal(null)}
+          onResume={(verification) => setModal({ kind: 'create', verification })}
+        />
       )}
       {modal?.kind === 'edit' && (
         <Modal busy={pending} error={error} title="Edit Member" onClose={() => setModal(null)}>
@@ -382,7 +343,8 @@ export default function AdminStaffDialogs({
           <CreatedMemberCredentials
             member={modal.member}
             temporaryPassword={modal.temporaryPassword}
-            onDismiss={() => setModal({ kind: 'face', member: modal.member })}
+            onFaceSetup={() => setModal({ kind: 'face', member: modal.member })}
+            onDismiss={() => setModal(null)}
           />
         </Modal>
       )}

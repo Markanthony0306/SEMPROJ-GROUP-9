@@ -60,6 +60,7 @@ function accountFromRow(row, roleById, subscription, planById) {
     subscriptionCreatedAt: subscription?.created_at || null,
     planId: subscription?.plan_id || null,
     mustChangePassword: Boolean(row.must_change_password),
+    idVerified: Boolean(row.id_verification_id),
     authVersion: Number(row.auth_version || 0),
     avatarId: row.avatar_path || ''
   }
@@ -254,6 +255,10 @@ export async function saveDatabase(supabase, database) {
         avatar_path: account.avatarId || null
       }
       if (account.memberCode) row.member_code = account.memberCode
+      if (account.idVerificationId) {
+        row.id_verification_id = account.idVerificationId
+        row.id_verification_actor = account.idVerificationActor
+      }
       return row
     })
     const { error } = await supabase.from('users').upsert(userRows, { onConflict: 'id' })

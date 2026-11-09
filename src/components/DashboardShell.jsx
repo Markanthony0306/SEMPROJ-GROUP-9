@@ -42,6 +42,12 @@ const PATHS = {
       <circle cx="12" cy="12" r="3" />
     </>
   ),
+  camera: (
+    <>
+      <path d="M3 6h4l2-3h6l2 3h4v14H3z" />
+      <circle cx="12" cy="13" r="3" />
+    </>
+  ),
   edit: (
     <>
       <path d="m16 3 5 5-12 12-6 1 1-6L16 3Z" />

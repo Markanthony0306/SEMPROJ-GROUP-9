@@ -10,6 +10,7 @@ const loadFaceApi = createFaceApiLoader({
 
 export default function FaceCapture({
   onCaptured,
+  onCaptureError,
   getChallenge,
   onReset,
   purpose = 'verification',
@@ -187,12 +188,14 @@ export default function FaceCapture({
     setMessage('Starting the live check…')
     setError('')
     setNeedsReload(false)
+    let challenge
+    let submitted = false
     try {
       const faceapi = await loadFaceApi()
       if (operation !== operationRef.current) return
       if (!videoRef.current || videoRef.current.readyState < 2)
         throw new Error('Wait for the camera image before capturing.')
-      const challenge = await getChallenge()
+      challenge = await getChallenge()
       if (operation !== operationRef.current) return
       const frames = await captureLiveFace({
         video: videoRef.current,
@@ -204,6 +207,7 @@ export default function FaceCapture({
       if (!frames) return
       setPhase('verifying')
       setMessage('Checking your face…')
+      submitted = true
       const result = await onCaptured({ frames, challengeToken: challenge.challengeToken })
       if (operation !== operationRef.current) return
       if (result === false) {
@@ -223,6 +227,7 @@ export default function FaceCapture({
       setNeedsReload(cause.code === 'FACE_LIBRARY_LOAD_FAILED')
       setError(cause.message || 'Could not capture or verify the face. Please try again.')
       setMessage('')
+      onCaptureError?.(cause, submitted ? undefined : challenge?.challengeToken)
     } finally {
       if (operation === operationRef.current) setBusy(false)
     }

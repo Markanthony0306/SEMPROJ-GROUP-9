@@ -44,10 +44,10 @@ const dateTime = (value) =>
         minute: '2-digit'
       })
     : '—'
-export default function AdminStaffPage({ user, onSignOut }) {
+export default function AdminStaffPage({ user, onSignOut, startMemberCreation = false }) {
   const { token } = useAuth()
   const [currentUser, setCurrentUser] = useState(user)
-  const [section, setSection] = useState('Dashboard')
+  const [section, setSection] = useState(startMemberCreation ? 'Members' : 'Dashboard')
   const [data, setData] = useState({
     members: [],
     membershipPlans: [],
@@ -60,7 +60,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
   })
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const [modal, setModal] = useState(null)
+  const [modal, setModal] = useState(startMemberCreation ? { kind: 'create' } : null)
   const [deletion, setDeletion] = useState(null)
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
@@ -196,24 +196,18 @@ export default function AdminStaffPage({ user, onSignOut }) {
       setError(cause.message)
     }
   }, [token, load])
-  const createMember = (event) => {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
+  const createMember = (details) =>
     act(
       '/admin/members',
       {
         method: 'POST',
-        body: JSON.stringify({
-          ...Object.fromEntries(form),
-          recordPayment: form.get('recordPayment') === 'on'
-        })
+        body: JSON.stringify(details)
       },
       'Member account created.',
       (result) => {
         if (result.member) setModal({ kind: 'credentials', member: result.member, temporaryPassword: result.temporaryPassword })
       }
     )
-  }
   const updateMember = (event) => {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
@@ -277,7 +271,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
               is moving.
             </p>
             <div className="dashboard-quick-actions">
-              {currentUser?.role === 'admin' && (
+              {['admin', 'staff'].includes(currentUser?.role) && (
                 <button className="btn" type="button" onClick={() => setModal({ kind: 'create' })}>
                   <Icon name="users" size={16} />
                   Add a member
@@ -400,10 +394,15 @@ export default function AdminStaffPage({ user, onSignOut }) {
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-          {currentUser?.role === 'admin' && (
-            <button className="btn" onClick={() => setModal({ kind: 'create' })}>
-              Create Account
-            </button>
+          {['admin', 'staff'].includes(currentUser?.role) && (
+            <>
+              <button className="btn ghost" type="button" onClick={() => setModal({ kind: 'id-reviews' })}>
+                ID Reviews
+              </button>
+              <button className="btn" type="button" onClick={() => setModal({ kind: 'create' })}>
+                Create Account
+              </button>
+            </>
           )}
         </div>
         <DataTable
@@ -450,6 +449,15 @@ export default function AdminStaffPage({ user, onSignOut }) {
                     onClick={() => setModal({ kind: 'edit', member })}
                   >
                     <Icon name="edit" size={18} />
+                  </button>
+                  <button
+                    className="report-icon-button"
+                    type="button"
+                    title="Face setup"
+                    aria-label={`Face setup for ${member.name}`}
+                    onClick={() => setModal({ kind: 'face', member })}
+                  >
+                    <Icon name="camera" size={18} />
                   </button>
                   {currentUser?.role === 'admin' && (
                     <RecordDeleteButton
@@ -839,6 +847,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
         modal={modal}
         setModal={setModal}
         currentUser={currentUser}
+        token={token}
         pending={pending}
         error={error}
         deletion={deletion}

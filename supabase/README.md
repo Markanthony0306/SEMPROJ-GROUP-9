@@ -45,6 +45,18 @@ worker. No database migration is required for this change.
 
 Use HTTPS or localhost for camera access. Try the live prompt on your target cameras and test both printed and screen-displayed photos. This gesture check is a prototype and can be fooled by replayed or synthetic camera frames. Use independently evaluated presentation attack detection before relying on it for production authentication.
 
+## Member ID checks
+
+1. Apply `010_member_id_verification.sql` to Supabase before restarting the updated API. It adds private verification and audit tables and links the approval to the member profile in the same database transaction.
+2. Set a stable server-only `ID_VERIFICATION_KEY` (32 random bytes encoded as hex), or keep the existing `FACE_ENCRYPTION_KEY` as the fallback. Changing the effective key without migrating stored numbers and fingerprints breaks duplicate checks for past records.
+3. Open **Members → Create Account**. Enter member details, select the ID type, record consent, and upload the photo on step 1. Compare the live face on step 2. Review the decision and create the approved account on step 3. Use **Members → ID Reviews** to see flagged cases and resume creation after an administrator approves.
+   After creating the account, use **Face setup** on the sign-in details screen or in the member's row to enroll their face for future sign-ins.
+4. Tesseract.js runs on the API server. It loads English language data on the first scan after startup. For offline use, set `ID_OCR_LANG_PATH` to a server directory containing `eng.traineddata.gz`. Uploaded images never go to the model download service.
+
+The automatic rules target common Philippine passport, driver’s license, and National ID layouts. Student IDs and documents with no readable expiry require an administrator to inspect the original in person. Three document uploads and three live prompts are allowed per case. The audit trail records the actor, time, outcome, and attempt count. An ID match checks consistency and likeness. It does not validate authenticity with the issuing authority.
+
+Images and webcam frames are discarded after processing. The ID portrait template stays in API memory for up to 15 minutes to allow retries. An API restart clears it, so reopen the case and upload again if attempts remain. Supabase keeps encrypted ID numbers, keyed fingerprints for duplicate checks, and the verification and review record. Test the checks against the gym’s supported documents and webcam before using them to make unattended decisions.
+
 ## Webcam QR check-in
 
 In **Attendance**, use **Scan QR with webcam**. The browser must support QR detection through the Barcode Detection API. The authenticated API verifies the same membership QR and uses the same check-in storage as the ESP32-CAM. A member or unauthenticated caller cannot use the staff scanner route.

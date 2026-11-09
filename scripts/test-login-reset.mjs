@@ -38,6 +38,7 @@ const project = {
   payments: [],
   attendance_logs: [],
   face_enrollments: [],
+  member_id_verifications: [],
   membership_reminders: [],
   gym_equipment: [],
   gym_maintenance: [],
@@ -222,19 +223,42 @@ globalThis.fetch = async (input, options = {}) => {
     const matches = (row) =>
       [...url.searchParams].every(([key, value]) => {
         if (value.startsWith('eq.')) return String(row[key]) === value.slice(3)
+        if (value === 'is.null') return row[key] == null
+        if (value === 'not.is.null') return row[key] != null
         if (value.startsWith('ilike.'))
           return String(row[key]).toLowerCase() === value.slice(6).toLowerCase()
         return true
       })
     let rows = project[table].filter(matches)
-    if (method === 'PATCH') rows.forEach((row) => Object.assign(row, body))
+    if (method === 'PATCH') rows.forEach((row) => {
+      Object.assign(row, body)
+      if (table === 'member_id_verifications') {
+        row.revision += 1
+        row.updated_at = new Date().toISOString()
+      }
+    })
     if (method === 'POST') {
       const key = url.searchParams.get('on_conflict') || 'id'
       rows = Array.isArray(body) ? body : [body]
       for (const row of rows) {
+        if (table === 'member_id_verifications') {
+          row.id ||= crypto.randomUUID()
+          row.member_id ??= null
+          row.verification_status ||= 'awaiting_document'
+          row.document_attempts ??= 0
+          row.attempts ??= 0
+          row.reasons ??= []
+          row.revision ??= 0
+          row.updated_at ||= new Date().toISOString()
+        }
         const existing = project[table].find((item) => item[key] === row[key])
         if (existing) Object.assign(existing, row)
         else project[table].push(structuredClone(row))
+        // Simulate the profile-link trigger. PostgreSQL enforces this in migration 010.
+        if (table === 'users' && row.id_verification_id) {
+          const verification = project.member_id_verifications.find((item) => item.id === row.id_verification_id)
+          if (verification) verification.member_id = row.id
+        }
       }
     }
     return response(headers.get('accept')?.includes('vnd.pgrst.object') ? rows[0] || null : rows)
@@ -259,7 +283,7 @@ try {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...headers
         },
-        body: JSON.stringify(body)
+        body: Buffer.isBuffer(body) ? body : JSON.stringify(body)
       }
     )
     return { status: result.status, body: await result.json() }
@@ -322,7 +346,7 @@ try {
     }
   })
 
-  await run('Public visitors, members, and staff cannot create accounts through either API', async () => {
+  await run('Only staff and administrators can start verification and creation requires approval', async () => {
     const before = structuredClone(project)
     const credentialsBefore = [...credentials.keys()]
     const body = {
@@ -331,12 +355,15 @@ try {
     }
     for (const [actorToken, status] of [
       [undefined, 401],
-      [applicationTokens.get(member.id), 403],
-      [applicationTokens.get(staff.id), 403]
+      [applicationTokens.get(member.id), 403]
     ]) {
-      for (const route of ['/auth/register', '/admin/members'])
+      for (const route of ['/auth/register', '/admin/members', '/admin/id-verifications'])
         assert.equal((await request(route, body, actorToken)).status, status)
     }
+    const staffToken = applicationTokens.get(staff.id)
+    assert.equal((await request('/auth/register', body, staffToken)).status, 403)
+    assert.equal((await request('/admin/members', body, staffToken)).body.code, 'ID_VERIFICATION_REQUIRED')
+    assert.equal((await request('/admin/id-verifications', body, staffToken)).status, 400)
     assert.deepEqual(project, before)
     assert.deepEqual([...credentials.keys()], credentialsBefore)
   })
@@ -352,7 +379,14 @@ try {
     }
     assert.equal((await request('/auth/register', { ...body, email: 'invalid' }, token)).status, 400)
     assert.equal(credentials.has(body.email), false)
-    assert.equal((await request('/auth/register', body, token)).status, 201)
+    assert.equal((await request('/auth/register', body, token)).body.code, 'ID_VERIFICATION_REQUIRED')
+    const verification = {
+      id: crypto.randomUUID(), opened_by: administrator.id,
+      applicant_email: body.email, applicant_name: body.name,
+      verification_status: 'approved', id_fingerprint: 'legacy-fixture-document'
+    }
+    project.member_id_verifications.push(verification)
+    assert.equal((await request('/auth/register', { ...body, verificationId: verification.id }, token)).status, 201)
     const profile = project.users.find((item) => item.email === body.email)
     assert.equal(profile.role_id, 2)
     assert.ok(project.subscriptions.some((item) => item.user_id === profile.id))
@@ -660,7 +694,7 @@ try {
     })
     assert.equal((await login(staff.email, credentials.get(staff.email).password)).body.requiresFaceVerification, true)
   })
-  await run('Creating a member returns a strong temporary password once and retires the old plan', async () => {
+  await run('Three unusable uploads require an admin decision before staff can create a verified member', async () => {
     const token = applicationTokens.get(administrator.id)
     const plans = await request('/admin/membership-plans', undefined, token, {}, 'GET')
     assert.deepEqual(plans.body.membershipPlans.map((plan) => plan.plan_name), ['Monthly'])
@@ -668,18 +702,65 @@ try {
       name: member.name, email: 'new-member@fixture.test',
       plan: 'Monthly', recordPayment: true, method: 'Cash'
     }
-    const rejected = await request('/admin/members', { ...details, plan: 'Unlimited Monthly' }, token)
+    const staffToken = applicationTokens.get(staff.id)
+    const opening = await request('/admin/id-verifications', { ...details, consent: true }, staffToken)
+    assert.equal(opening.status, 200)
+    const verificationId = opening.body.verification.id
+    const verificationPath = `/admin/id-verifications/${verificationId}`
+    assert.equal((await request(verificationPath + '/face-challenge', {}, staffToken)).status, 409)
+    assert.equal((await request('/admin/members', { ...details, verificationId }, staffToken)).status, 409)
+    for (const attempt of [1, 2, 3]) {
+      const upload = await request(
+        verificationPath + '/document?type=student_id',
+        Buffer.from('This is not an image.'), staffToken, { 'Content-Type': 'image/png' }
+      )
+      assert.equal(upload.status, 200)
+      assert.equal(upload.body.verification.documentAttempts, attempt)
+      assert.equal(upload.body.verification.status, attempt === 3 ? 'needs_review' : 'rejected')
+    }
+    assert.equal((await request(
+      verificationPath + '/document?type=student_id',
+      Buffer.from('This is not an image.'), staffToken, { 'Content-Type': 'image/png' }
+    )).status, 409)
+    const decision = {
+      decision: 'approve', inspected: true, idNumber: 'FIX-12345', issuer: 'Fixture School',
+      noExpiry: true, notes: 'Original student ID and its holder reviewed in person.'
+    }
+    assert.equal((await request(verificationPath + '/review', decision, staffToken)).status, 403)
+    assert.equal((await request(verificationPath + '/review', {
+      ...decision, noExpiry: false, expiryDate: '2000-01-01'
+    }, token)).status, 400)
+    const approval = await request(verificationPath + '/review', decision, token)
+    assert.equal(approval.status, 200)
+    assert.equal(approval.body.verification.status, 'approved')
+    assert.ok(!JSON.stringify(approval.body).includes(decision.idNumber))
+    const approved = { ...details, verificationId }
+    assert.equal((await request('/admin/members', {
+      ...approved, email: 'different-member@fixture.test'
+    }, staffToken)).status, 409)
+    const rejected = await request('/admin/members', { ...approved, plan: 'Unlimited Monthly' }, staffToken)
     assert.equal(rejected.status, 400)
-    const created = await request('/admin/members', details, token)
+    const created = await request('/admin/members', approved, staffToken)
     assert.equal(created.status, 201)
     const { temporaryPassword, member: createdMember } = created.body
+    assert.equal(createdMember.idVerified, true)
     assert.equal(temporaryPassword.length, 16)
     assert.ok(passwordPolicy(temporaryPassword))
     assert.equal(credentials.get(details.email).password, temporaryPassword)
     assert.ok(project.users.find((item) => item.id === createdMember.id).must_change_password)
     const subscription = project.subscriptions.find((item) => item.user_id === createdMember.id)
     assert.ok(project.payments.some((item) => item.subscription_id === subscription.subscription_id))
-    assert.equal((await request('/admin/members', details, token)).status, 409)
+    assert.equal((await request('/admin/members', approved, staffToken)).status, 409)
+    const duplicateCase = await request('/admin/id-verifications', {
+      ...details, email: 'duplicate-document@fixture.test', consent: true
+    }, staffToken)
+    assert.equal(duplicateCase.status, 200)
+    const duplicatePath = `/admin/id-verifications/${duplicateCase.body.verification.id}`
+    await request(duplicatePath + '/document?type=student_id',
+      Buffer.from('This is not an image.'), staffToken, { 'Content-Type': 'image/png' })
+    const duplicateApproval = await request(duplicatePath + '/review', decision, token)
+    assert.equal(duplicateApproval.status, 409)
+    assert.match(duplicateApproval.body.message, /already linked/)
     const listing = await request('/members', undefined, token, {}, 'GET')
     assert.ok(!JSON.stringify(listing.body).includes(temporaryPassword))
 

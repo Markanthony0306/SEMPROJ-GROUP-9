@@ -44,14 +44,14 @@ export function createFaceChallenges(now = Date.now) {
       pendingTerms.delete(token)
       return item.expiresAt > now() ? item : null
     },
-    issue({ userId, actorId, authVersion }) {
+    issue({ userId, actorId, authVersion, actions = faceActions }) {
       const time = now()
       for (const [id, item] of pending) {
         if (item.expiresAt <= time) pending.delete(id)
       }
       if (pending.size >= 10_000) pending.delete(pending.keys().next().value)
       const challengeToken = randomUUID()
-      const action = faceActions[randomInt(faceActions.length)]
+      const action = actions[randomInt(actions.length)]
       pending.set(challengeToken, { userId, actorId, authVersion, action, expiresAt: time + 120_000 })
       return { challengeToken, action }
     },
@@ -92,6 +92,24 @@ export async function readLiveFace(frames, action, matchThreshold) {
   return descriptors.every((item) => faceDescriptorDistance(descriptors[0], item) <= matchThreshold)
     ? descriptors[0]
     : null
+}
+
+export async function readDocumentPortrait({ data, width, height }) {
+  const api = await loadModels()
+  const tensor = api.tf.tensor3d(data, [height, width, 3], 'int32')
+  try {
+    const results = await api
+      .detectAllFaces(tensor, new api.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.55 }))
+      .withFaceLandmarks(true)
+      .withFaceDescriptors()
+    if (results.length !== 1) return null
+    const { box } = results[0].detection
+    if (box.x < 2 || box.y < 2 || box.x + box.width > width - 2 || box.y + box.height > height - 2 ||
+      Math.min(box.width, box.height) < 40) return null
+    return Array.from(results[0].descriptor)
+  } finally {
+    tensor.dispose()
+  }
 }
 
 export async function readFaceEnrollments(supabase, key) {
