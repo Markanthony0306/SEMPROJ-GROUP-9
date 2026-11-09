@@ -7,9 +7,7 @@ export function passwordLoginHandler({
   createAuthClient,
   supabase,
   loadAccount,
-  createSession,
-  faceLoginEnabled,
-  createFaceChallenge
+  createTermsChallenge
 }) {
   return async (req, res) => {
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : ''
@@ -55,23 +53,8 @@ export function passwordLoginHandler({
             message: 'Your account profile is incomplete. Please contact the administrator.',
             code: 'PROFILE_LINK_INVALID'
           })
-      if (faceLoginEnabled) {
-        const { data: enrollment, error: enrollmentError } = await supabase
-          .from('face_enrollments')
-          .select('enrollment_id')
-          .eq('user_id', account.id)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle()
-        if (enrollmentError) throw new Error('Face verification is temporarily unavailable.')
-        if (enrollment)
-          return res.json({
-            requiresFaceVerification: true,
-            ...createFaceChallenge(account)
-          })
-      }
-      return res.json(createSession(account))
+      res.set('Cache-Control', 'no-store')
+      return res.json({ requiresTermsAcceptance: true, ...createTermsChallenge(account) })
     } catch (error) {
       if (error instanceof PasswordAuthenticationError) {
         // Log only diagnostic codes; never passwords, tokens, or provider payloads.

@@ -10,6 +10,7 @@ import jwt from 'jsonwebtoken'
 import { passwordPolicy } from '../shared/passwordPolicy.js'
 import { FACE_FRAME_BYTES } from '../shared/faceLiveness.js'
 import { EQUIPMENT_CATEGORIES } from '../shared/equipmentCategories.js'
+import { createFaceChallenges } from '../server/services/faceVerification.js'
 
 const providerOrigin = 'https://login-fixture.test'
 const now = Date.now()
@@ -263,7 +264,12 @@ try {
     )
     return { status: result.status, body: await result.json() }
   }
-  const login = (email, password) => request('/auth/login', { email, password })
+  const beginLogin = (email, password) => request('/auth/login', { email, password })
+  const login = async (email, password) => {
+    const result = await beginLogin(email, password)
+    if (!result.body.requiresTermsAcceptance) return result
+    return request('/auth/accept-terms', { termsToken: result.body.termsToken, accepted: true })
+  }
   const applicationTokens = new Map()
   let testWindow = 0
   // Test cases share data, but each gets a fresh rate-limit window.
@@ -271,6 +277,39 @@ try {
     testWindow += 1
     Date.now = () => realNow() + testWindow * 16 * 60_000
     await callback()
+  })
+
+  await run('Terms acceptance is required before a session or face challenge is issued', async () => {
+    const result = await beginLogin(member.email, credentials.get(member.email).password)
+    assert.equal(result.status, 200)
+    assert.equal(result.body.requiresTermsAcceptance, true)
+    assert.ok(result.body.termsToken)
+    assert.equal(result.body.token, undefined)
+    assert.equal(result.body.challengeToken, undefined)
+    assert.equal((await request('/me', undefined, result.body.termsToken, {}, 'GET')).status, 401)
+    assert.equal((await request('/auth/face-verify', { challengeToken: result.body.termsToken })).status, 401)
+    assert.equal((await request('/auth/accept-terms', { termsToken: result.body.termsToken, accepted: false })).status, 400)
+    const accepted = await request('/auth/accept-terms', { termsToken: result.body.termsToken, accepted: true })
+    assert.equal(accepted.status, 200)
+    assert.equal(accepted.body.user.id, member.id)
+    assert.equal((await request('/auth/accept-terms', { termsToken: result.body.termsToken, accepted: true })).status, 401)
+    assert.equal((await request('/auth/accept-terms', { termsToken: 'forged', accepted: true })).status, 401)
+  })
+
+  await run('Expired terms and changed accounts cannot complete sign-in', async () => {
+    let clock = 0
+    const challenges = createFaceChallenges(() => clock)
+    const expired = challenges.issueTerms({ userId: member.id, authVersion: 0 })
+    clock = 10 * 60_000 + 1
+    assert.equal(challenges.consumeTerms(expired.termsToken), null)
+
+    const pending = await beginLogin(member.email, credentials.get(member.email).password)
+    member.status = 'inactive'
+    try {
+      assert.equal((await request('/auth/accept-terms', { termsToken: pending.body.termsToken, accepted: true })).status, 403)
+    } finally {
+      member.status = 'active'
+    }
   })
 
   await run('Admin, member, staff, and another member can sign in with their own credentials', async () => {
@@ -587,6 +626,14 @@ try {
       status: 'active',
       created_at: iso(-1)
     })
+    const pending = await beginLogin(member.email, credentials.get(member.email).password)
+    assert.equal(pending.body.requiresTermsAcceptance, true)
+    assert.equal(pending.body.challengeToken, undefined)
+    assert.equal((await request('/auth/face-verify', { challengeToken: pending.body.termsToken })).status, 401)
+    const afterTerms = await request('/auth/accept-terms', { termsToken: pending.body.termsToken, accepted: true })
+    assert.equal(afterTerms.body.requiresFaceVerification, true)
+    assert.ok(afterTerms.body.challengeToken)
+    assert.equal(afterTerms.body.token, undefined)
     const result = await login(member.email, credentials.get(member.email).password)
     assert.equal(result.status, 200)
     assert.equal(result.body.requiresFaceVerification, true)

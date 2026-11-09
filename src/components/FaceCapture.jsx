@@ -372,16 +372,16 @@ export default function FaceCapture({
           <li>If a sign-in check fails, return to password login and try again.</li>
         </ul>
       )}
-      <details className="face-privacy">
-        <summary>How your face data is used</summary>
-        <p>
-          FitPulse checks three camera frames on its server and discards them after processing.
-          During setup, it stores an encrypted face template. You can ask the gym to remove it.
-        </p>
-        <p>
-          Staff still check your photo ID during member setup.
-        </p>
-      </details>
+      {purpose !== 'enrollment' && (
+        <details className="face-privacy">
+          <summary>How your face data is used</summary>
+          <p>
+            FitPulse checks three camera frames on its server and discards them after processing.
+            During setup, it stores an encrypted face template. You can ask the gym to remove it.
+          </p>
+          <p>Staff still check your photo ID during member setup.</p>
+        </details>
+      )}
     </div>
   )
 }

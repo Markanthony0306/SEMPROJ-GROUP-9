@@ -26,7 +26,24 @@ function loadModels() {
 
 export function createFaceChallenges(now = Date.now) {
   const pending = new Map()
+  const pendingTerms = new Map()
   return {
+    issueTerms({ userId, authVersion }) {
+      const time = now()
+      for (const [id, item] of pendingTerms) {
+        if (item.expiresAt <= time) pendingTerms.delete(id)
+      }
+      if (pendingTerms.size >= 10_000) pendingTerms.delete(pendingTerms.keys().next().value)
+      const termsToken = randomUUID()
+      pendingTerms.set(termsToken, { userId, authVersion, expiresAt: time + 10 * 60_000 })
+      return { termsToken }
+    },
+    consumeTerms(token) {
+      const item = pendingTerms.get(token)
+      if (!item) return null
+      pendingTerms.delete(token)
+      return item.expiresAt > now() ? item : null
+    },
     issue({ userId, actorId, authVersion }) {
       const time = now()
       for (const [id, item] of pending) {

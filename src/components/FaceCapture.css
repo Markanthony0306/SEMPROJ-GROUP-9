@@ -277,6 +277,7 @@
 }
 .face-capture .face-status {
   min-height: 42px;
+  margin: 0;
   text-align: center;
   color: var(--muted);
   font-size: 13px;
@@ -337,6 +338,7 @@
   min-height: 28px;
 }
 .face-privacy p {
+  margin: 0;
   padding-top: 10px;
 }
 @media (max-width: 420px) {

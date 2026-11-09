@@ -36,15 +36,40 @@ function FaceEnrollmentForm({ selfEnrollment, onEnroll, getChallenge, busy }) {
 
   return (
     <div className="mf face-enrollment-form">
+      <section className="face-enrollment-terms" aria-labelledby="face-terms-title">
+        <h3 id="face-terms-title">Face verification terms</h3>
+        <p>Please read these terms before agreeing to face enrollment:</p>
+        <ul>
+          <li>
+            FitPulse uses your face to verify your identity when you sign in and to check for
+            duplicate enrollments.
+          </li>
+          <li>
+            Three camera frames are sent to the server for each live check and discarded after
+            processing. An encrypted face template is stored for future verification.
+          </li>
+          <li>
+            Face enrollment is optional. You can withdraw your consent and ask the gym to remove
+            your face template.
+          </li>
+        </ul>
+        {!selfEnrollment && (
+          <p>Staff must explain these terms and obtain the member's agreement before continuing.</p>
+        )}
+      </section>
       {!selfEnrollment && (
         <label className="set">
-          I checked the member's photo ID.
           <input type="checkbox" checked={idChecked} onChange={(event) => setIdChecked(event.target.checked)} />
+          <span>I checked the member's photo ID.</span>
         </label>
       )}
       <label className="set">
-        {selfEnrollment ? 'I agree to face verification.' : 'The member agrees to face verification.'}
         <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />
+        <span>
+          {selfEnrollment
+            ? 'I have read and agree to the face verification terms.'
+            : 'The member has agreed to the face verification terms.'}
+        </span>
       </label>
       {selfEnrollment && (
         <label className="field">

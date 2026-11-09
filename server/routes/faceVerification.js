@@ -15,6 +15,39 @@ export function faceVerificationRoutes({
       return res.status(503).json({ message: 'Face verification is not enabled.' })
     next()
   }
+  router.post('/auth/accept-terms', rateLimit({ max: 20 }), async (req, res) => {
+    res.set('Cache-Control', 'no-store')
+    if (req.body?.accepted !== true)
+      return res.status(400).json({ message: 'Please agree to the terms before continuing.' })
+    const pending = challenges.consumeTerms(req.body?.termsToken)
+    if (!pending)
+      return res.status(401).json({ message: 'Your sign-in expired. Log in again to continue.' })
+    try {
+      const account = await loadAccount(pending.userId)
+      if (!account || account.status !== 'active' || (account.authVersion || 0) !== pending.authVersion)
+        return res.status(403).json({ message: 'Your account is unavailable. Please log in again.' })
+      if (enabled) {
+        const { data: enrollment, error } = await supabase
+          .from('face_enrollments')
+          .select('enrollment_id')
+          .eq('user_id', account.id)
+          .eq('status', 'active')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        if (error) throw error
+        if (enrollment)
+          return res.json({
+            requiresFaceVerification: true,
+            ...challenges.issue({ userId: account.id, authVersion: pending.authVersion })
+          })
+      }
+      return res.json(createSession(account))
+    } catch (error) {
+      console.error('Terms acceptance failed:', error.message)
+      return res.status(503).json({ message: 'Unable to continue. Please log in again.' })
+    }
+  })
   router.post('/auth/face-verify', rateLimit({ max: 5 }), checkEnabled, async (req, res) => {
     const challenge = challenges.consume(req.body?.challengeToken)
     if (!challenge)

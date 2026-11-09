@@ -337,10 +337,8 @@ app.post('/api/auth/login', rateLimit({ max: 10 }), passwordLoginHandler({
   createAuthClient: createSupabaseAuthClient,
   supabase,
   loadAccount,
-  createSession,
-  faceLoginEnabled,
-  createFaceChallenge: (account) =>
-    faceChallenges.issue({ userId: account.id, authVersion: account.authVersion || 0 })
+  createTermsChallenge: (account) =>
+    faceChallenges.issueTerms({ userId: account.id, authVersion: account.authVersion || 0 })
 }))
 
 app.use('/api', faceVerificationRoutes({

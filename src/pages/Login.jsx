@@ -157,7 +157,11 @@ export default function Login({ onLogin }) {
   const [capsLock, setCapsLock] = useState(false)
   const [pending, setPending] = useState(false)
   const [facePending, setFacePending] = useState(false)
+  const [termsToken, setTermsToken] = useState(null)
+  const [termsPending, setTermsPending] = useState(false)
+  const [termsError, setTermsError] = useState('')
   const [faceChallenge, setFaceChallenge] = useState(null)
+  const [termsAccepted, setTermsAccepted] = useState(false)
   const [shaking, setShaking] = useState(false)
   const [errors, setErrors] = useState({ email: '', password: '', general: '' })
   const [resetOpen, setResetOpen] = useState(false)
@@ -168,13 +172,13 @@ export default function Login({ onLogin }) {
   const { dark, toggle: toggleTheme } = useTheme()
   const emailRef = useRef(null)
   const passwordRef = useRef(null)
-  const faceHeadingRef = useRef(null)
+  const stepHeadingRef = useRef(null)
   const submissionLock = useRef(false)
   const resetDialogRef = useRef(null)
 
   useEffect(() => {
-    if (faceChallenge) faceHeadingRef.current?.focus({ preventScroll: true })
-  }, [faceChallenge])
+    if (termsToken || faceChallenge) stepHeadingRef.current?.focus({ preventScroll: true })
+  }, [termsToken, faceChallenge])
 
   useEffect(() => {
     if (!resetOpen) return
@@ -239,15 +243,17 @@ export default function Login({ onLogin }) {
         method: 'POST',
         body: JSON.stringify({ email: normalizedEmail, password: submittedPassword })
       })
-      if (session.requiresFaceVerification && session.challengeToken) {
-        setFaceChallenge({ challengeToken: session.challengeToken, action: session.action })
+      if (session.requiresTermsAcceptance && session.termsToken) {
+        setTermsAccepted(false)
+        setTermsError('')
+        setTermsToken(session.termsToken)
         setPassword('')
         setShaking(false)
         setPending(false)
         submissionLock.current = false
         return
       }
-      finishLogin(session)
+      throw new Error('Unable to start sign-in. Please try again.')
     } catch (error) {
       setShowPassword(false)
       setErrors({
@@ -261,6 +267,38 @@ export default function Login({ onLogin }) {
       // Wait for disabled inputs to re-enable before moving keyboard focus.
       window.requestAnimationFrame(() => passwordRef.current?.focus())
     }
+  }
+  const acceptTerms = async () => {
+    if (!termsAccepted || !termsToken || termsPending) return
+    setTermsPending(true)
+    setTermsError('')
+    try {
+      const result = await apiRequest('/auth/accept-terms', {
+        method: 'POST',
+        body: JSON.stringify({ termsToken, accepted: true })
+      })
+      if (result.requiresFaceVerification && result.challengeToken) {
+        setFaceChallenge({ challengeToken: result.challengeToken, action: result.action })
+        setTermsToken(null)
+      } else if (result.token && result.user) {
+        finishLogin(result)
+      } else {
+        throw new Error('Unable to continue. Please log in again.')
+      }
+    } catch (error) {
+      setTermsError(error.message || 'Unable to continue. Please log in again.')
+    } finally {
+      setTermsPending(false)
+    }
+  }
+  const backToLogin = () => {
+    setTermsToken(null)
+    setFaceChallenge(null)
+    setTermsAccepted(false)
+    setTermsError('')
+    clearErrors()
+    submissionLock.current = false
+    window.requestAnimationFrame(() => passwordRef.current?.focus({ preventScroll: true }))
   }
   const verifyFace = async (capture) => {
     setFacePending(true)
@@ -297,7 +335,7 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div id="login" className={faceChallenge ? 'face-login' : undefined}>
+    <div id="login" className={termsToken || faceChallenge ? 'face-login' : undefined}>
       <button
         className="ib theme-fab"
         type="button"
@@ -336,13 +374,46 @@ export default function Login({ onLogin }) {
           className={`lform clay${shaking ? ' shake' : ''}`}
           onAnimationEnd={() => setShaking(false)}
         >
-          <div key={faceChallenge ? 'face' : 'password'} className="fhead login-step-heading">
-            <h2 ref={faceHeadingRef} tabIndex={faceChallenge ? -1 : undefined}>
-              {faceChallenge ? 'Verify your face' : 'Welcome back'}
+          <div key={termsToken ? 'terms' : faceChallenge ? 'face' : 'password'} className="fhead login-step-heading">
+            <h2 ref={stepHeadingRef} tabIndex={termsToken || faceChallenge ? -1 : undefined}>
+              {termsToken ? 'Terms and Conditions' : faceChallenge ? 'Verify your face' : 'Welcome back'}
             </h2>
-            {!faceChallenge && <p>Login to continue your fitness journey.</p>}
+            {!termsToken && !faceChallenge && <p>Login to continue your fitness journey.</p>}
           </div>
-          {faceChallenge ? (
+          {termsToken ? (
+            <div className="login-terms-step">
+              <section className="login-terms-content" aria-labelledby="terms-intro" tabIndex="0">
+                <h3 id="terms-intro">Before you continue</h3>
+                <p>Please read this short summary of how we use your information.</p>
+                <h4>What we collect</h4>
+                <p>Your login details and a scan of your face.</p>
+                <h4>Why we collect it</h4>
+                <p>To confirm it's really you and keep your account and our gym secure.</p>
+                <h4>How we protect it</h4>
+                <p>Your data is stored securely and is only accessible to authorized FitPulse staff.</p>
+                <h4>Your choices</h4>
+                <p>You can ask us to delete your data or withdraw your consent at any time by contacting the gym admin.</p>
+                <h4>If you don't agree</h4>
+                <p>You won't be able to continue to face verification or use your account.</p>
+              </section>
+              <label className="login-face-consent">
+                <input
+                  type="checkbox"
+                  checked={termsAccepted}
+                  disabled={termsPending}
+                  onChange={(event) => setTermsAccepted(event.target.checked)}
+                />
+                <span>I have read and agree to the Terms and Conditions.</span>
+              </label>
+              {termsError && <p className="form-error" role="alert">{termsError}</p>}
+              <button className="btn" type="button" disabled={!termsAccepted || termsPending} onClick={acceptTerms}>
+                {termsPending ? 'Continuing…' : 'Continue'}
+              </button>
+              <button className="login-face-back" type="button" disabled={termsPending} onClick={backToLogin}>
+                Back to password login
+              </button>
+            </div>
+          ) : faceChallenge ? (
             <div className="login-face-step">
               <FaceCapture
                 getChallenge={() => faceChallenge}
@@ -354,14 +425,7 @@ export default function Login({ onLogin }) {
                 className="login-face-back"
                 type="button"
                 disabled={facePending}
-                onClick={() => {
-                  setFaceChallenge(null)
-                  clearErrors()
-                  submissionLock.current = false
-                  window.requestAnimationFrame(() =>
-                    passwordRef.current?.focus({ preventScroll: true })
-                  )
-                }}
+                onClick={backToLogin}
               >
                 Back to password login
               </button>
