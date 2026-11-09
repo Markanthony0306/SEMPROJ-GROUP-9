@@ -15,7 +15,7 @@ export function membershipFailure(member, now = Date.now()) {
   return ''
 }
 
-export function scannerRoutes({ loadAccount, authenticate, rateLimit, jwtSecret }) {
+export function scannerRoutes({ loadAccount, authenticate, requireRole, rateLimit, jwtSecret }) {
   const router = express.Router()
   // A QR token must never be usable as a web login token.
   const qrSecret = crypto.createHmac('sha256', jwtSecret).update('fitpulse-qr-v1').digest('hex')
@@ -88,88 +88,108 @@ export function scannerRoutes({ loadAccount, authenticate, rateLimit, jwtSecret 
     next()
   }
 
-  router.post(
-    '/scanner/check-in',
-    rateLimit({ windowMs: 60000, max: 120 }),
-    authenticateScanner,
-    async (req, res) => {
-      const { qrToken, requestId } = req.body || {}
-      if (
-        req.body?.deviceId !== deviceId ||
-        typeof requestId !== 'string' ||
-        !/^[a-zA-Z0-9-]{16,80}$/.test(requestId) ||
-        typeof qrToken !== 'string' ||
-        qrToken.length > 2048
-      ) {
-        return res
-          .status(400)
-          .json({ allowed: false, code: 'INVALID_SCAN', message: 'Invalid scan request.' })
-      }
-      let claims
-      try {
-        claims = jwt.verify(qrToken, qrSecret, {
-          algorithms: ['HS256'],
-          audience: 'fitpulse-scanner'
-        })
-        if (typeof claims.sub !== 'string' || typeof claims.jti !== 'string')
-          throw new Error('Invalid claims')
-      } catch {
-        return res.status(403).json({
-          allowed: false,
-          code: 'QR_INVALID_OR_EXPIRED',
-          message: 'Refresh the member QR code and scan again.'
-        })
-      }
-      const member = await loadAccount(claims.sub)
-      const code = membershipFailure(member)
-      if (code)
-        return res.status(403).json({
-          allowed: false,
-          code,
-          message: 'Membership could not be verified. Please contact the front desk.'
-        })
-      const { data, error } = await supabase.rpc('record_fitpulse_checkin', {
-        p_member_id: member.id,
-        p_member_name: member.name,
-        p_date: new Date().toISOString(),
-        p_source: 'ESP32-CAM',
-        p_device_id: deviceId,
-        p_request_id: requestId,
-        p_qr_token_id: claims.jti
+  const checkIn = (source, getDeviceId) => async (req, res) => {
+    res.set('Cache-Control', 'no-store')
+    const { qrToken, requestId } = req.body || {}
+    const scanDeviceId = getDeviceId(req)
+    if (
+      !scanDeviceId ||
+      typeof requestId !== 'string' ||
+      !/^[a-zA-Z0-9-]{16,80}$/.test(requestId) ||
+      typeof qrToken !== 'string' ||
+      qrToken.length > 2048
+    ) {
+      return res
+        .status(400)
+        .json({ allowed: false, code: 'INVALID_SCAN', message: 'Invalid scan request.' })
+    }
+    let claims
+    try {
+      claims = jwt.verify(qrToken, qrSecret, {
+        algorithms: ['HS256'],
+        audience: 'fitpulse-scanner'
       })
-      if (error) {
-        console.error('Supabase could not record the scanner check-in:', error.message)
-        return res.status(503).json({
-          allowed: false,
-          code: 'CHECK_IN_UNAVAILABLE',
-          message: 'Attendance storage is unavailable. Please try again.'
-        })
-      }
-      const result = data?.[0]
-      if (!result) return res.status(503).json({
+      if (typeof claims.sub !== 'string' || typeof claims.jti !== 'string')
+        throw new Error('Invalid claims')
+    } catch {
+      return res.status(403).json({
+        allowed: false,
+        code: 'QR_INVALID_OR_EXPIRED',
+        message: 'Refresh the member QR code and scan again.'
+      })
+    }
+    const member = await loadAccount(claims.sub)
+    const code = membershipFailure(member)
+    if (code)
+      return res.status(403).json({
+        allowed: false,
+        code,
+        message: 'Membership could not be verified. Please contact the front desk.'
+      })
+    if (
+      claims.iat !== Math.floor(Date.parse(member.membershipStart || member.joined) / 1000) ||
+      claims.exp !== Math.floor(Date.parse(member.membershipEnd) / 1000)
+    )
+      return res.status(403).json({
+        allowed: false,
+        code: 'QR_INVALID_OR_EXPIRED',
+        message: 'The membership changed. Refresh the member QR and scan again.'
+      })
+    const { data, error } = await supabase.rpc('record_fitpulse_checkin', {
+      p_member_id: member.id,
+      p_member_name: member.name,
+      p_date: new Date().toISOString(),
+      p_source: source,
+      p_device_id: scanDeviceId,
+      p_request_id: requestId,
+      p_qr_token_id: claims.jti
+    })
+    if (error) {
+      console.error('Supabase could not record the scanner check-in:', error.message)
+      return res.status(503).json({
         allowed: false,
         code: 'CHECK_IN_UNAVAILABLE',
         message: 'Attendance storage is unavailable. Please try again.'
       })
-      if (result.result_code === 'REQUEST_CONFLICT')
-        return res.status(409).json({
-          allowed: false,
-          code: result.result_code,
-          message: 'Use a new request ID for each scan.'
-        })
-      if (result.result_code === 'CHECK_IN_COOLDOWN')
-        return res.status(409).json({
-          allowed: false,
-          code: result.result_code,
-          message: 'A check-in was just recorded for this member.'
-        })
-      return res.status(result.result_code === 'CHECK_IN_RECORDED' ? 201 : 200).json({
-        allowed: true,
-        code: result.result_code,
-        attendanceId: result.attendance_id,
-        memberName: member.name
-      })
     }
+    const result = data?.[0]
+    if (!result) return res.status(503).json({
+      allowed: false,
+      code: 'CHECK_IN_UNAVAILABLE',
+      message: 'Attendance storage is unavailable. Please try again.'
+    })
+    if (result.result_code === 'REQUEST_CONFLICT')
+      return res.status(409).json({
+        allowed: false,
+        code: result.result_code,
+        message: 'Use a new request ID for each scan.'
+      })
+    if (result.result_code === 'CHECK_IN_COOLDOWN')
+      return res.status(409).json({
+        allowed: false,
+        code: result.result_code,
+        message: 'A check-in was just recorded for this member.'
+      })
+    return res.status(result.result_code === 'CHECK_IN_RECORDED' ? 201 : 200).json({
+      allowed: true,
+      code: result.result_code,
+      attendanceId: result.attendance_id,
+      memberName: member.name
+    })
+  }
+
+  router.post(
+    '/scanner/check-in',
+    rateLimit({ windowMs: 60_000, max: 120 }),
+    authenticateScanner,
+    checkIn('ESP32-CAM', (req) => req.body?.deviceId === deviceId ? deviceId : null)
+  )
+  router.post(
+    '/admin/attendance/scan',
+    authenticate,
+    requireRole('admin', 'staff'),
+    rateLimit({ windowMs: 60_000, max: 60 }),
+    checkIn('Staff', (req) => 'webcam:' + req.user.id)
   )
   return router
 }

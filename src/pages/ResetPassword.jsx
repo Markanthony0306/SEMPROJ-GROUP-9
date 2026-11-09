@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { apiRequest } from '../utils/api'
+import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, passwordPolicy, passwordPolicyMessage } from '../../shared/passwordPolicy'
 import PasswordToggle from '../components/PasswordToggle'
 import './Login.css'
 
@@ -18,8 +19,8 @@ export default function ResetPassword({ navigate }) {
     setError('')
     setMessage('')
 
-    if (password.length < 8) {
-      setError('Use at least 8 characters for your password.')
+    if (!passwordPolicy(password)) {
+      setError(passwordPolicyMessage)
       return
     }
 
@@ -83,7 +84,7 @@ export default function ResetPassword({ navigate }) {
       <section className="lform clay reset-page">
         <div className="fhead">
           <h2>Choose a new password</h2>
-          <p>Use at least eight characters.</p>
+          <p>{passwordPolicyMessage}</p>
         </div>
 
         <form onSubmit={submit} aria-busy={pending}>
@@ -96,8 +97,8 @@ export default function ResetPassword({ navigate }) {
                 type={visible.password ? 'text' : 'password'}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                minLength={8}
-                maxLength={72}
+                minLength={MIN_PASSWORD_LENGTH}
+                maxLength={MAX_PASSWORD_LENGTH}
                 placeholder="New password"
                 required
               />
@@ -121,8 +122,8 @@ export default function ResetPassword({ navigate }) {
                 type={visible.confirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                minLength={8}
-                maxLength={72}
+                minLength={MIN_PASSWORD_LENGTH}
+                maxLength={MAX_PASSWORD_LENGTH}
                 placeholder="Confirm new password"
                 required
               />

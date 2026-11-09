@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
+import CreatedMemberCredentials from '../components/CreatedMemberCredentials'
 import './Login.css'
 
 export default function Register({ navigate }) {
   const { token } = useAuth()
-  const [message, setMessage] = useState('')
+  const [credentials, setCredentials] = useState(null)
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const [plans, setPlans] = useState([])
@@ -29,7 +30,6 @@ export default function Register({ navigate }) {
     event.preventDefault()
     if (pending) return
     setError('')
-    setMessage('')
     setPending(true)
     const form = event.currentTarget
     try {
@@ -42,13 +42,28 @@ export default function Register({ navigate }) {
       })
       form.reset()
       setSelectedPlan('')
-      setMessage(result.message || 'Member account created.')
+      setCredentials(result)
     } catch (cause) {
       setError(cause.message)
     } finally {
       setPending(false)
     }
   }
+  if (credentials) {
+    return (
+      <main id="login">
+        <section className="lform clay reset-page">
+          <h2>Member sign-in details</h2>
+          <CreatedMemberCredentials
+            member={credentials.member}
+            temporaryPassword={credentials.temporaryPassword}
+            onDismiss={() => navigate('admin')}
+          />
+        </section>
+      </main>
+    )
+  }
+
   return (
     <main id="login">
       <section className="lform clay reset-page">
@@ -115,14 +130,13 @@ export default function Register({ navigate }) {
             <input type="checkbox" name="recordPayment" />
           </label>
           <p className="form-help">
-            A temporary password will be generated and emailed. Check payment only after receiving it.
+            A temporary password will be shown once. Check payment only after receiving it.
           </p>
           {error && (
             <p className="err show" role="alert">
               {error}
             </p>
           )}
-          {message && <p role="status">{message}</p>}
           <button className="btn lbtn" disabled={pending}>
             {pending ? 'Creating...' : 'Create account'}
           </button>

@@ -32,15 +32,8 @@ export default function ActivityChart({
     <article className="card clay activity-chart" aria-labelledby={headingId} aria-busy={loading}>
       <div className="activity-heading">
         <div>
-          <span className="dashboard-eyebrow">
-            {admin ? 'THE BIGGER PICTURE' : 'YOUR CONSISTENCY, VISUALIZED'}
-          </span>
           <h2 id={headingId}>{admin ? 'Gym activity' : 'Your activity'}</h2>
-          <p>
-            {admin
-              ? 'A little momentum, every day.'
-              : 'Every visit is a step forward. Keep showing up.'}
-          </p>
+          {!admin && <p>Every visit is a step forward. Keep showing up.</p>}
         </div>
         <span className="activity-icon">
           <Icon name="chart" size={24} />
@@ -140,11 +133,7 @@ export default function ActivityChart({
           <i />
           {metric === 'revenue' ? 'Recorded payments' : 'Recorded visits'}
         </span>
-        <small>
-          {!loading && total === 0
-            ? 'No activity in this period yet.'
-            : 'Select a bar to explore · Asia/Manila'}
-        </small>
+        {!loading && total === 0 && <small>No activity in this period yet.</small>}
       </div>
     </article>
   )

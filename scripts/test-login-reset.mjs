@@ -7,7 +7,8 @@ import path from 'node:path'
 import { once } from 'node:events'
 import { test } from 'node:test'
 import jwt from 'jsonwebtoken'
-import nodemailer from 'nodemailer'
+import { passwordPolicy } from '../shared/passwordPolicy.js'
+import { FACE_FRAME_BYTES } from '../shared/faceLiveness.js'
 import { EQUIPMENT_CATEGORIES } from '../shared/equipmentCategories.js'
 
 const providerOrigin = 'https://login-fixture.test'
@@ -15,7 +16,7 @@ const now = Date.now()
 const iso = (days) => new Date(now + days * 86400000).toISOString()
 const originalFetch = globalThis.fetch
 const originalReadFileSync = fs.readFileSync
-const originalCreateTransport = nodemailer.createTransport
+const realNow = Date.now
 const roles = [
   { role_id: 1, role_name: 'admin' },
   { role_id: 2, role_name: 'member' },
@@ -24,14 +25,13 @@ const roles = [
 const credentials = new Map()
 const tokens = new Map()
 const recoveryLinks = new Map()
-const sentEmails = []
-let emailFailure = null
 const project = {
   roles,
   users: [],
   subscriptions: [],
   membership_plans: [
-    { plan_id: 1, plan_name: 'Unlimited Monthly', price: 800, duration_days: 30, is_active: true }
+    { plan_id: 1, plan_name: 'Monthly', price: 800, duration_days: 30, is_active: true },
+    { plan_id: 2, plan_name: 'Unlimited Monthly', price: 1500, duration_days: 30, is_active: true }
   ],
   payment_methods: [{ method_id: 1, method_name: 'Cash' }],
   payments: [],
@@ -128,10 +128,6 @@ Object.assign(process.env, {
   FACE_LOGIN_ENABLED: 'true',
   FACE_ENCRYPTION_KEY: 'ab'.repeat(32),
   FACE_MATCH_THRESHOLD: '0.5',
-  SMTP_HOST: 'smtp.fixture.test',
-  SMTP_USER: 'fixture',
-  SMTP_PASS: 'fixture',
-  SMTP_FROM: 'FitPulse <no-reply@fixture.test>',
   CLIENT_URL: 'https://app.fixture.test',
   ADMIN_PASSWORD: 'Fixture-before-reset-123!',
   SCANNER_API_KEY: 'scanner-only-fixture-key-at-least-32-characters',
@@ -141,19 +137,6 @@ fs.readFileSync = function (file, ...options) {
   if (path.resolve(String(file)) === path.resolve('.env')) return ''
   return originalReadFileSync.call(this, file, ...options)
 }
-nodemailer.createTransport = () => ({
-  sendMail: async (mail) => {
-    if (mail.subject.startsWith('Welcome to FitPulse')) {
-      const profile = project.users.find((item) => item.email === mail.to)
-      assert.ok(project.subscriptions.some((item) => item.user_id === profile?.id),
-        'Welcome emails must be sent only after membership persistence.')
-    }
-    if (emailFailure) throw emailFailure
-    sentEmails.push(mail)
-    return { messageId: 'fixture', accepted: [mail.to], rejected: [] }
-  }
-})
-
 globalThis.fetch = async (input, options = {}) => {
   const url = new URL(String(input))
   if (apiOrigin && url.origin === apiOrigin) return originalFetch(input, options)
@@ -181,20 +164,13 @@ globalThis.fetch = async (input, options = {}) => {
     const saved = tokens.get(headers.get('authorization')?.replace(/^Bearer\s+/i, ''))
     return saved ? response(saved.user) : providerError('bad_jwt', 401)
   }
-  if (url.pathname === '/auth/v1/admin/generate_link') {
+  if (url.pathname === '/auth/v1/recover') {
     const saved = credentials.get(body.email)
     if (!saved) return providerError('user_not_found', 404)
     const token = crypto.randomUUID()
-    const redirectTo = url.searchParams.get('redirect_to') || body.redirect_to || body.redirectTo
-    const actionLink = `${providerOrigin}/auth/v1/verify?token=${token}&type=recovery&redirect_to=${encodeURIComponent(redirectTo)}`
+    const redirectTo = url.searchParams.get('redirect_to')
     recoveryLinks.set(token, { user: saved.user, redirectTo })
-    return response({
-      ...saved.user,
-      action_link: actionLink,
-      hashed_token: token,
-      redirect_to: redirectTo,
-      verification_type: 'recovery'
-    })
+    return response({})
   }
   if (url.pathname === '/auth/v1/verify') {
     const link = recoveryLinks.get(url.searchParams.get('token'))
@@ -219,7 +195,7 @@ globalThis.fetch = async (input, options = {}) => {
   }
   if (url.pathname === '/rest/v1/rpc/record_fitpulse_checkin') {
     assert.equal(headers.get('apikey'), 'fixture-admin-key')
-    assert.equal(body.p_source, 'ESP32-CAM')
+    assert.ok(['ESP32-CAM', 'Staff'].includes(body.p_source))
     const prior = project.attendance_logs.find(
       (row) => row.device_id === body.p_device_id && row.request_id === body.p_request_id
     )
@@ -289,8 +265,15 @@ try {
   }
   const login = (email, password) => request('/auth/login', { email, password })
   const applicationTokens = new Map()
+  let testWindow = 0
+  // Test cases share data, but each gets a fresh rate-limit window.
+  const run = (name, callback) => test(name, async () => {
+    testWindow += 1
+    Date.now = () => realNow() + testWindow * 16 * 60_000
+    await callback()
+  })
 
-  await test('Admin, member, staff, and another member can sign in with their own credentials', async () => {
+  await run('Admin, member, staff, and another member can sign in with their own credentials', async () => {
     for (const account of [administrator, member, staff, otherMember]) {
       const result = await login(account.email, credentials.get(account.email).password)
       assert.equal(result.status, 200)
@@ -300,12 +283,12 @@ try {
     }
   })
 
-  await test('Public visitors, members, and staff cannot create accounts through either API', async () => {
+  await run('Public visitors, members, and staff cannot create accounts through either API', async () => {
     const before = structuredClone(project)
     const credentialsBefore = [...credentials.keys()]
     const body = {
       name: 'Denied Account', email: 'denied-account@fixture.test',
-      password: 'Fixture-registration-123!', plan: 'Unlimited Monthly'
+      password: 'Fixture-Reg123!', plan: 'Unlimited Monthly'
     }
     for (const [actorToken, status] of [
       [undefined, 401],
@@ -319,13 +302,15 @@ try {
     assert.deepEqual([...credentials.keys()], credentialsBefore)
   })
 
-  await test('Administrators retain the existing registration API and its input validation', async () => {
+  await run('Administrators retain the existing registration API and its input validation', async () => {
     const token = applicationTokens.get(administrator.id)
     const body = {
       name: 'Admin-created Member', email: 'admin-registration@fixture.test',
-      password: 'Fixture-registration-123!'
+      password: 'Fixture-Reg123!'
     }
-    assert.equal((await request('/auth/register', { ...body, password: 'short' }, token)).status, 400)
+    for (const password of ['short', 'ONLYUPPERCASE', 'MixedCase1234', 'NoNumbersHere!', 'NOLOWERCASE12!', 'Too-Long-Password123!']) {
+      assert.equal((await request('/auth/register', { ...body, password }, token)).status, 400)
+    }
     assert.equal((await request('/auth/register', { ...body, email: 'invalid' }, token)).status, 400)
     assert.equal(credentials.has(body.email), false)
     assert.equal((await request('/auth/register', body, token)).status, 201)
@@ -335,7 +320,7 @@ try {
     assert.equal((await login(body.email, body.password)).status, 200)
   })
 
-  await test('Equipment categories create, update, and reload for administrators and staff', async () => {
+  await run('Equipment categories create, update, and reload for administrators and staff', async () => {
     const maintenanceBefore = structuredClone(project.gym_maintenance)
     for (const [index, category] of EQUIPMENT_CATEGORIES.entries()) {
       const actor = index % 2 ? staff : administrator
@@ -368,7 +353,7 @@ try {
     assert.deepEqual(project.gym_maintenance, maintenanceBefore)
   })
 
-  await test('Invalid equipment categories and unauthorized edits never change equipment', async () => {
+  await run('Invalid equipment categories and unauthorized edits never change equipment', async () => {
     const token = applicationTokens.get(administrator.id)
     const id = project.gym_equipment[0].id
     const before = structuredClone(project.gym_equipment)
@@ -410,7 +395,7 @@ try {
     assert.deepEqual(project.gym_equipment, before)
   })
 
-  await test('Legacy equipment categories survive condition edits until a new area is selected', async () => {
+  await run('Legacy equipment categories survive condition edits until a new area is selected', async () => {
     const id = crypto.randomUUID()
     const token = applicationTokens.get(staff.id)
     project.gym_equipment.push({
@@ -442,7 +427,7 @@ try {
     assert.equal(categorized.body.equipment.lastInspected, iso(-1))
   })
 
-  await test('Manual check-in endpoints reject logged-in users without changing attendance', async () => {
+  await run('Manual check-in endpoints reject logged-in users without changing attendance', async () => {
     const before = structuredClone(project.attendance_logs)
     for (const account of [administrator, staff, member]) {
       for (const route of [
@@ -468,7 +453,7 @@ try {
     assert.deepEqual(project.attendance_logs, before)
   })
 
-  await test('An authenticated QR scanner can still record a member visit and retry safely', async () => {
+  await run('An authenticated QR scanner can still record a member visit and retry safely', async () => {
     const token = applicationTokens.get(member.id)
     const qrResponse = await fetch(`${apiOrigin}/api/me/qr`, {
       headers: { Authorization: `Bearer ${token}` }
@@ -495,14 +480,22 @@ try {
     assert.equal(retried.status, 200)
     assert.equal(retried.body.code, 'ALREADY_RECORDED')
     assert.equal(project.attendance_logs.length, before + 1)
+    const scan = { qrToken: qr.qrToken, requestId: crypto.randomUUID() }
+    assert.equal((await request('/admin/attendance/scan', scan, token)).status, 403)
+    const staffToken = applicationTokens.get(staff.id)
+    assert.equal((await request('/admin/attendance/scan', { ...scan, qrToken: 'invalid' }, staffToken)).status, 403)
+    const webcam = await request('/admin/attendance/scan', scan, staffToken)
+    assert.equal(webcam.status, 201)
+    assert.equal(project.attendance_logs.at(-1).entry_type, 'Staff')
+    assert.equal(project.attendance_logs.at(-1).user_id, member.id)
   })
-  await test('Wrong passwords are rejected without weakening authentication', async () => {
+  await run('Wrong passwords are rejected without weakening authentication', async () => {
     const result = await login(member.email, 'wrong-fixture-password')
     assert.equal(result.status, 401)
     assert.equal(result.body.code, 'INVALID_CREDENTIALS')
     assert.equal(result.body.token, undefined)
   })
-  await test('Email normalization preserves the exact password, including significant spaces', async () => {
+  await run('Email normalization preserves the exact password, including significant spaces', async () => {
     const saved = credentials.get(staff.email)
     const previousPassword = saved.password
     saved.password = '  Case-sensitive-Fixture-Password!  '
@@ -512,7 +505,7 @@ try {
     assert.equal((await login(staff.email, saved.password.trim())).status, 401)
     saved.password = previousPassword
   })
-  await test('Provider outages, invalid API keys, and rate limits are not reported as bad passwords', async () => {
+  await run('Provider outages, invalid API keys, and rate limits are not reported as bad passwords', async () => {
     for (const failure of [
       { code: 'unexpected_failure', status: 500, expected: 503 },
       { code: 'bad_jwt', status: 401, expected: 503 },
@@ -526,7 +519,7 @@ try {
     }
     providerFailure = null
   })
-  await test('Email confirmation problems retain a specific actionable error', async () => {
+  await run('Email confirmation problems retain a specific actionable error', async () => {
     const saved = credentials.get(otherMember.email)
     const confirmedAt = saved.user.email_confirmed_at
     saved.user.email_confirmed_at = null
@@ -535,21 +528,19 @@ try {
     assert.equal(result.body.code, 'EMAIL_NOT_CONFIRMED')
     saved.user.email_confirmed_at = confirmedAt
   })
-  await test('Email recovery changes the real login password, invalidates the old password, and preserves other accounts', async () => {
+  await run('Email recovery changes the real login password, invalidates the old password, and preserves other accounts', async () => {
     const oldPassword = credentials.get(member.email).password
     const before = await login(member.email, oldPassword)
     const reset = await request('/auth/forgot-password', { email: member.email })
     assert.equal(reset.status, 200)
-    const email = sentEmails.at(-1)
-    assert.equal(email.to, member.email)
-    assert.ok(email.html.includes('cid:fitpulse-brand'))
-    const recoveryUrl = email.text.match(/Reset password: (\S+)/)[1]
+    const [recoveryToken] = [...recoveryLinks.keys()]
+    const recoveryUrl = providerOrigin + '/auth/v1/verify?token=' + recoveryToken
     const clicked = await fetch(recoveryUrl)
     assert.equal(clicked.status, 302)
     const redirect = new URL(clicked.headers.get('location'))
     assert.equal(redirect.origin, 'https://app.fixture.test')
     const accessToken = new URLSearchParams(redirect.hash.slice(1)).get('access_token')
-    const newPassword = 'Newly-reset-Fixture-password-456!'
+    const newPassword = 'Newly-Reset456!'
     const updated = await request('/auth/reset-password', { password: newPassword }, accessToken)
     assert.equal(updated.status, 200)
     assert.equal((await login(member.email, oldPassword)).status, 401)
@@ -564,10 +555,10 @@ try {
     })
     assert.equal(oldSession.status, 401)
   })
-  await test('Changing a password in Settings also works on the next login', async () => {
+  await run('Changing a password in Settings also works on the next login', async () => {
     const oldPassword = credentials.get(otherMember.email).password
     const loggedIn = await login(otherMember.email, oldPassword)
-    const password = 'Settings-fixture-password-789!'
+    const password = 'Settings789!Pwd'
     const changed = await request(
       '/profile/change-password',
       { currentPassword: oldPassword, password, confirmPassword: password },
@@ -577,7 +568,7 @@ try {
     assert.equal((await login(otherMember.email, oldPassword)).status, 401)
     assert.equal((await login(otherMember.email, password)).status, 200)
   })
-  await test('Concurrent sign-ins return the right account and keep the privileged key separate', async () => {
+  await run('Concurrent sign-ins return the right account and keep the privileged key separate', async () => {
     const results = await Promise.all(
       [member, otherMember, administrator].map((account) =>
         login(account.email, credentials.get(account.email).password)
@@ -589,7 +580,7 @@ try {
     )
     assert.ok(results.every((result) => result.status === 200))
   })
-  await test('Face-enrolled members still receive a challenge before any application session', async () => {
+  await run('Face-enrolled members still receive a challenge before any application session', async () => {
     project.face_enrollments.push({
       enrollment_id: crypto.randomUUID(),
       user_id: member.id,
@@ -601,38 +592,60 @@ try {
     assert.equal(result.body.requiresFaceVerification, true)
     assert.ok(result.body.challengeToken)
     assert.equal(result.body.token, undefined)
+    assert.ok(['blink', 'mouth'].includes(result.body.action))
+    const useChallengeAsSession = await request('/me', undefined, result.body.challengeToken, {}, 'GET')
+    assert.equal(useChallengeAsSession.status, 401)
+    const legacyChallenge = jwt.sign(
+      { id: member.id, purpose: 'face-login' },
+      process.env.JWT_SECRET,
+      { expiresIn: '2m' }
+    )
+    assert.equal((await request('/me', undefined, legacyChallenge, {}, 'GET')).status, 401)
+    const frame = Buffer.alloc(FACE_FRAME_BYTES).toString('base64')
+    const capture = { challengeToken: result.body.challengeToken, frames: [frame, frame, frame] }
+    assert.equal((await request('/auth/face-verify', capture)).status, 401)
+    assert.match((await request('/auth/face-verify', capture)).body.message, /expired/)
+    project.face_enrollments.push({
+      enrollment_id: crypto.randomUUID(),
+      user_id: staff.id,
+      status: 'active',
+      created_at: iso(-1)
+    })
+    assert.equal((await login(staff.email, credentials.get(staff.email).password)).body.requiresFaceVerification, true)
   })
-  await test('Welcome email failure preserves the member, subscription, payment, and a working access-email retry', async () => {
-    const email = 'welcome-retry@fixture.test'
-    emailFailure = Object.assign(new Error('Synthetic SMTP outage'), { code: 'ETIMEDOUT' })
-    const created = await request('/admin/members', {
-      name: 'Welcome Retry', email, plan: 'Unlimited Monthly', recordPayment: true, method: 'Cash'
-    }, applicationTokens.get(administrator.id))
-    emailFailure = null
+  await run('Creating a member returns a strong temporary password once and retires the old plan', async () => {
+    const token = applicationTokens.get(administrator.id)
+    const plans = await request('/admin/membership-plans', undefined, token, {}, 'GET')
+    assert.deepEqual(plans.body.membershipPlans.map((plan) => plan.plan_name), ['Monthly'])
+    const details = {
+      name: member.name, email: 'new-member@fixture.test',
+      plan: 'Monthly', recordPayment: true, method: 'Cash'
+    }
+    const rejected = await request('/admin/members', { ...details, plan: 'Unlimited Monthly' }, token)
+    assert.equal(rejected.status, 400)
+    const created = await request('/admin/members', details, token)
     assert.equal(created.status, 201)
-    assert.equal(created.body.emailSent, false)
-    assert.match(created.body.message, /welcome email was not sent/)
-    assert.equal(created.body.temporaryPassword, undefined)
-    const profile = project.users.find((item) => item.email === email)
-    assert.ok(profile)
-    assert.ok(credentials.has(email))
-    const subscription = project.subscriptions.find((item) => item.user_id === profile.id)
-    assert.ok(subscription)
+    const { temporaryPassword, member: createdMember } = created.body
+    assert.equal(temporaryPassword.length, 16)
+    assert.ok(passwordPolicy(temporaryPassword))
+    assert.equal(credentials.get(details.email).password, temporaryPassword)
+    assert.ok(project.users.find((item) => item.id === createdMember.id).must_change_password)
+    const subscription = project.subscriptions.find((item) => item.user_id === createdMember.id)
     assert.ok(project.payments.some((item) => item.subscription_id === subscription.subscription_id))
-    const retry = await request(`/admin/members/${profile.id}/send-access`, {}, applicationTokens.get(administrator.id))
-    assert.equal(retry.status, 200)
-    assert.equal(sentEmails.at(-1).to, email)
-    assert.ok(sentEmails.at(-1).subject.includes('Reset your FitPulse password'))
-  })
-  await test('Welcome email is accepted after the complete membership has been saved', async () => {
-    const email = 'welcome-accepted@fixture.test'
-    const created = await request('/admin/members', {
-      name: 'Welcome Accepted', email, plan: 'Unlimited Monthly'
-    }, applicationTokens.get(administrator.id))
-    assert.equal(created.status, 201)
-    assert.equal(created.body.emailSent, true)
-    assert.equal(sentEmails.at(-1).to, email)
-    assert.equal(created.body.temporaryPassword, undefined)
+    assert.equal((await request('/admin/members', details, token)).status, 409)
+    const listing = await request('/members', undefined, token, {}, 'GET')
+    assert.ok(!JSON.stringify(listing.body).includes(temporaryPassword))
+
+    const firstLogin = await login(details.email, temporaryPassword)
+    assert.equal(firstLogin.body.user.mustChangePassword, true)
+    assert.equal((await request('/me/qr', undefined, firstLogin.body.token, {}, 'GET')).status, 403)
+    const changed = await request('/profile/change-password', {
+      currentPassword: temporaryPassword, password: 'New-Member123!'
+    }, firstLogin.body.token)
+    assert.equal(changed.status, 200)
+    assert.equal(changed.body.session.user.mustChangePassword, false)
+    assert.equal((await login(details.email, temporaryPassword)).status, 401)
+    assert.equal((await request('/me/qr', undefined, changed.body.session.token, {}, 'GET')).status, 200)
   })
 } finally {
   if (server) {
@@ -641,5 +654,5 @@ try {
   }
   globalThis.fetch = originalFetch
   fs.readFileSync = originalReadFileSync
-  nodemailer.createTransport = originalCreateTransport
+  Date.now = realNow
 }

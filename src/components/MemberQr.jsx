@@ -32,7 +32,7 @@ export default function MemberQr({ member }) {
 
     const canvas = document.createElement('canvas')
     canvas.width = 720
-    canvas.height = 1126
+    canvas.height = 1050
     const context = canvas.getContext('2d')
     if (!context) return
 
@@ -92,12 +92,6 @@ export default function MemberQr({ member }) {
     context.font = '700 20px Arial, sans-serif'
     context.fillText('Download QR code', canvas.width / 2, 982)
 
-    context.fillStyle = 'rgba(255,255,255,0.9)'
-    context.font = '800 16px Arial, sans-serif'
-    context.letterSpacing = '2px'
-    context.fillText('SHOW AT THE GYM ENTRANCE', canvas.width / 2, 1081)
-    context.letterSpacing = '0px'
-
     const link = document.createElement('a')
     link.download = 'fitpulse-membership-qr.png'
     link.href = canvas.toDataURL('image/png')
@@ -128,7 +122,6 @@ export default function MemberQr({ member }) {
               Download QR code
             </button>
           </div>
-          <footer className="member-qr-card-footer">SHOW AT THE GYM ENTRANCE</footer>
         </section>
       ) : (
         <p>
@@ -143,7 +136,7 @@ export default function MemberQr({ member }) {
         </p>
       )}
       <p className="member-caption">
-        Hold the code in front of the ESP32-CAM entrance scanner. This code can be used for check-in during your membership.
+        Show this code at check-in during your membership.
       </p>
     </div>
   )

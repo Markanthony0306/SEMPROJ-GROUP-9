@@ -47,7 +47,7 @@ function StatCard({ label, value, hint, icon }) {
       <div>
         <small>{label}</small>
         <b>{value}</b>
-        <p>{hint}</p>
+        {hint && <p>{hint}</p>}
       </div>
     </article>
   )
@@ -227,15 +227,14 @@ export default function UserPage({ user, onSignOut }) {
         </section>
         <section className="grid member-stats" aria-label="Membership overview">
           <StatCard
-            label="Membership plan"
+            label="Membership"
             value={currentUser?.plan || 'Not set'}
-            hint="Your current gym plan"
             icon="card"
           />
           <StatCard
-            label="Membership status"
+            label="Status"
             value={status}
-            hint={expired ? 'Renew at the front desk' : 'Current membership status'}
+            hint={expired ? 'Renew at the front desk' : null}
             icon="bell"
           />
           <StatCard
@@ -251,7 +250,6 @@ export default function UserPage({ user, onSignOut }) {
           <StatCard
             label="Total check-ins"
             value={loading ? 'Loading...' : attendance.length}
-            hint="Recorded gym visits"
             icon="dumbbell"
           />
         </section>

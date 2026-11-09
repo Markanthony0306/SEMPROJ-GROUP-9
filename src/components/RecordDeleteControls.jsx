@@ -8,7 +8,7 @@ const CATEGORIES = {
   notifications: {
     title: 'notification',
     effect:
-      'Only your current alerts are dismissed. Members, equipment, and email delivery records are preserved.'
+      'Only your current alerts are dismissed. Member and equipment records are preserved.'
   },
   attendance: {
     title: 'attendance',

@@ -17,6 +17,7 @@
   font-size: 23px;
 }
 .activity-heading p {
+  margin: 0;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
@@ -25,6 +26,7 @@
   display: grid;
   place-items: center;
   width: 52px;
+  flex-shrink: 0;
   height: 52px;
   border-radius: 18px;
   color: var(--orange);
@@ -76,6 +78,17 @@
   gap: 12px;
   flex-wrap: wrap;
   min-height: 42px;
+}
+.member-app .activity-heading h2 {
+  margin: 0 0 4px;
+}
+.member-app .activity-controls {
+  justify-content: flex-start;
+  margin: 12px 0;
+}
+.member-app .activity-summary {
+  min-height: 0;
+  gap: 6px 10px;
 }
 .activity-summary strong {
   font-size: clamp(24px, 3vw, 34px);

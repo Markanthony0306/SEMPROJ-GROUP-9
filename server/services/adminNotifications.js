@@ -36,36 +36,6 @@ export function buildAdminNotifications(database, now = Date.now()) {
   return notifications
 }
 
-export function reminderDeliveryStatus(
-  notification,
-  receipts,
-  settings,
-  smtpConfigured,
-  now = Date.now()
-) {
-  const receipt = receipts.find(
-    (row) =>
-      row.subscription_id === notification.subscriptionId &&
-      Date.parse(row.membership_end) === Date.parse(notification.membershipEnd) &&
-      row.reminder_type === notification.type
-  )
-  if (receipt?.sent_at)
-    return { state: 'sent', sentAt: receipt.sent_at, messageId: receipt.message_id || null }
-  if (receipt?.last_error_code)
-    return {
-      state: 'failed',
-      errorCode: receipt.last_error_code,
-      attemptedAt: receipt.last_attempt_at
-    }
-  if (receipt && Date.parse(receipt.claimed_until) > now)
-    return { state: 'processing', attemptedAt: receipt.last_attempt_at }
-  if (receipt?.last_attempt_at)
-    return { state: 'unconfirmed', attemptedAt: receipt.last_attempt_at }
-  if (!settings.emailOn) return { state: 'disabled' }
-  if (!smtpConfigured) return { state: 'unconfigured' }
-  return { state: 'not_sent' }
-}
-
 async function readAll(queryPage) {
   const rows = []
   for (let start = 0; ; start += 1000) {
@@ -79,60 +49,21 @@ async function readAll(queryPage) {
 export function createAdminNotificationService({
   supabase,
   loadDatabase,
-  smtpConfigured,
-  reminders,
   now = Date.now
 }) {
   async function list(actorId) {
     const database = await loadDatabase(['accounts', 'equipment', 'settings'])
-    const [dismissals, receipts] = await Promise.all([
-      readAll(() =>
-        supabase
-          .from('admin_notification_dismissals')
-          .select('notification_key')
-          .eq('admin_user_id', actorId)
-          .order('notification_key')
-      ),
-      readAll(() =>
-        supabase
-          .from('membership_reminders')
-          .select(
-            'subscription_id,membership_end,reminder_type,sent_at,claimed_until,last_attempt_at,last_error_code,message_id'
-          )
-          .order('membership_end')
-      )
-    ])
+    const dismissals = await readAll(() =>
+      supabase
+        .from('admin_notification_dismissals')
+        .select('notification_key')
+        .eq('admin_user_id', actorId)
+        .order('notification_key')
+    )
     const hidden = new Set(dismissals.data.map((row) => row.notification_key))
-    const notifications = buildAdminNotifications(database, now())
-      .filter((notification) => !hidden.has(notification.id))
-      .map((notification) =>
-        notification.kind === 'membership'
-          ? {
-              ...notification,
-              delivery: receipts.error
-                ? { state: 'unavailable' }
-                : reminderDeliveryStatus(
-                    notification,
-                    receipts.data,
-                    database.settings,
-                    smtpConfigured,
-                    now()
-                  )
-            }
-          : notification
-      )
     return {
-      notifications,
+      notifications: buildAdminNotifications(database, now()).filter((item) => !hidden.has(item.id)),
       canDismiss: !dismissals.error,
-      email: {
-        configured: smtpConfigured,
-        enabled: database.settings.emailOn,
-        trackingReady: !receipts.error,
-        issue: receipts.error
-          ? 'Email tracking is unavailable. Apply migration 005_admin_notifications.sql.'
-          : null,
-        ...reminders.getStatus()
-      },
       issue: dismissals.error
         ? 'Notification clearing is unavailable. Apply migration 005_admin_notifications.sql.'
         : null

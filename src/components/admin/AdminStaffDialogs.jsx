@@ -2,6 +2,7 @@ import { useState } from 'react'
 import DataTable from '../DataTable'
 import ProfileAvatar from '../ProfileAvatar'
 import FaceCapture from '../FaceCapture'
+import CreatedMemberCredentials from '../CreatedMemberCredentials'
 import Dialog from '../Dialog'
 import RecordDeleteDialog from '../RecordDeleteControls'
 import AccountDeleteDialog from '../AccountDeleteDialog'
@@ -28,68 +29,43 @@ function Modal({ title, children, onClose, busy, error, className }) {
   )
 }
 
-function FaceEnrollmentForm({ member, onEnroll, onCancel, busy }) {
-  const [descriptor, setDescriptor] = useState(null)
+function FaceEnrollmentForm({ selfEnrollment, onEnroll, getChallenge, busy }) {
   const [consent, setConsent] = useState(false)
   const [idChecked, setIdChecked] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
 
   return (
-    <form
-      className="mf face-enrollment-form"
-      onSubmit={(event) => {
-        event.preventDefault()
-        if (!descriptor || !consent || !idChecked) return
-        onEnroll({ descriptor, consent, idChecked })
-      }}
-    >
-      <p className="form-help">
-        Help {member.name} set up face verification. First confirm their ID and permission, then
-        take a clear capture while they are here with you.
-      </p>
+    <div className="mf face-enrollment-form">
+      {!selfEnrollment && (
+        <label className="set">
+          I checked the member's photo ID.
+          <input type="checkbox" checked={idChecked} onChange={(event) => setIdChecked(event.target.checked)} />
+        </label>
+      )}
       <label className="set">
-        I checked the member's photo ID and it matches their account.
-        <input
-          type="checkbox"
-          checked={idChecked}
-          onChange={(event) => {
-            setIdChecked(event.target.checked)
-            setDescriptor(null)
-          }}
-          required
-        />
+        {selfEnrollment ? 'I agree to face verification.' : 'The member agrees to face verification.'}
+        <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} />
       </label>
-      <label className="set">
-        The member agrees to face verification and understands how their face data is used below.
-        <input
-          type="checkbox"
-          checked={consent}
-          onChange={(event) => {
-            setConsent(event.target.checked)
-            setDescriptor(null)
-          }}
-          required
-        />
-      </label>
+      {selfEnrollment && (
+        <label className="field">
+          Current password
+          <input
+            className="clay-in"
+            type="password"
+            autoComplete="current-password"
+            value={currentPassword}
+            onChange={(event) => setCurrentPassword(event.target.value)}
+          />
+        </label>
+      )}
       <FaceCapture
-        onCaptured={setDescriptor}
-        onReset={() => setDescriptor(null)}
+        getChallenge={getChallenge}
+        onCaptured={(capture) => onEnroll({ ...capture, consent, idChecked, currentPassword })}
         purpose="enrollment"
-        disabled={busy || !consent || !idChecked}
-        actionLabel={descriptor ? 'Capture again' : 'Capture face'}
+        disabled={busy || !consent || (selfEnrollment ? !currentPassword : !idChecked)}
+        actionLabel="Capture and save"
       />
-      <div className="ma">
-        <button
-          className="btn"
-          type="submit"
-          disabled={busy || !descriptor || !consent || !idChecked}
-        >
-          Save
-        </button>
-        <button className="btn ghost" type="button" disabled={busy} onClick={onCancel}>
-          Cancel
-        </button>
-      </div>
-    </form>
+    </div>
   )
 }
 
@@ -128,6 +104,7 @@ export default function AdminStaffDialogs({
   createMember,
   updateMember,
   enrollFace,
+  requestFaceChallenge,
   recordPayment
 }) {
   return (
@@ -306,7 +283,7 @@ export default function AdminStaffDialogs({
               <input className="clay-in" name="email" type="email" required />
             </label>
             <p className="form-help">
-              A temporary password will be generated and emailed to the member.
+              A temporary password will be shown once so you can give it to the member.
             </p>
             <label className="field">
               Plan
@@ -375,6 +352,15 @@ export default function AdminStaffDialogs({
           </form>
         </Modal>
       )}
+      {modal?.kind === 'credentials' && (
+        <Modal title="Member sign-in details" onClose={() => setModal(null)}>
+          <CreatedMemberCredentials
+            member={modal.member}
+            temporaryPassword={modal.temporaryPassword}
+            onDismiss={() => setModal({ kind: 'face', member: modal.member })}
+          />
+        </Modal>
+      )}
       {modal?.kind === 'face' && (
         <Modal
           busy={pending}
@@ -384,9 +370,9 @@ export default function AdminStaffDialogs({
           onClose={() => setModal(null)}
         >
           <FaceEnrollmentForm
-            member={modal.member}
+            selfEnrollment={modal.member.id === currentUser?.id}
             onEnroll={enrollFace}
-            onCancel={() => setModal(null)}
+            getChallenge={requestFaceChallenge}
             busy={pending}
           />
         </Modal>

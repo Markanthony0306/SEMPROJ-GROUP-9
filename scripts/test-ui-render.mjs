@@ -169,7 +169,6 @@ try {
   const AdminNotifications = await load('components/AdminNotifications')
   const notificationState = {
     canDismiss: true,
-    email: { configured: true, enabled: true, trackingReady: true },
     notifications: [
       {
         id: 'member-alert',
@@ -177,8 +176,7 @@ try {
         name: 'Test Member',
         email: 'member@fixture.test',
         membershipEnd: '2026-10-22T00:00:00Z',
-        type: 'expired',
-        delivery: { state: 'sent', sentAt: '2026-10-22T01:00:00Z' }
+        type: 'expired'
       },
       {
         id: 'equipment-alert',
@@ -197,15 +195,11 @@ try {
     'Clear all membership reminders',
     'Clear all equipment reminders',
     'Delete notification for Test Member',
-    'Delete notification for Treadmill',
-    'Email sent to mail server',
-    'Sent:',
-    'Check SMTP',
-    'Run reminders now'
+    'Delete notification for Treadmill'
   ])
     assert.ok(
       notificationPanel.includes(text),
-      `Missing notification control or delivery detail: ${text}`
+      `Missing notification control: ${text}`
     )
   const staffNotifications = render(
     AdminNotifications,
@@ -216,7 +210,9 @@ try {
     !staffNotifications.includes('Clear all data') &&
       !staffNotifications.includes('Delete notification')
   )
-  assert.ok(staffNotifications.includes('Email sent to mail server'))
+  assert.ok(staffNotifications.includes('Test Member'))
+  assert.ok(!notificationPanel.includes('Email delivery'))
+  assert.ok(!notificationPanel.includes('Check SMTP'))
   const notificationDialog = render(RecordDeleteDialog, {
     target: {
       all: true,
@@ -227,9 +223,8 @@ try {
     }
   })
   assert.ok(notificationDialog.includes('Clear all membership reminders?'))
-  assert.ok(notificationDialog.includes('email delivery records are preserved'))
   assert.ok(!notificationDialog.includes('export a CSV'))
-  console.log('PASS: Notifications expose delivery receipts and scoped admin-only clearing.')
+  console.log('PASS: In-app notifications retain scoped admin-only clearing.')
 
   const FaceCapture = await load('components/FaceCapture')
   const face = render(FaceCapture, { onCaptured: () => {} })

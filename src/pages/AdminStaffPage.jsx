@@ -13,6 +13,7 @@ import ActivityChart from '../components/ActivityChart'
 import { RecordDeleteButton } from '../components/RecordDeleteControls'
 import EquipmentCategorySelect from '../components/EquipmentCategorySelect'
 import AdminNotifications from '../components/AdminNotifications'
+import WebcamQrScanner from '../components/WebcamQrScanner'
 import { membershipState, reminderMembers, inspectionDue } from '../utils/membership'
 import AdminStaffDialogs, { Pill, memberBadge } from '../components/admin/AdminStaffDialogs'
 import './AdminStaffPage.css'
@@ -54,8 +55,8 @@ export default function AdminStaffPage({ user, onSignOut }) {
     payments: [],
     equipment: [],
     maintenance: [],
-    notificationState: { notifications: [], email: {}, canDismiss: false },
-    settings: { gym: 'FitPulse Gym', remind: 7, emailOn: true }
+    notificationState: { notifications: [], canDismiss: false },
+    settings: { gym: 'FitPulse Gym', remind: 7 }
   })
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -88,7 +89,6 @@ export default function AdminStaffPage({ user, onSignOut }) {
           apiRequest('/me', { token, signal }),
           apiRequest('/admin/notifications', { token, signal }).catch((cause) => ({
             notifications: [],
-            email: {},
             canDismiss: false,
             issue: cause.message
           }))
@@ -181,6 +181,21 @@ export default function AdminStaffPage({ user, onSignOut }) {
   const renewals = data.payments.filter((payment) => payment.type === 'Renewal')
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
   const revenue = data.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+  const scanQr = useCallback(async (qrToken) => {
+    setError('')
+    setNotice('')
+    try {
+      const result = await apiRequest('/admin/attendance/scan', {
+        token,
+        method: 'POST',
+        body: JSON.stringify({ qrToken, requestId: crypto.randomUUID() })
+      })
+      setNotice(`Check-in recorded for ${result.memberName}.`)
+      await load()
+    } catch (cause) {
+      setError(cause.message)
+    }
+  }, [token, load])
   const createMember = (event) => {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
@@ -195,7 +210,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
       },
       'Member account created.',
       (result) => {
-        if (result.member) setModal({ kind: 'face', member: result.member })
+        if (result.member) setModal({ kind: 'credentials', member: result.member, temporaryPassword: result.temporaryPassword })
       }
     )
   }
@@ -208,11 +223,14 @@ export default function AdminStaffPage({ user, onSignOut }) {
       'Member updated.'
     )
   }
+  const faceEnrollmentPath = `/admin/members/${modal?.member?.id}/face-enrollment`
+  const requestFaceChallenge = () =>
+    apiRequest(faceEnrollmentPath + '/challenge', { token, method: 'POST' })
   const enrollFace = (details) =>
     act(
-      `/admin/members/${modal.member.id}/face-enrollment`,
+      faceEnrollmentPath,
       { method: 'POST', body: JSON.stringify(details) },
-      'Encrypted face template saved. Face login still needs to be enabled in the API environment.'
+      'Face verification is ready.'
     )
   const recordPayment = (event) => {
     event.preventDefault()
@@ -232,8 +250,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
         method: 'PATCH',
         body: JSON.stringify({
           gym: form.get('gym'),
-          remind: Number(form.get('remind')),
-          emailOn: form.get('emailOn') === 'on'
+          remind: Number(form.get('remind'))
         })
       },
       'Preferences saved.'
@@ -434,22 +451,6 @@ export default function AdminStaffPage({ user, onSignOut }) {
                   >
                     <Icon name="edit" size={18} />
                   </button>
-                  <button
-                    className="report-icon-button member-mail-button"
-                    type="button"
-                    title={`Send sign-in link to ${member.name}`}
-                    aria-label={`Send sign-in link to ${member.name}`}
-                    disabled={pending || member.accountStatus !== 'active'}
-                    onClick={() =>
-                      act(
-                        `/admin/members/${member.id}/send-access`,
-                        { method: 'POST' },
-                        'Sign-in link accepted by the mail server.'
-                      )
-                    }
-                  >
-                    <Icon name="mail" size={18} />
-                  </button>
                   {currentUser?.role === 'admin' && (
                     <RecordDeleteButton
                       label={`Delete account for ${member.name}`}
@@ -606,6 +607,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
             />
           )}
         </div>
+        {section === 'Attendance' && <WebcamQrScanner onScan={scanQr} />}
         <DataTable
           headings={[
             'Member',
@@ -714,24 +716,6 @@ export default function AdminStaffPage({ user, onSignOut }) {
         canManage={canDeleteHistory}
         busy={pending || loading}
         onDelete={setDeletion}
-        onCheck={() =>
-          act(
-            '/admin/notifications/check-email',
-            { method: 'POST' },
-            'Reminder check completed.',
-            (result) =>
-              setNotice(
-                `${result.sent} reminder email(s) accepted by SMTP; ${result.failed} failed. Check each delivery status below.`
-              )
-          )
-        }
-        onVerify={() =>
-          act(
-            '/admin/notifications/check-smtp',
-            { method: 'POST' },
-            'SMTP connection and authentication verified. No test email was sent.'
-          )
-        }
         onReview={() => setSection('Equipment')}
       />
     ),
@@ -779,6 +763,17 @@ export default function AdminStaffPage({ user, onSignOut }) {
           <PasswordChangeForm />
         </article>
         <article className="card clay">
+          <h2>Face verification</h2>
+          <button
+            type="button"
+            className="btn ghost"
+            disabled={!currentUser?.id}
+            onClick={() => setModal({ kind: 'face', member: currentUser })}
+          >
+            Set up face sign-in
+          </button>
+        </article>
+        <article className="card clay">
           <h2>Gym Preferences</h2>
           <form onSubmit={settings} className="mf">
             <label className="field">
@@ -793,13 +788,6 @@ export default function AdminStaffPage({ user, onSignOut }) {
                 <option value="7">7 days</option>
               </select>
             </label>
-            <label className="set">
-              Send automatic email reminders
-              <input name="emailOn" type="checkbox" defaultChecked={data.settings.emailOn} />
-            </label>
-            <p className="form-help">
-              Members receive one email within the selected reminder period and one after expiry.
-            </p>
             <button className="btn" disabled={pending || loading}>
               {pending ? 'Saving...' : 'Save preferences'}
             </button>
@@ -867,6 +855,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
         createMember={createMember}
         updateMember={updateMember}
         enrollFace={enrollFace}
+        requestFaceChallenge={requestFaceChallenge}
         recordPayment={recordPayment}
       />
     </DashboardShell>

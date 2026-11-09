@@ -4,7 +4,6 @@ import {
   PasswordAuthenticationError
 } from '../services/passwordAuthentication.js'
 import { deleteMemberAccount } from '../services/accountDeletion.js'
-import { sendPasswordRecovery } from '../services/passwordRecovery.js'
 
 export function accountRoutes({
   authenticate,
@@ -12,10 +11,7 @@ export function accountRoutes({
   rateLimit,
   loadAccount,
   supabase,
-  createAuthClient,
-  mailer,
-  from,
-  clientUrl
+  createAuthClient
 }) {
   const router = Router()
   const remove = async (req, res) => {
@@ -60,40 +56,6 @@ export function accountRoutes({
     requireRole('admin'),
     rateLimit({ max: 5 }),
     remove
-  )
-  router.post(
-    '/admin/members/:id/send-access',
-    authenticate,
-    requireRole('admin', 'staff'),
-    rateLimit({ max: 5 }),
-    async (req, res) => {
-      if (!mailer)
-        return res.status(503).json({ message: 'SMTP is not configured on the API server.' })
-      try {
-        const account = await loadAccount(req.params.id)
-        if (!account || !['user', 'member'].includes(account.role))
-          return res.status(404).json({ message: 'Member account not found.' })
-        if (account.status !== 'active' || !account.authUserId)
-          return res.status(409).json({ message: 'The member needs an active linked login first.' })
-        await sendPasswordRecovery({
-          supabaseAdmin: supabase,
-          supabaseAuth: createAuthClient(),
-          mailer,
-          email: account.email,
-          name: account.name,
-          redirectTo: `${clientUrl}/reset-password`,
-          from
-        })
-        return res.json({ message: 'A password setup link was accepted by the mail server.' })
-      } catch (error) {
-        console.error('Member access email failed:', error.code || 'EMAIL_ERROR')
-        return res
-          .status(503)
-          .json({
-            message: 'The sign-in email could not be sent. Check SMTP in Notifications, then retry.'
-          })
-      }
-    }
   )
   return router
 }

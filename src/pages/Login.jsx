@@ -157,7 +157,7 @@ export default function Login({ onLogin }) {
   const [capsLock, setCapsLock] = useState(false)
   const [pending, setPending] = useState(false)
   const [facePending, setFacePending] = useState(false)
-  const [faceChallenge, setFaceChallenge] = useState('')
+  const [faceChallenge, setFaceChallenge] = useState(null)
   const [shaking, setShaking] = useState(false)
   const [errors, setErrors] = useState({ email: '', password: '', general: '' })
   const [resetOpen, setResetOpen] = useState(false)
@@ -168,8 +168,13 @@ export default function Login({ onLogin }) {
   const { dark, toggle: toggleTheme } = useTheme()
   const emailRef = useRef(null)
   const passwordRef = useRef(null)
+  const faceHeadingRef = useRef(null)
   const submissionLock = useRef(false)
   const resetDialogRef = useRef(null)
+
+  useEffect(() => {
+    if (faceChallenge) faceHeadingRef.current?.focus({ preventScroll: true })
+  }, [faceChallenge])
 
   useEffect(() => {
     if (!resetOpen) return
@@ -235,7 +240,9 @@ export default function Login({ onLogin }) {
         body: JSON.stringify({ email: normalizedEmail, password: submittedPassword })
       })
       if (session.requiresFaceVerification && session.challengeToken) {
-        setFaceChallenge(session.challengeToken)
+        setFaceChallenge({ challengeToken: session.challengeToken, action: session.action })
+        setPassword('')
+        setShaking(false)
         setPending(false)
         submissionLock.current = false
         return
@@ -255,12 +262,12 @@ export default function Login({ onLogin }) {
       window.requestAnimationFrame(() => passwordRef.current?.focus())
     }
   }
-  const verifyFace = async (descriptor) => {
+  const verifyFace = async (capture) => {
     setFacePending(true)
     try {
       const session = await apiRequest('/auth/face-verify', {
         method: 'POST',
-        body: JSON.stringify({ challengeToken: faceChallenge, descriptor })
+        body: JSON.stringify(capture)
       })
       finishLogin(session)
     } finally {
@@ -290,7 +297,7 @@ export default function Login({ onLogin }) {
   }
 
   return (
-    <div id="login">
+    <div id="login" className={faceChallenge ? 'face-login' : undefined}>
       <button
         className="ib theme-fab"
         type="button"
@@ -300,60 +307,60 @@ export default function Login({ onLogin }) {
       >
         <Icon name={dark ? 'sun' : 'moon'} />
       </button>
-      <div className={`lwrap${faceChallenge ? ' verification-layout' : ''}`}>
-        {!faceChallenge && (
-          <section className="hero clay">
-            <div className="brandbar">
-              <Brand />
+      <div className="lwrap">
+        <section className="hero clay">
+          <div className="brandbar">
+            <Brand />
+          </div>
+          <div className="hbody">
+            <Dumbbell />
+            <h1>Make every session count.</h1>
+            <p>Your membership, check-ins, and progress in one place.</p>
+            <div className="feats">
+              <span className="feat">
+                <Icon name="qr" size={16} />
+                QR check-in
+              </span>
+              <span className="feat">
+                <Icon name="bell" size={16} />
+                Expiry reminders
+              </span>
+              <span className="feat">
+                <Icon name="wallet" size={16} />
+                Payment records
+              </span>
             </div>
-            <div className="hbody">
-              <Dumbbell />
-              <h1>Make every session count.</h1>
-              <p>Your membership, check-ins, and progress in one place.</p>
-              <div className="feats">
-                <span className="feat">
-                  <Icon name="qr" size={16} />
-                  QR check-in
-                </span>
-                <span className="feat">
-                  <Icon name="bell" size={16} />
-                  Expiry reminders
-                </span>
-                <span className="feat">
-                  <Icon name="wallet" size={16} />
-                  Payment records
-                </span>
-              </div>
-            </div>
-          </section>
-        )}
+          </div>
+        </section>
         <section
           className={`lform clay${shaking ? ' shake' : ''}`}
           onAnimationEnd={() => setShaking(false)}
         >
-          <div className="fhead">
-            <h2>{faceChallenge ? 'Verify your face' : 'Welcome back'}</h2>
-            <p>
-              {faceChallenge
-                ? `Complete face verification for ${email.trim().toLowerCase()}.`
-                : 'Login to continue your fitness journey.'}
-            </p>
+          <div key={faceChallenge ? 'face' : 'password'} className="fhead login-step-heading">
+            <h2 ref={faceHeadingRef} tabIndex={faceChallenge ? -1 : undefined}>
+              {faceChallenge ? 'Verify your face' : 'Welcome back'}
+            </h2>
+            {!faceChallenge && <p>Login to continue your fitness journey.</p>}
           </div>
           {faceChallenge ? (
             <div className="login-face-step">
               <FaceCapture
+                getChallenge={() => faceChallenge}
                 onCaptured={verifyFace}
                 disabled={facePending}
                 actionLabel={facePending ? 'Verifying…' : 'Verify and continue'}
               />
               <button
-                className="btn ghost"
+                className="login-face-back"
                 type="button"
                 disabled={facePending}
                 onClick={() => {
-                  setFaceChallenge('')
+                  setFaceChallenge(null)
                   clearErrors()
                   submissionLock.current = false
+                  window.requestAnimationFrame(() =>
+                    passwordRef.current?.focus({ preventScroll: true })
+                  )
                 }}
               >
                 Back to password login

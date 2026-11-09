@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createFaceApiLoader } from '../utils/faceApi'
+import { captureLiveFace } from '../utils/captureLiveFace'
 import './FaceCapture.css'
 
 const loadFaceApi = createFaceApiLoader({
@@ -9,6 +10,7 @@ const loadFaceApi = createFaceApiLoader({
 
 export default function FaceCapture({
   onCaptured,
+  getChallenge,
   onReset,
   purpose = 'verification',
   disabled = false,
@@ -20,7 +22,7 @@ export default function FaceCapture({
   const statusId = useId()
   const [cameraReady, setCameraReady] = useState(false)
   const [busy, setBusy] = useState(false)
-  const [message, setMessage] = useState('Start the camera, then center one face in the frame.')
+  const [message, setMessage] = useState('Center one face in the guide.')
   const [error, setError] = useState('')
   const [needsReload, setNeedsReload] = useState(false)
   const [phase, setPhase] = useState('idle')
@@ -154,7 +156,7 @@ export default function FaceCapture({
       if (operation !== operationRef.current) return null
       setCameraReady(true)
       setPhase('ready')
-      setMessage('Camera ready. Face forward with good lighting.')
+      setMessage('Center your face and move slightly to begin.')
       return faceapi
     } catch (cause) {
       if (operation !== operationRef.current) return null
@@ -182,7 +184,7 @@ export default function FaceCapture({
     const operation = ++operationRef.current
     setBusy(true)
     setPhase('scanning')
-    setMessage('Finding your face. Look straight at the camera and hold still.')
+    setMessage('Starting the live check…')
     setError('')
     setNeedsReload(false)
     try {
@@ -190,33 +192,29 @@ export default function FaceCapture({
       if (operation !== operationRef.current) return
       if (!videoRef.current || videoRef.current.readyState < 2)
         throw new Error('Wait for the camera image before capturing.')
-      const detections = await faceapi
-        .detectAllFaces(
-          videoRef.current,
-          new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.55 })
-        )
-        .withFaceLandmarks(true)
-        .withFaceDescriptors()
-      if (detections.length !== 1)
-        throw new Error(
-          detections.length
-            ? 'Only one face should be visible.'
-            : 'No face found. Adjust the lighting and try again.'
-        )
+      const challenge = await getChallenge()
       if (operation !== operationRef.current) return
+      const frames = await captureLiveFace({
+        video: videoRef.current,
+        faceapi,
+        action: challenge.action,
+        isCurrent: () => operation === operationRef.current,
+        onPrompt: setMessage
+      })
+      if (!frames) return
       setPhase('verifying')
-      setMessage(
-        purpose === 'enrollment'
-          ? 'Preparing your face capture…'
-          : 'Face captured. Checking your details…'
-      )
-      const result = await onCaptured(Array.from(detections[0].descriptor))
-      if (result === false) throw new Error('The face check was not completed. Please try again.')
+      setMessage('Checking your face…')
+      const result = await onCaptured({ frames, challengeToken: challenge.challengeToken })
       if (operation !== operationRef.current) return
+      if (result === false) {
+        setPhase('ready')
+        setMessage('')
+        return
+      }
       setPhase('success')
       setMessage(
         purpose === 'enrollment'
-          ? 'Face captured. Select Save to finish setup.'
+          ? 'Face verification is ready.'
           : 'Face verification complete.'
       )
     } catch (cause) {
@@ -236,8 +234,8 @@ export default function FaceCapture({
     setPhase('ready')
     setMessage('Center your face in the guide, then select Capture face.')
   }
-  const currentStep =
-    phase === 'success' ? 3 : ['scanning', 'verifying'].includes(phase) ? 2 : cameraReady ? 1 : 0
+  const readyToVerify = canCapture || ['scanning', 'verifying'].includes(phase)
+  const currentStep = phase === 'success' ? 3 : readyToVerify ? 2 : cameraReady ? 1 : 0
 
   return (
     <div className={`face-capture is-${phase}`} aria-busy={busy || disabled}>
@@ -277,13 +275,6 @@ export default function FaceCapture({
                   )}
                 </i>
                 <span>{step}</span>
-                <small>
-                  {index < currentStep
-                    ? 'Done'
-                    : index === currentStep
-                      ? 'Current step'
-                      : 'Up next'}
-                </small>
               </button>
             </li>
           )
@@ -314,7 +305,7 @@ export default function FaceCapture({
             <span>Your camera preview will appear here</span>
           </div>
         )}
-        {busy && (
+        {busy && phase !== 'scanning' && (
           <div className="face-processing">
             <span className="face-spinner" aria-hidden="true" />
             <b>
@@ -333,9 +324,7 @@ export default function FaceCapture({
           </span>
         )}
       </div>
-      <p id={statusId} className="face-status" role="status" aria-live="polite">
-        {message || 'Make an adjustment below, then try again.'}
-      </p>
+      {message && <p id={statusId} className="face-status" role="status">{message}</p>}
       {error && (
         <p className="form-error" role="alert">
           {error}
@@ -365,9 +354,7 @@ export default function FaceCapture({
             {busy ? 'Checking your face…' : actionLabel}
           </button>
         ) : (
-          <p className="face-capture-requirements" role="status">
-            Move in front of the camera and keep one face in frame to continue.
-          </p>
+          <button className="btn" type="button" disabled>{actionLabel}</button>
         )}
       </div>
       <button
@@ -388,13 +375,11 @@ export default function FaceCapture({
       <details className="face-privacy">
         <summary>How your face data is used</summary>
         <p>
-          Your camera image stays in this browser. We turn your facial features into a set of
-          numbers to check for a match. During setup, these numbers are sent to FitPulse and stored
-          with encryption to protect them. Ask gym staff if you want your saved face data removed.
+          FitPulse checks three camera frames on its server and discards them after processing.
+          During setup, it stores an encrypted face template. You can ask the gym to remove it.
         </p>
         <p>
-          A face match can make mistakes and cannot reliably tell a live person from a photo. Staff
-          must still check your photo ID during setup.
+          Staff still check your photo ID during member setup.
         </p>
       </details>
     </div>

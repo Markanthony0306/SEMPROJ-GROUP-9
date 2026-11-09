@@ -964,12 +964,146 @@ h2,
 #login .auth-field .input-label {
   margin: 0;
 }
+html:has(#login) {
+  scrollbar-gutter: stable;
+}
 #login .login-face-step {
   display: grid;
-  gap: 1rem;
+  gap: 8px;
 }
-#login .lwrap.verification-layout {
-  width: min(640px, 100%);
-  grid-template-columns: minmax(0, 1fr);
+#login.face-login .login-step-heading,
+#login .login-face-step {
+  animation: login-step-in 260ms ease-out both;
+}
+#login.face-login .lform {
+  gap: 12px;
+}
+#login .login-face-back {
+  justify-self: start;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: start;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+#login .login-face-back:hover:not(:disabled) {
+  text-decoration-thickness: 2px;
+}
+#login .login-face-back:disabled {
+  color: var(--muted);
+  cursor: default;
+}
+#login .login-face-step .face-capture {
+  gap: 8px;
+}
+#login .login-face-step .face-camera-badge,
+#login .login-face-step .face-help-toggle,
+#login .login-face-step .face-privacy,
+#login .login-face-step .face-placeholder span {
+  display: none;
+}
+#login .login-face-step .face-viewport video {
   min-height: 0;
+  height: clamp(100px, 32svh, 280px);
+  object-fit: contain;
+}
+#login .login-face-step .face-status {
+  min-height: 0;
+  margin: 0;
+}
+@keyframes login-step-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (min-width: 901px) and (max-height: 750px) {
+  #login {
+    padding: 52px 24px 16px;
+  }
+  #login .lwrap {
+    min-height: min(640px, calc(100svh - 68px));
+  }
+  #login .dumb {
+    max-height: 25svh;
+  }
+  #login .hero,
+  #login .lform {
+    padding-block: 20px;
+  }
+}
+@media (max-width: 900px) {
+  #login {
+    padding: 54px 16px 12px;
+    align-items: start;
+  }
+  #login .lwrap {
+    gap: 12px;
+  }
+  #login .hero {
+    grid-row: 1;
+    padding: 12px 20px;
+  }
+  #login .hero .hbody {
+    display: none;
+  }
+  #login .hero .brandbar {
+    font-size: 26px;
+  }
+  #login .lform {
+    grid-row: 2;
+  }
+  #login.face-login .lform {
+    padding-block: 16px;
+  }
+}
+@media (max-width: 900px) and (max-height: 700px) {
+  #login.face-login .lform {
+    gap: 8px;
+    padding-block: 12px;
+  }
+  #login .login-face-step .face-viewport video {
+    height: clamp(100px, 23svh, 160px);
+  }
+}
+@media (min-width: 620px) and (max-width: 900px) and (max-height: 530px) {
+  #login .lwrap {
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  }
+  #login .hero {
+    align-self: start;
+    min-height: calc(100svh - 66px);
+  }
+  #login .lform {
+    grid-row: 1;
+    grid-column: 2;
+  }
+  #login.face-login .lform {
+    gap: 6px;
+    padding-block: 8px;
+  }
+  #login .login-face-step,
+  #login .login-face-step .face-capture {
+    gap: 4px;
+  }
+  #login .hero .hbody {
+    display: flex;
+  }
+  #login .hero .feats {
+    display: none;
+  }
+  #login .login-face-step .face-viewport video {
+    height: 23svh;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  #login.face-login .login-step-heading,
+  #login .login-face-step {
+    animation: none;
+  }
 }

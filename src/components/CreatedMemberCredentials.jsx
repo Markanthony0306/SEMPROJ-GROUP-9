@@ -1,7 +1,6 @@
 export default function CreatedMemberCredentials({
   member,
   temporaryPassword,
-  emailSent,
   onDismiss
 }) {
   return (
@@ -28,7 +27,6 @@ export default function CreatedMemberCredentials({
           </dd>
         </div>
       </dl>
-      {emailSent && <p role="status">A welcome email with these sign-in details was sent.</p>}
       <p>The member must choose a new password before accessing their dashboard.</p>
       <button type="button" className="btn" onClick={onDismiss}>
         Done

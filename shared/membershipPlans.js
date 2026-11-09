@@ -3,9 +3,10 @@ export const MEMBERSHIP_PLANS = [
   { name: 'Weekly', durationDays: 7, price: 200 },
   { name: 'Monthly', durationDays: 30, price: 800 },
   { name: 'Quarterly', durationDays: 90, price: 2200 },
-  { name: 'Annual', durationDays: 365, price: 7800 },
-  { name: 'Unlimited Monthly', durationDays: 30, price: 1500 }
+  { name: 'Annually', durationDays: 365, price: 7800 }
 ]
+
+export const isRetiredPlan = (name) => String(name).trim().toLowerCase() === 'unlimited monthly'
 
 export const getMembershipPlan = (name) => MEMBERSHIP_PLANS.find((plan) => plan.name === name)
 

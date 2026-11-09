@@ -55,7 +55,7 @@ export function passwordLoginHandler({
             message: 'Your account profile is incomplete. Please contact the administrator.',
             code: 'PROFILE_LINK_INVALID'
           })
-      if (faceLoginEnabled && roleName === 'member') {
+      if (faceLoginEnabled) {
         const { data: enrollment, error: enrollmentError } = await supabase
           .from('face_enrollments')
           .select('enrollment_id')
@@ -68,7 +68,7 @@ export function passwordLoginHandler({
         if (enrollment)
           return res.json({
             requiresFaceVerification: true,
-            challengeToken: createFaceChallenge(account)
+            ...createFaceChallenge(account)
           })
       }
       return res.json(createSession(account))

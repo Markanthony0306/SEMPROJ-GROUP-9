@@ -1,22 +1,18 @@
 /* Match the member dashboard's restrained clay surfaces and spacing. */
-.admin-app {
-  min-width: 1280px;
+.app.admin-app {
+  --dashboard-gap: 16px;
+  --dashboard-padding: 16px;
+  min-width: 0;
   --admin-shadow: rgba(64, 92, 135, 0.18);
   --admin-highlight: rgba(255, 255, 255, 0.5);
   --admin-inset: rgba(64, 92, 135, 0.1);
   grid-template-columns: 232px minmax(0, 1fr);
-  gap: 28px;
-  padding: 24px;
+  align-items: start;
+  gap: var(--dashboard-gap);
+  padding: var(--dashboard-padding);
 }
 .admin-app .g2 {
   grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.notification-system-status {
-  display: grid;
-  gap: 10px;
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
 }
 .notification-list li {
   align-items: flex-start;
@@ -31,37 +27,6 @@
   flex-shrink: 0;
   gap: 10px;
 }
-.notification-delivery {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 6px 10px;
-  border: 1px solid var(--id);
-  border-radius: 8px;
-  color: var(--text);
-  background: var(--card2);
-  font-size: 12px;
-  font-weight: 700;
-}
-.notification-delivery[data-state='sent'] {
-  color: #14643d;
-  background: #e0f4e9;
-  border-color: #8abfa5;
-}
-.notification-delivery[data-state='failed'] {
-  color: #8d202b;
-  background: #ffe9e9;
-  border-color: #e6a0a8;
-}
-[data-theme='dark'] .notification-delivery[data-state='sent'] {
-  color: #c4f5da;
-  background: #164432;
-  border-color: #568f73;
-}
-[data-theme='dark'] .notification-delivery[data-state='failed'] {
-  color: #ffced6;
-  background: #562331;
-  border-color: #b9657a;
-}
 [data-theme='dark'] .admin-app {
   --admin-shadow: rgba(0, 0, 0, 0.3);
   --admin-highlight: rgba(130, 180, 220, 0.08);
@@ -75,13 +40,22 @@
     inset 2px 2px 4px var(--admin-highlight),
     inset -2px -2px 6px var(--admin-inset);
 }
-.admin-app main {
+.app.admin-app main {
   width: 100%;
-  max-width: 1440px;
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
+  gap: var(--dashboard-gap);
 }
-.admin-app header {
+.app.admin-app aside {
+  top: var(--dashboard-padding);
+  height: calc(100svh - var(--dashboard-padding) - var(--dashboard-padding));
+}
+.app.admin-app header {
   min-height: 84px;
+  top: var(--dashboard-padding);
+}
+.admin-app .dashboard-stage {
+  min-height: 0;
 }
 .admin-app header h1 {
   min-width: 0;
@@ -103,7 +77,15 @@
 .admin-app #view {
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
+  align-content: start;
+  gap: var(--dashboard-gap);
+}
+.admin-app #view > .dashboard-overview {
+  margin-bottom: 0;
+}
+.admin-app #view > .activity-chart + .g2 {
+  align-items: start;
+  gap: var(--dashboard-gap);
 }
 .admin-app .card {
   padding: 26px;
@@ -169,16 +151,30 @@
 }
 .admin-app .admin-stats {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-content: start;
+  gap: var(--dashboard-gap);
 }
 .admin-app .admin-stats .stat {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 22px;
+  container: admin-stat / inline-size;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  min-height: 90px;
+}
+.admin-app .admin-stats .stat > div {
+  flex: 1;
+}
+.admin-app .admin-stats .stat small {
+  margin-bottom: 4px;
 }
 .admin-app .admin-stats .stat b {
-  font-size: clamp(22px, 2vw, 30px);
+  font-size: 24px;
   line-height: 1.2;
+}
+.admin-app .admin-stats .bub {
+  width: 36px;
+  height: 36px;
 }
 .admin-app .bub {
   width: 46px;
@@ -487,6 +483,23 @@
 .admin-app .face-enrollment-dialog {
   width: min(600px, 100%);
 }
+.admin-app .face-enrollment-form .face-capture {
+  gap: 8px;
+}
+.admin-app .face-enrollment-form .face-camera-badge,
+.admin-app .face-enrollment-form .face-help-toggle,
+.admin-app .face-enrollment-form .face-placeholder span {
+  display: none;
+}
+.admin-app .face-enrollment-form .face-viewport video {
+  min-height: 0;
+  height: clamp(100px, 30svh, 250px);
+  object-fit: contain;
+}
+.admin-app .face-enrollment-form .face-status {
+  min-height: 0;
+  margin: 0;
+}
 .admin-app .face-enrollment-form .set {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 20px;
@@ -504,10 +517,90 @@
 .face-enrollment-form .ma {
   margin-top: 4px;
 }
+/* Use wide cards without scaling up their type or height. */
+@container admin-stat (min-width: 300px) {
+  .admin-app .admin-stats .stat > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .admin-app .admin-stats .stat small {
+    min-width: 0;
+    margin-bottom: 0;
+  }
+  .admin-app .admin-stats .stat b {
+    flex-shrink: 0;
+    max-width: 60%;
+    text-align: right;
+  }
+}
+@media (max-width: 1200px) {
+  .admin-app .admin-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1000px) {
+  .app.admin-app {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .app.admin-app aside {
+    position: fixed;
+    left: var(--dashboard-padding);
+    bottom: var(--dashboard-padding);
+    width: min(280px, calc(100vw - var(--dashboard-padding) - var(--dashboard-padding)));
+    height: auto;
+    transform: translateX(-120%);
+    transition: transform 0.3s;
+  }
+  .app.admin-app aside.open {
+    transform: none;
+  }
+  .admin-app .ov.show {
+    display: block;
+  }
+  .admin-app #menuBtn {
+    display: grid;
+  }
+}
+@media (max-width: 760px) {
+  .admin-app .g2 {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .app.admin-app {
+    --dashboard-padding: 12px;
+  }
+  .app.admin-app header {
+    gap: 8px;
+    padding: 12px;
+  }
+  .admin-app .chip div {
+    display: none;
+  }
+  .admin-app .admin-stats {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (prefers-reduced-motion: reduce) {
+  .app.admin-app aside,
   .admin-app *,
   .admin-app *::after {
     animation: none;
     transition: none;
   }
+}
+.admin-app .webcam-qr {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.admin-app .webcam-qr video {
+  width: min(100%, 360px);
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  background: var(--card2);
+  border-radius: 16px;
 }

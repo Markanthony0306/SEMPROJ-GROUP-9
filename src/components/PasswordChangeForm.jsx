@@ -1,6 +1,7 @@
 import { useId, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
+import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, passwordPolicy, passwordPolicyMessage } from '../../shared/passwordPolicy'
 import PasswordToggle from './PasswordToggle'
 
 export default function PasswordChangeForm() {
@@ -16,10 +17,8 @@ export default function PasswordChangeForm() {
     if (pending) return
     setError('')
     setMessage('')
-    if (values.password.length < 8 || new TextEncoder().encode(values.password).length > 72) {
-      setError(
-        'Use at least 8 characters, up to 72 bytes. Symbols and emojis can use more than one byte.'
-      )
+    if (!passwordPolicy(values.password)) {
+      setError(passwordPolicyMessage)
       return
     }
     if (values.password !== values.confirmPassword) {
@@ -54,7 +53,7 @@ export default function PasswordChangeForm() {
   return (
     <form className="mf password-form" onSubmit={submit} aria-busy={pending}>
       <p id={helpId} className="form-help">
-        Use at least 8 characters. Your current password is required.
+        {passwordPolicyMessage} Your current password is required.
       </p>
       {[
         ['currentPassword', 'Current password'],
@@ -70,8 +69,8 @@ export default function PasswordChangeForm() {
               type={visible[name] ? 'text' : 'password'}
               autoComplete={name === 'currentPassword' ? 'current-password' : 'new-password'}
               required
-              minLength={name === 'currentPassword' ? undefined : 8}
-              maxLength={72}
+              minLength={name === 'currentPassword' ? undefined : MIN_PASSWORD_LENGTH}
+              maxLength={name === 'currentPassword' ? 72 : MAX_PASSWORD_LENGTH}
               aria-describedby={helpId}
               value={values[name]}
               disabled={pending}

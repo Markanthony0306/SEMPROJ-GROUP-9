@@ -4,9 +4,7 @@ export function notificationRoutes({
   authenticate,
   requireRole,
   rateLimit,
-  notifications,
-  reminders,
-  mailer
+  notifications
 }) {
   const router = Router()
   router.use(
@@ -18,43 +16,6 @@ export function notificationRoutes({
   router.get('/admin/notifications', async (req, res) => {
     res.json(await notifications.list(req.user.id))
   })
-  router.post(
-    '/admin/notifications/check-email',
-    requireRole('admin'),
-    rateLimit({ max: 5 }),
-    async (req, res) => {
-      if (!mailer)
-        return res.status(503).json({ message: 'SMTP is not configured on the API server.' })
-      const current = await notifications.list(req.user.id)
-      if (!current.email.enabled)
-        return res
-          .status(409)
-          .json({ message: 'Enable automatic email reminders in Gym Preferences first.' })
-      if (!current.email.trackingReady)
-        return res.status(503).json({ message: current.email.issue })
-      res.json(await reminders.runDue())
-    }
-  )
-  router.post(
-    '/admin/notifications/check-smtp',
-    requireRole('admin'),
-    rateLimit({ max: 5 }),
-    async (req, res) => {
-      if (!mailer)
-        return res.status(503).json({ message: 'SMTP is not configured on the API server.' })
-      try {
-        await mailer.verify()
-        res.json({
-          message: 'SMTP connection and authentication verified. No test email was sent.'
-        })
-      } catch (error) {
-        const code = /^[A-Z_]{2,40}$/.test(error.code || '') ? error.code : 'SMTP_ERROR'
-        res.status(503).json({
-          message: `SMTP verification failed (${code}). Check the private server settings.`
-        })
-      }
-    }
-  )
   router.delete('/admin/notifications', requireRole('admin'), async (req, res) => {
     if (req.body?.confirmation !== 'CLEAR')
       return res.status(400).json({ message: 'Type CLEAR to confirm.' })

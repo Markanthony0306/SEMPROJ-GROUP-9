@@ -6,6 +6,7 @@ import ForgotPassword from './pages/ForgotPassword'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import ResetPassword from './pages/ResetPassword'
+import ChangePasswordPage from './pages/ChangePasswordPage'
 // Load dashboard styles up front; the shared shell owns the entrance timing.
 import AdminStaffPage from './pages/AdminStaffPage'
 import UserPage from './pages/UserPage'
@@ -62,6 +63,9 @@ export default function App() {
     logout()
     navigate('login')
   }
+
+  if (token && user?.mustChangePassword && ['user', 'admin', 'register'].includes(route))
+    return <ChangePasswordPage onSignOut={handleLogout} />
 
   const pages = {
     login: <Login navigate={navigate} onLogin={handleLogin} />,
