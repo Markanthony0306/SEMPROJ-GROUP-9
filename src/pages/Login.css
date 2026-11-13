@@ -508,26 +508,6 @@ h2,
   width: 100%;
   margin-top: 12px;
 }
-.lbtn .sp {
-  display: none;
-  width: 20px;
-  height: 20px;
-  border: 3px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-.lbtn.load .sp {
-  display: block;
-}
-.lbtn.load .tx {
-  display: inline;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 .lfoot {
   text-align: center;
   color: var(--muted);
@@ -784,7 +764,7 @@ h2,
 #login .login-submit:focus-visible::after {
   left: 130%;
 }
-#login .lbtn.load {
+#login .login-submit[aria-busy='true'] {
   opacity: 1;
   cursor: wait;
 }
@@ -1022,7 +1002,7 @@ html:has(#login) {
 }
 #login.face-login .login-step-heading,
 #login .login-face-step {
-  animation: login-step-in 260ms ease-out both;
+  animation: login-step-in var(--ui-duration) ease-out both;
 }
 #login.face-login .lform {
   gap: 12px;
@@ -1042,9 +1022,6 @@ html:has(#login) {
   text-underline-offset: 3px;
   cursor: pointer;
 }
-#login .login-face-back:hover:not(:disabled) {
-  text-decoration-thickness: 2px;
-}
 #login .login-face-back:disabled {
   color: var(--muted);
   cursor: default;
@@ -1061,7 +1038,6 @@ html:has(#login) {
 #login .login-face-step .face-viewport video {
   min-height: 0;
   height: clamp(100px, 32svh, 280px);
-  object-fit: cover;
 }
 #login .login-face-step .face-status {
   min-height: 0;

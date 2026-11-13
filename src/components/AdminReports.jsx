@@ -125,7 +125,7 @@ function RecordForm({ kind, record, data, busy, onSubmit, onClose }) {
               : 'You are correcting an existing check-in. Scanner details stay attached to the record.'}
         </p>
         <div className="ma">
-          <button className="btn ghost" type="button" onClick={onClose}>
+          <button className="btn ghost cancel-button" type="button" onClick={onClose}>
             Cancel
           </button>
           <button className="btn" type="submit">

@@ -4,6 +4,7 @@ import ProfileAvatar from '../ProfileAvatar'
 import FaceCapture from '../FaceCapture'
 import CreatedMemberCredentials from '../CreatedMemberCredentials'
 import Dialog from '../Dialog'
+import Spinner from '../Spinner'
 import RecordDeleteDialog from '../RecordDeleteControls'
 import AccountDeleteDialog from '../AccountDeleteDialog'
 import EquipmentCategorySelect from '../EquipmentCategorySelect'
@@ -20,8 +21,8 @@ function Modal({ title, children, onClose, busy, error, className }) {
         </p>
       )}
       {busy && (
-        <p className="form-help" role="status">
-          Saving...
+        <p className="form-help loading-inline" role="status">
+          <Spinner /> Saving…
         </p>
       )}
       <fieldset className="modal-fields" disabled={busy}>
@@ -31,34 +32,35 @@ function Modal({ title, children, onClose, busy, error, className }) {
   )
 }
 
-function FaceEnrollmentForm({ selfEnrollment, onEnroll, getChallenge, busy }) {
+function FaceEnrollmentForm({ selfEnrollment, adminEnrollment, onEnroll, getChallenge, busy }) {
   const [consent, setConsent] = useState(false)
   const [idChecked, setIdChecked] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
 
   return (
     <div className="mf face-enrollment-form">
-      <section className="face-enrollment-terms" aria-labelledby="face-terms-title">
-        <h3 id="face-terms-title">Face verification terms</h3>
-        <p>Please read these terms before agreeing to face enrollment:</p>
+      {adminEnrollment && (
+        <p>The gym must set up your ID portrait first. After your first enrollment, sign in again to verify your face.</p>
+      )}
+      <details className="face-enrollment-terms">
+        <summary>Face verification terms</summary>
         <ul>
           <li>
             FitPulse uses your face to verify your identity when you sign in and to check for
             duplicate enrollments.
           </li>
           <li>
-            Three camera frames are sent to the server for each live check and discarded after
+            Camera frames are sent to the server for each live check and discarded after
             processing. An encrypted face template is stored for future verification.
           </li>
           <li>
-            Face enrollment is optional. You can withdraw your consent and ask the gym to remove
-            your face template.
+            You can ask the gym to remove your face template. Removing it can block future sign-in.
           </li>
         </ul>
         {!selfEnrollment && (
           <p>Staff must explain these terms and obtain the member's agreement before continuing.</p>
         )}
-      </section>
+      </details>
       {!selfEnrollment && (
         <label className="set">
           <input type="checkbox" checked={idChecked} onChange={(event) => setIdChecked(event.target.checked)} />
@@ -174,7 +176,7 @@ export default function AdminStaffDialogs({
                 {modal.member.memberCode || modal.member.id}
               </span>
               <Pill status={memberBadge(modal.member)} />
-              {modal.member.idVerified && <span className="pill p-ok">ID verified</span>}
+              {modal.member.idVerified && <span className="pill p-ok">ID review linked</span>}
             </div>
           </div>
           <section className="member-profile-section" aria-label="Contact details">
@@ -208,13 +210,11 @@ export default function AdminStaffDialogs({
             </dl>
           </section>
           <div className="ma">
-            <button
-              className="btn ghost"
-              type="button"
-              onClick={() => setModal({ kind: 'face', member: modal.member })}
-            >
-              Face setup
-            </button>
+            {currentUser?.role === 'admin' && (
+              <button className="btn ghost" type="button" onClick={() => setModal({ kind: 'face', member: modal.member })}>
+                Face setup
+              </button>
+            )}
             <button
               className="btn"
               type="button"
@@ -297,6 +297,7 @@ export default function AdminStaffDialogs({
           plans={data.membershipPlans}
           planOptionLabel={planOptionLabel}
           initialCase={modal.verification}
+          canEnrollFace={currentUser.role === 'admin'}
           pending={pending}
           error={error}
           onClose={() => setModal(null)}
@@ -343,12 +344,11 @@ export default function AdminStaffDialogs({
           <CreatedMemberCredentials
             member={modal.member}
             temporaryPassword={modal.temporaryPassword}
-            onFaceSetup={() => setModal({ kind: 'face', member: modal.member })}
             onDismiss={() => setModal(null)}
           />
         </Modal>
       )}
-      {modal?.kind === 'face' && (
+      {modal?.kind === 'face' && currentUser?.role === 'admin' && (
         <Modal
           busy={pending}
           error={error}
@@ -358,6 +358,7 @@ export default function AdminStaffDialogs({
         >
           <FaceEnrollmentForm
             selfEnrollment={modal.member.id === currentUser?.id}
+            adminEnrollment={modal.member.role === 'admin'}
             onEnroll={enrollFace}
             getChallenge={requestFaceChallenge}
             busy={pending}

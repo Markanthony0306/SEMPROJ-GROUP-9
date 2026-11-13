@@ -13,19 +13,22 @@ import { reportRoutes } from './routes/reports.js'
 import { notificationRoutes } from './routes/notifications.js'
 import { createAdminNotificationService } from './services/adminNotifications.js'
 import { EQUIPMENT_CATEGORIES } from '../shared/equipmentCategories.js'
+import { FACE_BODY_LIMIT } from '../shared/faceLiveness.js'
 import { passwordPolicy, passwordPolicyMessage } from '../shared/passwordPolicy.js'
 import { isRetiredPlan } from '../shared/membershipPlans.js'
 import { generateTemporaryPassword } from './lib/temporaryPassword.js'
-import { createFaceChallenges } from './services/faceVerification.js'
+import {
+  createFaceChallenges, FaceVerificationError, hasActiveFaceEnrollment, loadFaceModels, withFaceEnrollmentLock
+} from './services/faceVerification.js'
 import { faceVerificationRoutes } from './routes/faceVerification.js'
 import { memberIdVerificationRoutes } from './routes/memberIdVerification.js'
-import { MemberIdError, requireMemberIdApproval } from './services/memberIdRecords.js'
+import { assertUniqueStagedFace, attemptLimitError, MemberIdError, requireMemberIdApproval } from './services/memberIdRecords.js'
 import { passwordLoginHandler } from './routes/passwordLogin.js'
 import { authenticatePassword, PasswordAuthenticationError } from './services/passwordAuthentication.js'
 import { createSupabaseAuthClient } from './lib/authClient.js'
 import { supabase } from './lib/supabase.js'
 import { withMemberAccountLock } from './lib/memberAccountLock.js'
-import { parseFaceEncryptionKey } from './lib/face-auth.js'
+import { parseFaceEncryptionKey, requiresFaceAndId } from './lib/face-auth.js'
 import {
   loadAccount as loadSupabaseAccount,
   loadDatabase as loadSupabaseDatabase,
@@ -72,18 +75,15 @@ if (!jwtSecret) {
   process.exit(1)
 }
 
-const faceLoginEnabled = process.env.FACE_LOGIN_ENABLED === 'true'
+const staffFaceEnabled = process.env.FACE_LOGIN_ENABLED === 'true'
 const faceEncryptionKey = parseFaceEncryptionKey()
 const memberIdKey = parseFaceEncryptionKey(process.env.ID_VERIFICATION_KEY || process.env.FACE_ENCRYPTION_KEY)
-const configuredFaceThreshold = Number(process.env.FACE_MATCH_THRESHOLD || 0.5)
-if (faceLoginEnabled && !faceEncryptionKey) {
-  throw new Error('FACE_ENCRYPTION_KEY must be a 64-character hex key when FACE_LOGIN_ENABLED=true.')
-}
-if (!Number.isFinite(configuredFaceThreshold) || configuredFaceThreshold <= 0 || configuredFaceThreshold > 1) {
-  throw new Error('FACE_MATCH_THRESHOLD must be a number greater than 0 and at most 1.')
-}
-const faceMatchThreshold = configuredFaceThreshold
 const faceChallenges = createFaceChallenges()
+if (faceEncryptionKey || memberIdKey) {
+  void loadFaceModels().catch((error) => {
+    console.warn('Face models could not preload:', error.code || error.name)
+  })
+}
 const availablePlan = (plan, name) =>
   plan.is_active && !isRetiredPlan(plan.plan_name) &&
   String(plan.plan_name).toLowerCase() === name.toLowerCase()
@@ -96,10 +96,10 @@ const corsOrigins = (
   .map((origin) => origin.trim())
   .filter(Boolean)
 app.use(cors({ origin: corsOrigins }))
-app.use(
-  ['/api/auth/face-verify', '/api/admin/members/:id/face-enrollment', '/api/admin/id-verifications/:id/face'],
-  express.json({ limit: '512kb' })
-)
+app.post('/api/auth/face-verify', rateLimit({ max: 5 }), express.json({ limit: FACE_BODY_LIMIT }))
+for (const path of ['/api/admin/members/:id/face-enrollment', '/api/admin/id-verifications/:id/face']) {
+  app.post(path, rateLimit({ max: 10 }), express.json({ limit: FACE_BODY_LIMIT }))
+}
 app.use(express.json({ limit: '100kb' }))
 
 // ---------------------------------------------------------------- database
@@ -163,7 +163,11 @@ async function getRoleId(roleName) {
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 
-function createSession(account) {
+function createSession(account, { faceVerified = false, allowUnenrolledAdmin = false } = {}) {
+  const passwordOnlyAdmin = account.role === 'admin' && allowUnenrolledAdmin
+  if (requiresFaceAndId(account.role) && !faceVerified && !passwordOnlyAdmin) {
+    throw new Error('A verified face is required to issue this session.')
+  }
   const user = {
     id: account.id,
     name: account.name,
@@ -181,7 +185,7 @@ function createSession(account) {
   return {
     user,
     role: user.role,
-    token: jwt.sign({ ...user, authVersion: account.authVersion || 0 }, jwtSecret, {
+    token: jwt.sign({ ...user, authVersion: account.authVersion || 0, faceVerified }, jwtSecret, {
       expiresIn: '8h',
       algorithm: 'HS256'
     })
@@ -202,6 +206,16 @@ async function authenticate(req, res, next) {
     const account = await loadAccount(claims.id)
     if (!account || account.status !== 'active' || (claims.authVersion || 0) !== (account.authVersion || 0))
       return res.status(401).json({ message: 'Your session has expired. Please log in again.' })
+    if (requiresFaceAndId(account.role)) {
+      const passwordOnlyAdmin = account.role === 'admin' && claims.faceVerified === false
+      if (
+        claims.role !== account.role ||
+        (claims.faceVerified !== true &&
+          (!passwordOnlyAdmin || await hasActiveFaceEnrollment(supabase, account.id)))
+      ) {
+        return res.status(401).json({ message: 'Log in again to complete face verification.' })
+      }
+    }
     const passwordChangeAllowed =
       (req.method === 'GET' && req.path === '/api/me') ||
       (req.method === 'POST' && req.path === '/api/profile/change-password')
@@ -329,11 +343,15 @@ app.post('/api/auth/register', authenticate, requireRole('admin'), async (req, r
       authVersion: 0
     }
     database.accounts.push(member)
-    await saveDatabase(database)
+    await withFaceEnrollmentLock(async () => {
+      await assertUniqueStagedFace(supabase, idVerificationId, faceEncryptionKey)
+      await saveDatabase(database)
+    })
     return res.status(201).json({ message: 'Account created. Please log in.' })
-  } catch (error) {
+  } catch (cause) {
     if (authUserId) await supabase.auth.admin.deleteUser(authUserId)
-    if (error instanceof MemberIdError)
+    const error = cause.code === 'P5405' ? attemptLimitError() : cause
+    if (error instanceof MemberIdError || error instanceof FaceVerificationError)
       return res.status(error.status).json({ message: error.message, code: error.code })
     console.error('Registration failed:', error.message)
     return res.status(503).json({ message: 'Unable to create the account. Please try again.' })
@@ -345,19 +363,23 @@ app.post('/api/auth/login', rateLimit({ max: 10 }), passwordLoginHandler({
   createAuthClient: createSupabaseAuthClient,
   supabase,
   loadAccount,
+  createSession,
+  createAdminFaceChallenge: (account) => faceEncryptionKey && faceChallenges.issue({
+    userId: account.id, authVersion: account.authVersion || 0, role: account.role
+  }),
   createTermsChallenge: (account) =>
-    faceChallenges.issueTerms({ userId: account.id, authVersion: account.authVersion || 0 })
+    faceChallenges.issueTerms({ userId: account.id, authVersion: account.authVersion || 0, role: account.role })
 }))
 
 app.use('/api', faceVerificationRoutes({
   supabase, authenticate, requireRole, rateLimit, loadAccount, createSession,
-  enabled: faceLoginEnabled, key: faceEncryptionKey, threshold: faceMatchThreshold,
+  staffFaceEnabled, key: faceEncryptionKey, memberIdKey,
   challenges: faceChallenges, createAuthClient: createSupabaseAuthClient
 }))
 
 app.use('/api', memberIdVerificationRoutes({
   supabase, authenticate, requireRole, rateLimit, validAccountInput,
-  key: memberIdKey, threshold: faceMatchThreshold
+  key: memberIdKey, faceKey: faceEncryptionKey, challenges: faceChallenges
 }))
 
 app.delete(
@@ -367,10 +389,13 @@ app.delete(
   rateLimit({ max: 10 }),
   async (req, res) => {
     try {
+      const account = await loadAccount(req.params.id)
+      if (!account || (account.role !== 'user' && account.id !== req.user.id))
+        return res.status(404).json({ message: 'Account not found.' })
       const { error } = await supabase
         .from('face_enrollments')
         .delete()
-        .eq('user_id', req.params.id)
+        .eq('user_id', account.id)
       if (error) throw error
       return res.json({ message: 'Member face template removed.' })
     } catch (error) {
@@ -382,15 +407,7 @@ app.delete(
 
 app.get('/api/profile/face-enrollment', authenticate, async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('face_enrollments')
-      .select('enrollment_id')
-      .eq('user_id', req.user.id)
-      .eq('status', 'active')
-      .limit(1)
-      .maybeSingle()
-    if (error) throw error
-    return res.json({ enrolled: Boolean(data) })
+    return res.json({ enrolled: await hasActiveFaceEnrollment(supabase, req.user.id) })
   } catch (error) {
     console.error('Face enrollment status lookup failed:', error.message)
     return res.status(503).json({ message: 'Could not load face verification settings.' })
@@ -404,7 +421,11 @@ app.delete('/api/profile/face-enrollment', authenticate, async (req, res) => {
       .delete()
       .eq('user_id', req.user.id)
     if (error) throw error
-    return res.json({ message: 'Face sign-in has been disabled.' })
+    return res.json({
+      message: req.user.role === 'user'
+        ? 'Face enrollment removed. Contact the gym before signing in again.'
+        : 'Face sign-in has been disabled.'
+    })
   } catch (error) {
     console.error('Face enrollment revocation failed:', error.message)
     return res.status(503).json({ message: 'Could not disable face sign-in. Please try again.' })
@@ -759,9 +780,9 @@ app.post(
       const now = new Date().toISOString()
       const roleId = await getRoleId('member')
 
-      const { data: profile, error: profileError } = await supabase
-        .from('users')
-        .insert({
+      const { data: profile, error: profileError } = await withFaceEnrollmentLock(async () => {
+        await assertUniqueStagedFace(supabase, idVerificationId, faceEncryptionKey)
+        return supabase.from('users').insert({
           id: memberId,
           auth_user_id: authUserId,
           role_id: roleId,
@@ -776,6 +797,7 @@ app.post(
         })
         .select('id, member_code, name, email, phone_number, status, created_at')
         .single()
+      })
 
       if (profileError || !profile) {
         console.error(
@@ -795,6 +817,11 @@ app.post(
         }
 
         authUserId = null
+
+        if (profileError?.code === 'P5405') {
+          const error = attemptLimitError()
+          return res.status(error.status).json({ message: error.message, code: error.code })
+        }
 
         if (['23505', '23514'].includes(profileError?.code)) {
           return res.status(409).json({
@@ -861,10 +888,6 @@ app.post(
         }
       })
     } catch (error) {
-      if (error instanceof MemberIdError)
-        return res.status(error.status).json({ message: error.message, code: error.code })
-      console.error('Unable to create member:', error.message)
-
       // Attempt cleanup if creation failed after creating the Auth user.
       if (profileId) {
         const { error: profileRollbackError } = await supabase
@@ -888,6 +911,9 @@ app.post(
         }
       }
 
+      if (error instanceof MemberIdError || error instanceof FaceVerificationError)
+        return res.status(error.status).json({ message: error.message, code: error.code })
+      console.error('Unable to create member:', error.message)
       return res.status(500).json({
         message: 'Unable to create the member account.'
       })
@@ -1434,7 +1460,10 @@ app.post(
       // Return a fresh application session after the password change.
       return res.json({
         message: 'Password updated.',
-        session: createSession(account)
+        session: createSession(account, {
+          faceVerified: req.user.faceVerified === true,
+          allowUnenrolledAdmin: req.user.role === 'admin' && req.user.faceVerified === false
+        })
       })
     } catch (error) {
       if (error instanceof PasswordAuthenticationError) {

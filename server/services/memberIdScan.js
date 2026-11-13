@@ -160,8 +160,8 @@ export async function scanMemberId(image, mimeType, idType) {
   }
 }
 
-export async function compareMemberIdFace(frames, action, portrait, threshold) {
-  const live = await readLiveFace(frames, action, threshold)
+export async function compareMemberIdFace(frames, actions, portrait, threshold) {
+  const live = await readLiveFace(frames, actions)
   if (!live)
     return {
       status: 'needs_review',

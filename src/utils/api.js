@@ -1,7 +1,9 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 
 function buildHeaders(options = {}) {
-  const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) }
+  const headers = { ...(options.headers || {}) }
+  // The browser adds the boundary required to read multipart uploads.
+  if (!(options.body instanceof FormData)) headers['Content-Type'] ??= 'application/json'
   if (options.token) headers.Authorization = `Bearer ${options.token}`
   return headers
 }
@@ -25,6 +27,8 @@ export async function apiResponse(path, options = {}) {
     const error = new Error(payload.message || `Request failed (${response.status}).`)
     error.status = response.status
     error.code = payload.code
+    error.remainingAttempts = payload.remainingAttempts
+    error.rejectedAttempts = payload.rejectedAttempts
     throw error
   }
   return response

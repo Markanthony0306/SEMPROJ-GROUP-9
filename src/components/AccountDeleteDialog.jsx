@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
 import Dialog from './Dialog'
+import Spinner from './Spinner'
 
 export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
   const { token } = useAuth()
@@ -82,10 +83,11 @@ export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
           </p>
         )}
         <div className="ma">
-          <button className="btn ghost" type="button" disabled={busy} onClick={onClose}>
+          <button className="btn ghost cancel-button" type="button" disabled={busy} onClick={onClose}>
             Cancel
           </button>
           <button className="btn danger" type="submit" disabled={busy}>
+            {busy && <Spinner />}
             {busy ? 'Deleting...' : 'Delete account permanently'}
           </button>
         </div>

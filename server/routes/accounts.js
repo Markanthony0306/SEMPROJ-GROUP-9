@@ -35,9 +35,11 @@ export function accountRoutes({
       await deleteMemberAccount({ supabase, account })
       return res.json({ message: 'Member account permanently deleted.' })
     } catch (error) {
+      if (!(error instanceof PasswordAuthenticationError) && (!error.status || error.status >= 500)) {
+        console.error('Member account deletion failed:', error.cause?.code || error.code || 'ACCOUNT_DELETE_ERROR')
+      }
       if (error instanceof PasswordAuthenticationError || error.status)
         return res.status(error.status).json({ message: error.message })
-      console.error('Member account deletion failed:', error.code || 'ACCOUNT_DELETE_ERROR')
       return res
         .status(503)
         .json({ message: 'Unable to delete the member account. Please try again.' })

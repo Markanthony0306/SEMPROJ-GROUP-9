@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { apiRequest } from '../utils/api'
 import { isLoginSession, isStripeVerificationUrl } from '../utils/adminIdentity'
+import Spinner from './Spinner'
 import './AdminIdentityVerification.css'
 
 const CHECK_INTERVAL = 4000
@@ -211,10 +212,11 @@ export default function AdminIdentityVerification({
           disabled={checking || Boolean(cooldownUntil) || finished.current}
           onClick={() => setAttempt((value) => value + 1)}
         >
+          {checking && <Spinner />}
           {checking ? 'Checking verification...' : 'Check verification'}
         </button>
         <button
-          className="forgot-link"
+          className="forgot-link cancel-button"
           type="button"
           disabled={finished.current}
           onClick={() => onCancel()}

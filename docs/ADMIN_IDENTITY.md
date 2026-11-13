@@ -1,5 +1,9 @@
 # Administrator identity verification
 
+> Current localhost sign-in uses the Node camera and ID check. See
+> [Strict face sign-in](FACE_SIGN_IN.md) for migration and administrator setup.
+> The Stripe instructions below describe the earlier provider-based flow.
+
 FitPulse uses Stripe Identity's hosted document and selfie flow before issuing an
 administrator session. The `stripe` Node.js SDK is installed in this project.
 ID images and selfies go directly to Stripe; FitPulse does not receive an upload

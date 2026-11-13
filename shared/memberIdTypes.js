@@ -6,5 +6,12 @@ export const memberIdTypes = {
 }
 
 export const memberIdImageTypes = ['image/jpeg', 'image/png']
-export const memberIdImageLimit = 5 * 1024 * 1024
+export const memberIdDocumentTypes = [
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+]
+export const memberIdFileLimit = 5 * 1024 * 1024
+export const memberIdRejectedAttemptLimit = 5
+export const memberIdImageLimit = memberIdFileLimit
 export const memberIdAttemptLimit = 3

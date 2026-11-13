@@ -3,10 +3,13 @@
 ## Enable the database changes
 
 Apply `supabase/migrations/005_admin_notifications.sql` to enable the automatic
-reminder tables and delivery tracking if it has not been run yet. Then apply
-`supabase/migrations/006_delete_member_accounts.sql` in the Supabase SQL Editor.
-Migration 006 requires migration 001's Auth-to-profile cascade. These migrations
-must be applied before testing live reminders and account deletion.
+reminder tables and delivery tracking if it has not been run yet. For account
+deletion, apply `supabase/migrations/013_member_id_account_deletion.sql` in the
+Supabase SQL Editor after migrations 001 and 011. It includes the setup from
+migration 006, gives the ID cleanup trigger the permissions it needs during
+Auth deletion, and refreshes the Data API schema cache. The API checks this
+setup before removing photos for members with a linked ID. For an older schema
+without member ID verification, migration 006 enables basic account deletion.
 
 Apply `supabase/migrations/007_admin_managed_accounts.sql` to keep account and
 membership writes behind the API's role checks, including databases with older
@@ -21,8 +24,9 @@ clearing function and refreshes the Data API schema cache without clearing data.
 Migration 006 adds a private readiness check and a trigger (a function PostgreSQL
 runs when a profile is deleted). Supabase Auth deletes the login and cascades to
 the linked profile. The trigger removes that member's payments, subscriptions,
-attendance, saved face template, legacy notifications, and QR credentials in the
-same transaction. A database error rolls back those database changes. Existing
+attendance, saved face template, legacy notifications, and QR credentials. The
+member's linked ID review, files, and audit history are removed in the same
+transaction. A database error rolls back those database changes. Existing
 row-level security stays enabled; browser clients cannot call the readiness check.
 
 No existing member is deleted by applying the migration. Do not test deletion on

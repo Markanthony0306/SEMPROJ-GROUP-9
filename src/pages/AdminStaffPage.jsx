@@ -10,6 +10,7 @@ import { downloadPayments } from '../utils/paymentExport'
 import PasswordChangeForm from '../components/PasswordChangeForm'
 import AdminReports from '../components/AdminReports'
 import ActivityChart from '../components/ActivityChart'
+import Spinner from '../components/Spinner'
 import { RecordDeleteButton } from '../components/RecordDeleteControls'
 import EquipmentCategorySelect from '../components/EquipmentCategorySelect'
 import AdminNotifications from '../components/AdminNotifications'
@@ -158,6 +159,10 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
     setNotice('')
     try {
       const result = await apiRequest(path, { token, ...options })
+      if (result.signInRequired) {
+        onSignOut()
+        return true
+      }
       setNotice(result.message || message)
       setModal(null)
       await load()
@@ -450,15 +455,17 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
                   >
                     <Icon name="edit" size={18} />
                   </button>
-                  <button
-                    className="report-icon-button"
-                    type="button"
-                    title="Face setup"
-                    aria-label={`Face setup for ${member.name}`}
-                    onClick={() => setModal({ kind: 'face', member })}
-                  >
-                    <Icon name="camera" size={18} />
-                  </button>
+                  {currentUser?.role === 'admin' && (
+                    <button
+                      className="report-icon-button"
+                      type="button"
+                      title="Face setup"
+                      aria-label={`Face setup for ${member.name}`}
+                      onClick={() => setModal({ kind: 'face', member })}
+                    >
+                      <Icon name="camera" size={18} />
+                    </button>
+                  )}
                   {currentUser?.role === 'admin' && (
                     <RecordDeleteButton
                       label={`Delete account for ${member.name}`}
@@ -770,17 +777,18 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
           <h2>Change Password</h2>
           <PasswordChangeForm />
         </article>
-        <article className="card clay">
-          <h2>Face verification</h2>
-          <button
-            type="button"
-            className="btn ghost"
-            disabled={!currentUser?.id}
-            onClick={() => setModal({ kind: 'face', member: currentUser })}
-          >
-            Set up face sign-in
-          </button>
-        </article>
+        {currentUser?.role === 'admin' && (
+          <article className="card clay face-settings-card">
+            <h2>Face verification</h2>
+            <button
+              type="button"
+              className="btn ghost"
+              onClick={() => setModal({ kind: 'face', member: currentUser })}
+            >
+              Set up face sign-in
+            </button>
+          </article>
+        )}
         <article className="card clay">
           <h2>Gym Preferences</h2>
           <form onSubmit={settings} className="mf">
@@ -817,7 +825,7 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
     >
       {loading && (
         <p className="dashboard-feedback" role="status">
-          Loading gym records...
+          <span className="loading-inline"><Spinner /> Loading gym records…</span>
         </p>
       )}
       {error && (

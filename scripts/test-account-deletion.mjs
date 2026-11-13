@@ -207,6 +207,41 @@ test('missing migration or changed account link stops before Storage and Auth', 
     assert.deepEqual(state.deleted, [])
   }))
 
+test('a member with a linked ID requires the ID cleanup migration before any deletion', () =>
+  fixture(async ({ state, request, member }) => {
+    member.idVerified = true
+    state.checkError = { code: 'PGRST202' }
+    const missing = await request()
+    assert.equal(missing.status, 503)
+    assert.match(missing.body.message, /013_member_id_account_deletion/)
+    assert.deepEqual(state.rpcCalls, [{
+      name: 'check_fitpulse_account_deletion_with_id',
+      values: { p_user_id: member.id, p_auth_user_id: member.authUserId }
+    }])
+    assert.deepEqual(state.removed, [])
+    assert.deepEqual(state.deleted, [])
+
+    state.checkError = null
+    state.ready = false
+    assert.equal((await request()).status, 409)
+    assert.deepEqual(state.removed, [])
+    assert.deepEqual(state.deleted, [])
+
+    state.ready = true
+    assert.equal((await request()).status, 200)
+    assert.deepEqual(state.deleted, [member.authUserId])
+  }))
+
+test('a readiness service error is reported without exposing its details', () =>
+  fixture(async ({ state, request }) => {
+    state.checkError = { code: '42501', message: 'Private Supabase error detail' }
+    const failure = await request()
+    assert.equal(failure.status, 503)
+    assert.equal(failure.body.message, 'Unable to check account deletion setup. Please try again.')
+    assert.deepEqual(state.removed, [])
+    assert.deepEqual(state.deleted, [])
+  }))
+
 test('Storage failures preserve the login; Auth failures do not report success', () =>
   fixture(async ({ state, request }) => {
     state.storageError = { message: 'Storage unavailable' }

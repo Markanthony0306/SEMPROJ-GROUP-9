@@ -49,11 +49,34 @@ try {
 
   const MemberIdWizard = await load('components/admin/MemberIdWizard')
   const wizard = render(MemberIdWizard, { plans: [], planOptionLabel: (plan) => plan.plan_name })
-  assert.match(wizard, /Step 1 of 3/)
-  assert.match(wizard, /Member details and photo ID/)
+  assert.match(wizard, /Step 1 of 2/)
+  assert.match(wizard, /Member details and ID verification/)
   assert.match(wizard, /Philippine passport/)
-  assert.match(wizard, /type="file" accept="image\/jpeg,image\/png" disabled=""/)
-  assert.match(wizard, /disabled="">Read ID and continue<\/button>/)
+  assert.match(wizard, /Front of ID/)
+  assert.match(wizard, /Back of ID/)
+  assert.match(wizard, /One document \(PDF, DOC or DOCX\)/)
+  assert.equal((wizard.match(/type="file" accept="\.jpg,\.jpeg,\.png" disabled=""/g) || []).length, 2)
+  assert.match(wizard, /disabled="">Save ID and continue<\/button>/)
+  const blockedWizard = render(MemberIdWizard, {
+    plans: [],
+    initialCase: { status: 'rejected', remainingAttempts: 0, rejectedAttempts: 5 }
+  })
+  assert.match(blockedWizard, /Too many rejected attempts/)
+  assert.doesNotMatch(blockedWizard, /type="file"/)
+  const MemberIdReviews = await load('components/admin/MemberIdReviews')
+  assert.match(render(MemberIdReviews, { isAdmin: true }), /Reset attempts by email/)
+  assert.doesNotMatch(render(MemberIdReviews, { isAdmin: false }, 'staff'), /Reset attempts by email/)
+
+  const { validateMemberIdFile } = await vite.ssrLoadModule('/src/utils/memberIdUpload.js')
+  const renamedText = new File(['text data'], 'not-a-photo.jpg', { type: 'image/jpeg' })
+  await assert.rejects(validateMemberIdFile(renamedText, 'front'), /checks the file contents/)
+  const pdf = new File(['%PDF-1.7\n'], 'both-sides.pdf', { type: 'application/pdf' })
+  assert.equal(await validateMemberIdFile(pdf, 'document'), pdf)
+  await assert.rejects(validateMemberIdFile(pdf, 'back'), /Choose a valid JPG or PNG image/)
+  const largeFile = new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'large.jpg', {
+    type: 'image/jpeg'
+  })
+  await assert.rejects(validateMemberIdFile(largeFile, 'front'), /no larger than 5 MB/)
   const CreatedMemberCredentials = await load('components/CreatedMemberCredentials')
   const credentials = render(CreatedMemberCredentials, {
     member: { name: 'Test Member', email: 'member@fixture.test' },
@@ -63,7 +86,7 @@ try {
   })
   assert.match(credentials, />Face setup<\/button>/)
   assert.match(credentials, />Done<\/button>/)
-  console.log('PASS: Member creation shows the ID upload first and offers separate face setup.')
+  console.log('PASS: Member creation shows both ID sides, validates uploads, and displays the rejection limit.')
 
   for (const [path, role, heading] of [
     ['pages/AdminStaffPage', 'admin', 'Gym activity'],
@@ -271,8 +294,8 @@ try {
 
   const Loader = await load('components/HeartRateLoader')
   const loader = render(Loader, { message: 'Opening your dashboard' })
-  assert.ok(loader.includes('--loader-duration:1000ms') && loader.includes('loading-pulse'))
-  console.log('PASS: The heartbeat loader renders with the shared one-second duration.')
+  assert.ok(loader.includes('spinner spinner-large') && loader.includes('Opening your dashboard'))
+  console.log('PASS: The loading overlay renders the shared circular spinner.')
 } finally {
   await vite.close()
 }

@@ -7,47 +7,65 @@
   overflow-wrap: anywhere;
 }
 
+.admin-app .id-check-wizard,
+.admin-app .id-check-wizard .mf {
+  display: grid;
+  gap: var(--ui-space-3);
+  margin-top: 0;
+}
+
 .id-check-wizard h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 1.125rem;
+  line-height: 1.35;
 }
 
-.admin-app .id-check-member-details {
+.id-check-wizard .id-check-step {
+  width: fit-content;
+  padding: var(--ui-space-1) var(--ui-space-2);
+  border: 1px solid var(--id);
+  border-radius: var(--ui-radius);
+  background: var(--card2);
+  font-weight: 700;
+}
+
+.id-check-wizard p {
+  margin: 0;
+}
+
+.id-check-section {
+  padding-top: var(--ui-space-3);
+  border-top: 1px solid var(--id);
+}
+
+.admin-app .id-check-member-details,
+.id-check-slots {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: var(--ui-space-3);
 }
 
-.id-check-upload {
-  padding: 14px 16px;
-  border: 1px solid var(--id);
-  border-radius: 14px;
-  background: var(--card2);
+.id-check-slots > :only-child {
+  grid-column: 1 / -1;
 }
 
 .id-check-upload h4 {
   margin: 0;
 }
 
-@media (max-width: 480px) {
-  .admin-app .id-check-member-details {
-    grid-template-columns: 1fr;
-  }
-}
-
 .id-check-result,
 .id-check-drop,
-.id-check-fields > div,
 .id-check-queue li {
-  padding: 14px 16px;
+  min-width: 0;
+  padding: var(--ui-space-3);
   border: 1px solid var(--id);
-  border-radius: 14px;
+  border-radius: var(--ui-radius);
   background: var(--card2);
 }
 
 .id-check-result p,
 .id-check-result ul {
-  margin: 6px 0 0;
+  margin: var(--ui-space-2) 0 0;
   color: var(--muted);
   line-height: 1.5;
 }
@@ -60,7 +78,13 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: 10px;
+  gap: var(--ui-space-2);
+}
+
+.admin-app .id-check-payment {
+  align-self: end;
+  align-items: center;
+  min-height: var(--ui-control-height);
 }
 
 .id-check-consent input {
@@ -68,53 +92,59 @@
 }
 
 .id-check-drop {
+  display: grid;
+  gap: var(--ui-space-2);
   border-style: dashed;
 }
 
-.id-check-drop input,
-.id-check-progress progress {
+.id-check-drop input {
+  width: 100%;
+  min-width: 0;
   max-width: 100%;
+  color: var(--muted);
+}
+
+.id-check-drop input::file-selector-button {
+  margin-right: var(--ui-space-2);
+  padding: var(--ui-space-2);
+  border: 1px solid var(--id);
+  border-radius: var(--ui-space-2);
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+.id-check-drop input[aria-invalid='true'] {
+  border-radius: var(--ui-space-2);
+  outline: 1px solid var(--ui-error);
 }
 
 .id-check-drop img {
   display: block;
   max-width: 100%;
-  max-height: 200px;
-  margin-top: 8px;
+  max-height: 150px;
+  border-radius: var(--ui-space-2);
   object-fit: contain;
 }
 
 .id-check-progress {
-  display: grid;
-  gap: 6px;
-}
-
-.id-check-progress progress {
-  width: 100%;
-  accent-color: var(--orange);
-}
-
-.id-check-fields {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
-  gap: 8px;
-  margin: 0;
-}
-
-.id-check-fields dd {
-  margin: 2px 0 0;
-}
-
-.id-check-fields dt,
-.id-check-fields small,
-.id-check-queue small {
+  display: flex;
+  align-items: center;
+  gap: var(--ui-space-2);
   color: var(--muted);
-  font-size: 12px;
+}
+
+.id-check-notice {
+  padding: var(--ui-space-2) var(--ui-space-3);
+  border: 1px solid var(--id);
+  border-inline-start: 3px solid var(--orange);
+  border-radius: var(--ui-space-2);
+  background: var(--card2);
 }
 
 .id-check-queue {
   display: grid;
-  gap: 8px;
+  gap: var(--ui-space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -122,16 +152,38 @@
 
 .id-check-queue li {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: var(--ui-space-3);
 }
 
 .id-check-queue small {
   display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.id-check-wizard .ma,
+.id-check-queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ui-space-2);
 }
 
 .id-check-wizard .ma {
-  display: flex;
-  flex-wrap: wrap;
+  margin-top: 0;
+  padding-top: var(--ui-space-3);
+  border-top: 1px solid var(--id);
+}
+
+@media (max-width: 520px) {
+  .admin-app .id-check-member-details,
+  .id-check-slots {
+    grid-template-columns: 1fr;
+  }
+
+  .id-check-wizard .ma .btn {
+    flex: 1 1 135px;
+  }
 }

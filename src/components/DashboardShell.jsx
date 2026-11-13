@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTheme } from './brand/useTheme'
 import ProfileAvatar from './ProfileAvatar'
+import Dialog from './Dialog'
 import dayBanner from '../assets/db-day-v.jpg'
 import nightBanner from '../assets/db-night-v.jpg'
 import '../styles/dashboard-features.css'
@@ -268,89 +269,63 @@ export default function DashboardShell({
         </div>
       </main>
       {modal && (
-        <div
-          className="modal show"
-          role="dialog"
-          aria-modal="true"
-          onMouseDown={(event) => event.target === event.currentTarget && setModal('')}
+        <Dialog
+          title={modal === 'logout' ? 'Sign out?' : 'Profile Details'}
+          onClose={() => setModal('')}
         >
-          <div className="clay" id="mbody">
-            {modal === 'logout' ? (
-              <>
-                <div className="mh">
-                  <h2>Sign out?</h2>
-                  <button
-                    className="ib sm"
-                    type="button"
-                    onClick={() => setModal('')}
-                    aria-label="Close"
-                  >
-                    <Icon name="x" size={16} />
-                  </button>
-                </div>
-                <p className="modal-copy">Are you sure you want to sign out of FitPulse?</p>
-                <div className="ma">
-                  <button className="btn ghost" type="button" onClick={() => setModal('')}>
-                    Cancel
-                  </button>
-                  <button className="btn" type="button" onClick={onSignOut}>
-                    <Icon name="out" size={16} />
-                    Sign out
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="mh">
-                  <h2>Profile Details</h2>
-                  <button
-                    className="ib sm"
-                    type="button"
-                    onClick={() => setModal('')}
-                    aria-label="Close"
-                  >
-                    <Icon name="x" size={16} />
-                  </button>
-                </div>
-                <div className="center">
-                  <ProfileAvatar user={user} large />
-                  <b className="profile-name">{user?.name || 'FitPulse User'}</b>
-                  <span className={`pill ${isAdmin ? 'p-warn' : 'p-ok'}`}>
-                    {isAdmin ? 'Administrator' : 'Member'}
-                  </span>
-                </div>
-                <div className="info">
-                  <span>Email</span>
-                  {user?.email || 'Not available'}
-                  {!isAdmin && (
-                    <>
-                      <span>Member ID</span>
-                      {user?.memberCode || user?.id || 'Not available'}
-                      <span>Plan</span>
-                      {user?.plan || 'Not available'}
-                    </>
-                  )}
-                </div>
-                <div className="ma">
-                  <button className="btn ghost" type="button" onClick={() => setModal('')}>
-                    Cancel
-                  </button>
-                  <button
-                    className="btn"
-                    type="button"
-                    onClick={() => {
-                      setModal('')
-                      select('Settings')
-                    }}
-                  >
-                    <Icon name="sliders" size={16} />
-                    Settings
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+          {modal === 'logout' ? (
+            <>
+              <p className="modal-copy">Are you sure you want to sign out of FitPulse?</p>
+              <div className="ma">
+                <button className="btn ghost cancel-button" type="button" onClick={() => setModal('')}>
+                  Cancel
+                </button>
+                <button className="btn" type="button" onClick={onSignOut}>
+                  <Icon name="out" size={16} />
+                  Sign out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="center">
+                <ProfileAvatar user={user} large />
+                <b className="profile-name">{user?.name || 'FitPulse User'}</b>
+                <span className={`pill ${isAdmin ? 'p-warn' : 'p-ok'}`}>
+                  {isAdmin ? 'Administrator' : 'Member'}
+                </span>
+              </div>
+              <div className="info">
+                <span>Email</span>
+                {user?.email || 'Not available'}
+                {!isAdmin && (
+                  <>
+                    <span>Member ID</span>
+                    {user?.memberCode || user?.id || 'Not available'}
+                    <span>Plan</span>
+                    {user?.plan || 'Not available'}
+                  </>
+                )}
+              </div>
+              <div className="ma">
+                <button className="btn ghost cancel-button" type="button" onClick={() => setModal('')}>
+                  Cancel
+                </button>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => {
+                    setModal('')
+                    select('Settings')
+                  }}
+                >
+                  <Icon name="sliders" size={16} />
+                  Settings
+                </button>
+              </div>
+            </>
+          )}
+        </Dialog>
       )}
     </div>
   )

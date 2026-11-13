@@ -1,7 +1,9 @@
 .face-capture {
   --face-success: #218253;
+  --face-guide-ready: #67e3a2;
+  --face-guide-adjust: #ffcf52;
   display: grid;
-  gap: 16px;
+  gap: var(--ui-space-2);
   min-width: 0;
 }
 [data-theme='dark'] .face-capture {
@@ -11,9 +13,9 @@
 .face-capture video {
   display: block;
   width: 100%;
-  max-height: 300px;
+  max-height: 220px;
   aspect-ratio: 4 / 3;
-  object-fit: cover;
+  object-fit: contain;
   border: 1px solid var(--line, rgba(255, 255, 255, 0.14));
   border-radius: 14px;
   background: #071a29;
@@ -26,7 +28,7 @@
 }
 
 .face-steps {
-  --face-step-size: clamp(28px, 6svh, 36px);
+  --face-step-size: 28px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   list-style: none;
@@ -53,7 +55,7 @@
   background: #218253;
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.5s ease;
+  transition: transform var(--ui-duration) ease;
 }
 .face-steps li.complete::after {
   transform: scaleX(1);
@@ -138,7 +140,7 @@
 .face-viewport {
   position: relative;
   overflow: hidden;
-  border-radius: 24px;
+  border-radius: var(--ui-radius);
   background: var(--card2);
   box-shadow:
     inset 4px 4px 12px var(--id),
@@ -147,9 +149,9 @@
 .face-capture .face-viewport video {
   border: 0;
   border-radius: inherit;
-  min-height: 230px;
+  height: clamp(128px, 24svh, 220px);
   opacity: 0;
-  transition: opacity 0.35s;
+  transition: opacity var(--ui-duration);
 }
 .face-capture.is-ready video,
 .face-capture.is-scanning video,
@@ -160,24 +162,72 @@
 }
 .face-guide {
   position: absolute;
-  inset: 12% 26%;
+  top: 50%;
+  left: 50%;
+  height: 76%;
+  max-width: 48%;
+  aspect-ratio: 3 / 4;
+  transform: translate(-50%, -50%);
   border: 2px dashed #ffffff99;
   border-radius: 45%;
   pointer-events: none;
   opacity: 0.65;
 }
-.face-capture.is-success .face-guide {
-  border-color: #2a9d5c;
-  border-style: solid;
+.face-guide[data-position='adjust'] {
+  border-color: var(--face-guide-adjust);
+  opacity: 1;
 }
-.face-guide > span {
-  display: none;
+.face-guide[data-position='ready'],
+.face-capture.is-success .face-guide {
+  border-color: var(--face-guide-ready);
+  border-style: solid;
+  opacity: 1;
+}
+.face-detection-box {
+  position: absolute;
+  border: 1px solid #ffffff80;
+  border-radius: 12px;
+  pointer-events: none;
+  transition: left 60ms ease-out, top 60ms ease-out, width 60ms ease-out, height 60ms ease-out;
+}
+.face-landmark {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 2px #071a29;
+  transform: translate(-50%, -50%);
+  transition: left 60ms ease-out, top 60ms ease-out;
+  pointer-events: none;
+}
+.face-gesture-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.face-gesture-steps li[aria-current='step'] {
+  color: var(--text);
+  font-weight: 750;
+}
+.face-gesture-check {
+  color: var(--face-success);
+  margin-inline-end: 4px;
 }
 .face-live-status {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  display: grid;
+  top: var(--ui-space-2);
+  right: var(--ui-space-2);
+  box-sizing: border-box;
+  max-width: calc(100% - 2 * var(--ui-space-2));
+  display: flex;
+  align-items: center;
   gap: 6px;
   padding: 8px 10px;
   border-radius: 12px;
@@ -187,9 +237,9 @@
   pointer-events: none;
 }
 .face-live-status span {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .face-live-status i {
   width: 6px;
@@ -198,20 +248,11 @@
   border-radius: 50%;
   background: #9ab0be;
 }
-.face-live-status .is-detected i {
-  background: #67e3a2;
-  box-shadow: 0 0 7px #67e3a2aa;
+.face-live-status[data-position='adjust'] i {
+  background: var(--face-guide-adjust);
 }
-.face-capture.is-scanning .face-guide > span {
-  display: block;
-  position: absolute;
-  top: 10%;
-  left: 5%;
-  width: 90%;
-  height: 2px;
-  background: #fcbf49;
-  box-shadow: 0 0 15px #f77f00;
-  animation: face-scan 1.8s ease-in-out infinite alternate;
+.face-live-status[data-position='ready'] i {
+  background: var(--face-guide-ready);
 }
 .face-placeholder {
   position: absolute;
@@ -228,14 +269,14 @@
   font-size: 12px;
 }
 .face-placeholder svg {
-  width: 80px;
-  height: 80px;
+  width: 48px;
+  height: 48px;
   stroke: var(--orange);
   stroke-width: 2;
 }
 .face-processing {
   position: absolute;
-  inset: auto 16px 16px;
+  inset: auto var(--ui-space-2) var(--ui-space-2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -246,15 +287,6 @@
   color: var(--text);
   box-shadow: 0 5px 14px #00304922;
   font-size: 12px;
-}
-.face-spinner {
-  display: block;
-  width: 19px;
-  height: 19px;
-  border: 2px solid var(--id);
-  border-top-color: var(--orange);
-  border-radius: 50%;
-  animation: face-spin 0.8s linear infinite;
 }
 .face-camera-badge {
   display: flex;
@@ -276,7 +308,6 @@
   border-radius: 50%;
 }
 .face-capture .face-status {
-  min-height: 42px;
   margin: 0;
   text-align: center;
   color: var(--muted);
@@ -299,7 +330,7 @@
 }
 .face-capture-actions .btn {
   width: 100%;
-  min-height: 48px;
+  min-height: var(--ui-control-height);
 }
 .face-help-toggle {
   border: 0;
@@ -324,7 +355,7 @@
   font-size: 12px;
   line-height: 1.6;
   min-width: 0;
-  padding: 14px 16px;
+  padding: var(--ui-space-2) var(--ui-space-3);
   border: 1px solid var(--id);
   border-radius: 16px;
   background: var(--card2);
@@ -342,14 +373,8 @@
   padding-top: 10px;
 }
 @media (max-width: 420px) {
-  .face-capture {
-    gap: 12px;
-  }
   .face-steps button {
     font-size: 11px;
-  }
-  .face-capture .face-viewport video {
-    min-height: 180px;
   }
 }
 @keyframes face-step-complete {
@@ -374,24 +399,16 @@
     stroke-dashoffset: 0;
   }
 }
-@keyframes face-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes face-scan {
-  to {
-    top: 90%;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
-  .face-spinner,
-  .face-guide > span,
   .face-steps .complete .face-step-circle,
   .face-step-check path {
     animation: none;
   }
   .face-capture .face-viewport video {
+    transition: none;
+  }
+  .face-detection-box,
+  .face-landmark {
     transition: none;
   }
   .face-step-circle,

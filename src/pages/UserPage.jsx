@@ -8,6 +8,7 @@ import MemberQr from '../components/MemberQr'
 import ProfilePhoto from '../components/ProfilePhoto'
 import FitnessSculpture from '../components/FitnessSculpture'
 import ActivityChart from '../components/ActivityChart'
+import Spinner from '../components/Spinner'
 import { downloadPayments } from '../utils/paymentExport'
 import { getMemberQr } from '../utils/memberQr'
 import PasswordChangeForm from '../components/PasswordChangeForm'
@@ -401,7 +402,7 @@ export default function UserPage({ user, onSignOut }) {
     >
       {loading && (
         <p className="member-feedback" role="status">
-          Loading your membership...
+          <span className="loading-inline"><Spinner /> Loading your membership…</span>
         </p>
       )}
       {error && (

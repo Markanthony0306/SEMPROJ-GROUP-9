@@ -162,7 +162,7 @@ export default function RecordDeleteDialog({ target, onClose, onChanged, onNotic
           </label>
         )}
         <div className="ma">
-          <button className="btn ghost" type="button" disabled={busy} onClick={onClose}>
+          <button className="btn ghost cancel-button" type="button" disabled={busy} onClick={onClose}>
             Cancel
           </button>
           <button

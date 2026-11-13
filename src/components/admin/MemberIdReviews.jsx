@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { memberIdTypes } from '../../../shared/memberIdTypes'
 import { apiRequest } from '../../utils/api'
 import Dialog from '../Dialog'
+import Spinner from '../Spinner'
 import {
   idVerificationError,
   idVerificationLabels,
@@ -9,7 +10,7 @@ import {
   IdVerificationResult
 } from './MemberIdWizard'
 
-function ReviewDecision({ verification, onDecision, busy }) {
+function ReviewDecision({ verification, onDecision, busy, submitting }) {
   const [decision, setDecision] = useState('approve')
   const [noExpiry, setNoExpiry] = useState(false)
   const mayHaveNoExpiry = ['national_id', 'student_id'].includes(verification.idType)
@@ -43,7 +44,7 @@ function ReviewDecision({ verification, onDecision, busy }) {
         {decision === 'approve' && (
           <>
             <p className="form-help">
-              Inspect the original ID with the member present. FitPulse discards uploaded images.
+              Inspect the original ID with the member present before approving this submission.
             </p>
             <label className="field">
               ID number as printed
@@ -102,7 +103,8 @@ function ReviewDecision({ verification, onDecision, busy }) {
           />
         </label>
         <button className="btn" type="submit" disabled={busy}>
-          Save decision
+          {submitting && <Spinner />}
+          {submitting ? 'Saving decision…' : 'Save decision'}
         </button>
       </fieldset>
     </form>
@@ -114,9 +116,12 @@ export default function MemberIdReviews({ token, isAdmin, onClose, onResume }) {
   const [cases, setCases] = useState([])
   const [hasMore, setHasMore] = useState(false)
   const [selected, setSelected] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
+  const [resetEmail, setResetEmail] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving] = useState('')
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [refresh, setRefresh] = useState(0)
 
   useEffect(() => {
@@ -140,8 +145,9 @@ export default function MemberIdReviews({ token, isAdmin, onClose, onResume }) {
 
   async function saveDecision(values) {
     if (saving || !selected) return
-    setSaving(true)
+    setSaving('review')
     setError('')
+    setNotice('')
     try {
       const result = await apiRequest(`${idVerificationPath}/${selected.id}/review`, {
         token,
@@ -149,17 +155,184 @@ export default function MemberIdReviews({ token, isAdmin, onClose, onResume }) {
         body: JSON.stringify(values)
       })
       setSelected(result.verification)
+      setNotice(values.decision === 'reject' ? 'Rejection saved.' : 'Approval saved.')
       setRefresh((value) => value + 1)
     } catch (cause) {
       setError(idVerificationError(cause))
     } finally {
-      setSaving(false)
+      setSaving('')
     }
   }
 
+  function openReset(email = '') {
+    setError('')
+    setNotice('')
+    setResetEmail(email)
+  }
+
+  async function resetAttempts(event) {
+    event.preventDefault()
+    if (saving || !isAdmin) return
+    const email = new FormData(event.currentTarget).get('email')
+    setSaving('reset')
+    setError('')
+    setNotice('')
+    try {
+      const result = await apiRequest(`${idVerificationPath}/reset-attempts`, {
+        token,
+        method: 'POST',
+        body: JSON.stringify({ email })
+      })
+      setResetEmail(null)
+      setSelected(null)
+      setNotice(result.message || 'Rejected attempts reset.')
+      setRefresh((value) => value + 1)
+    } catch (cause) {
+      setError(idVerificationError(cause))
+    } finally {
+      setSaving('')
+    }
+  }
+
+  function openDelete(item) {
+    setError('')
+    setNotice('')
+    setConfirmDelete(item)
+  }
+
+  function closeDelete() {
+    setConfirmDelete(null)
+    setError('')
+  }
+
+  async function deleteVerification() {
+    if (saving || !isAdmin || !confirmDelete) return
+    setSaving('delete')
+    setError('')
+    try {
+      const result = await apiRequest(`${idVerificationPath}/${confirmDelete.id}`, {
+        token,
+        method: 'DELETE'
+      })
+      setSelected(null)
+      setConfirmDelete(null)
+      setCases((current) => current.filter((item) => item.id !== confirmDelete.id))
+      setNotice(result.message || 'ID review and stored files deleted.')
+      if (cases.length === 1 && page > 0) setPage((value) => value - 1)
+      else setRefresh((value) => value + 1)
+    } catch (cause) {
+      setError(idVerificationError(cause))
+    } finally {
+      setSaving('')
+    }
+  }
+
+  const busy = Boolean(saving)
+  if (resetEmail !== null) {
+    const closeReset = () => {
+      setResetEmail(null)
+      setError('')
+    }
+    return (
+      <Dialog
+        title="Reset rejected attempts"
+        onClose={closeReset}
+        busy={busy}
+        className="id-check-dialog"
+      >
+        <form className="mf id-check-wizard" onSubmit={resetAttempts}>
+          <p className="form-help">Enter the email used for the rejected submissions.</p>
+          <label className="field">
+            Email
+            <input
+              className="clay-in"
+              type="email"
+              name="email"
+              autoComplete="email"
+              defaultValue={resetEmail}
+              required
+              disabled={busy}
+              data-autofocus
+            />
+          </label>
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="ma">
+            <button
+              className="btn ghost cancel-button"
+              type="button"
+              disabled={busy}
+              onClick={closeReset}
+            >
+              Cancel
+            </button>
+            <button className="btn" type="submit" disabled={busy}>
+              {busy && <Spinner />}
+              {busy ? 'Resetting attempts…' : 'Reset rejected attempts'}
+            </button>
+          </div>
+        </form>
+      </Dialog>
+    )
+  }
+
+  if (confirmDelete) {
+    return (
+      <Dialog
+        title="Delete ID review?"
+        onClose={closeDelete}
+        busy={busy}
+        className="id-check-dialog"
+      >
+        <div className="mf id-check-wizard">
+          <p>
+            Delete the ID review and stored ID files for <strong>{confirmDelete.name}</strong>? This
+            action is permanent.
+          </p>
+          {confirmDelete.memberId && (
+            <p className="form-help">Deleting this ID will block the member’s face sign-in.</p>
+          )}
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="ma">
+            <button
+              className="btn ghost cancel-button"
+              type="button"
+              disabled={busy}
+              onClick={closeDelete}
+              data-autofocus
+            >
+              Cancel
+            </button>
+            <button
+              className="btn danger"
+              type="button"
+              disabled={busy}
+              onClick={deleteVerification}
+            >
+              {busy && <Spinner />}
+              {busy ? 'Deleting review…' : 'Delete review'}
+            </button>
+          </div>
+        </div>
+      </Dialog>
+    )
+  }
+
   return (
-    <Dialog title="ID Reviews" onClose={onClose} busy={saving} className="id-check-dialog">
+    <Dialog title="ID Reviews" onClose={onClose} busy={busy} className="id-check-dialog">
       <div className="mf id-check-wizard">
+        {notice && (
+          <p className="id-check-notice" role="status">
+            {notice}
+          </p>
+        )}
         {error && (
           <p className="form-error" role="alert">
             {error}
@@ -172,38 +345,49 @@ export default function MemberIdReviews({ token, isAdmin, onClose, onResume }) {
               {selected.email} · {memberIdTypes[selected.idType] || 'No ID uploaded'}
             </p>
             <IdVerificationResult verification={selected} />
-            <p className="form-help">
-              {selected.documentAttempts} uploads · {selected.attempts} face attempts
-            </p>
+            {selected.memberId && <p className="form-help">Linked to a member account.</p>}
             {isAdmin &&
-              !selected.processing &&
-              ['needs_review', 'rejected'].includes(selected.status) && (
+              !selected.memberId &&
+              selected.hasDocuments &&
+              selected.remainingAttempts > 0 &&
+              ['awaiting_face', 'needs_review'].includes(selected.status) && (
                 <ReviewDecision
-                  key={selected.id}
+                  key={`${selected.id}:${selected.status}`}
                   verification={selected}
                   onDecision={saveDecision}
-                  busy={saving}
+                  busy={busy}
+                  submitting={saving === 'review'}
                 />
               )}
             <div className="ma">
               <button
                 className="btn ghost"
                 type="button"
-                disabled={saving}
+                disabled={busy}
                 onClick={() => setSelected(null)}
               >
                 Back to list
               </button>
-              <button
-                className="btn"
-                type="button"
-                disabled={saving}
-                onClick={() => onResume(selected)}
-              >
-                {['approved', 'verified'].includes(selected.status)
-                  ? 'Finish creating account'
-                  : 'Open verification'}
-              </button>
+              {isAdmin && selected.rejectedAttempts > 0 && (
+                <button
+                  className="btn ghost"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => openReset(selected.email)}
+                >
+                  Reset rejected attempts
+                </button>
+              )}
+              {!selected.memberId && (
+                <button
+                  className="btn"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onResume(selected)}
+                >
+                  {selected.faceEnrolled ? 'Finish creating account' : 'Open verification'}
+                </button>
+              )}
             </div>
           </>
         ) : (
@@ -214,7 +398,9 @@ export default function MemberIdReviews({ token, isAdmin, onClose, onResume }) {
                 : 'Check the status of your submissions.'}
             </p>
             {loading ? (
-              <p role="status">Loading verifications…</p>
+              <p className="id-check-progress" role="status">
+                <Spinner /> Loading verifications…
+              </p>
             ) : error ? null : cases.length ? (
               <ul className="id-check-queue">
                 {cases.map((item) => (
@@ -223,14 +409,29 @@ export default function MemberIdReviews({ token, isAdmin, onClose, onResume }) {
                       <strong>{item.name}</strong>
                       <small>{idVerificationLabels[item.status]}</small>
                     </div>
-                    <button
-                      className="btn ghost"
-                      type="button"
-                      onClick={() => setSelected(item)}
-                      aria-label={`View verification for ${item.name}`}
-                    >
-                      View
-                    </button>
+                    <div className="id-check-queue-actions">
+                      <button
+                        className="btn ghost"
+                        type="button"
+                        onClick={() => {
+                          setNotice('')
+                          setSelected(item)
+                        }}
+                        aria-label={`View verification for ${item.name}`}
+                      >
+                        View
+                      </button>
+                      {isAdmin && (
+                        <button
+                          className="btn danger"
+                          type="button"
+                          onClick={() => openDelete(item)}
+                          aria-label={`Delete verification for ${item.name}`}
+                        >
+                          Delete
+                        </button>
+                      )}
+                    </div>
                   </li>
                 ))}
               </ul>
@@ -246,6 +447,16 @@ export default function MemberIdReviews({ token, isAdmin, onClose, onResume }) {
               >
                 Refresh
               </button>
+              {isAdmin && (
+                <button
+                  className="btn ghost"
+                  type="button"
+                  disabled={loading}
+                  onClick={() => openReset()}
+                >
+                  Reset attempts by email
+                </button>
+              )}
               {page > 0 && (
                 <button
                   className="btn ghost"

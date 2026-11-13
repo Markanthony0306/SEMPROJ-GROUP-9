@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from '../components/brand/useTheme'
-import FaceCapture from '../components/FaceCapture'
+import FaceCapture, { preloadFaceCapture } from '../components/FaceCapture'
+import Spinner from '../components/Spinner'
 import { apiRequest } from '../utils/api'
 import './Login.css'
 
@@ -176,6 +177,8 @@ export default function Login({ onLogin }) {
   const submissionLock = useRef(false)
   const resetDialogRef = useRef(null)
 
+  useEffect(preloadFaceCapture, [])
+
   useEffect(() => {
     if (termsToken || faceChallenge) stepHeadingRef.current?.focus({ preventScroll: true })
   }, [termsToken, faceChallenge])
@@ -247,13 +250,15 @@ export default function Login({ onLogin }) {
         setTermsAccepted(false)
         setTermsError('')
         setTermsToken(session.termsToken)
-        setPassword('')
-        setShaking(false)
-        setPending(false)
-        submissionLock.current = false
-        return
+      } else if (session.requiresFaceVerification && session.challengeToken) {
+        setFaceChallenge(session)
+      } else if (session.token && session.user) {
+        finishLogin(session)
+      } else {
+        throw new Error('Unable to start sign-in. Please try again.')
       }
-      throw new Error('Unable to start sign-in. Please try again.')
+      setPassword('')
+      setShaking(false)
     } catch (error) {
       setShowPassword(false)
       setErrors({
@@ -262,10 +267,11 @@ export default function Login({ onLogin }) {
         general: error.message || 'We could not log you in. Please try again.'
       })
       setShaking(true)
-      submissionLock.current = false
-      setPending(false)
       // Wait for disabled inputs to re-enable before moving keyboard focus.
       window.requestAnimationFrame(() => passwordRef.current?.focus())
+    } finally {
+      submissionLock.current = false
+      setPending(false)
     }
   }
   const acceptTerms = async () => {
@@ -278,7 +284,7 @@ export default function Login({ onLogin }) {
         body: JSON.stringify({ termsToken, accepted: true })
       })
       if (result.requiresFaceVerification && result.challengeToken) {
-        setFaceChallenge({ challengeToken: result.challengeToken, action: result.action })
+        setFaceChallenge(result)
         setTermsToken(null)
       } else if (result.token && result.user) {
         finishLogin(result)
@@ -303,10 +309,18 @@ export default function Login({ onLogin }) {
   const verifyFace = async (capture) => {
     setFacePending(true)
     try {
-      const session = await apiRequest('/auth/face-verify', {
+      const { verificationToken } = await apiRequest('/auth/face-verify', {
         method: 'POST',
         body: JSON.stringify(capture)
       })
+      if (!verificationToken) throw new Error('The server could not complete face verification. Please log in again.')
+      const session = await apiRequest('/auth/face-session', {
+        method: 'POST',
+        body: JSON.stringify({ verificationToken })
+      })
+      if (!session.token || !session.user) {
+        throw new Error('The server could not complete face verification. Please log in again.')
+      }
       finishLogin(session)
     } finally {
       setFacePending(false)
@@ -407,9 +421,10 @@ export default function Login({ onLogin }) {
               </label>
               {termsError && <p className="form-error" role="alert">{termsError}</p>}
               <button className="btn" type="button" disabled={!termsAccepted || termsPending} onClick={acceptTerms}>
+                {termsPending && <Spinner />}
                 {termsPending ? 'Continuing…' : 'Continue'}
               </button>
-              <button className="login-face-back" type="button" disabled={termsPending} onClick={backToLogin}>
+              <button className="login-face-back cancel-button" type="button" disabled={termsPending} onClick={backToLogin}>
                 Back to password login
               </button>
             </div>
@@ -418,11 +433,12 @@ export default function Login({ onLogin }) {
               <FaceCapture
                 getChallenge={() => faceChallenge}
                 onCaptured={verifyFace}
+                singleUseChallenge
                 disabled={facePending}
                 actionLabel={facePending ? 'Verifying…' : 'Verify and continue'}
               />
               <button
-                className="login-face-back"
+                className="login-face-back cancel-button"
                 type="button"
                 disabled={facePending}
                 onClick={backToLogin}
@@ -534,12 +550,12 @@ export default function Login({ onLogin }) {
                   </button>
                 </div>
                 <button
-                  className={`btn lbtn login-submit${pending ? ' load' : ''}`}
+                  className="btn lbtn login-submit"
                   type="submit"
                   disabled={pending}
                   aria-busy={pending}
                 >
-                  <span className="sp" aria-hidden="true" />
+                  {pending && <Spinner />}
                   <span className="tx" aria-live="polite">
                     {pending ? 'Logging in' : 'Log in'}
                   </span>
@@ -584,16 +600,19 @@ export default function Login({ onLogin }) {
                   required
                   type="email"
                   placeholder="you@example.com"
+                  aria-invalid={resetError === 'Enter a valid email address'}
+                  aria-describedby={resetError ? 'login-reset-error' : undefined}
                   value={resetEmail}
                   onChange={(event) => setResetEmail(event.target.value)}
                 />
               </label>
-              {resetError && <p className="reset-error">{resetError}</p>}
+              {resetError && <p id="login-reset-error" className="reset-error" role="alert">{resetError}</p>}
               <div className="ma">
                 <button className="btn" type="submit" disabled={resetPending}>
+                  {resetPending && <Spinner />}
                   {resetPending ? 'Sending...' : 'Send reset link'}
                 </button>
-                <button className="btn ghost" type="button" onClick={() => setResetOpen(false)}>
+                <button className="btn ghost cancel-button" type="button" onClick={() => setResetOpen(false)}>
                   Cancel
                 </button>
               </div>

@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
 import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, passwordPolicy, passwordPolicyMessage } from '../../shared/passwordPolicy'
 import PasswordToggle from './PasswordToggle'
+import Spinner from './Spinner'
 
 export default function PasswordChangeForm() {
   const { token, login } = useAuth()
@@ -100,6 +101,7 @@ export default function PasswordChangeForm() {
         </p>
       )}
       <button className="btn" type="submit" disabled={pending}>
+        {pending && <Spinner />}
         {pending ? 'Updating password...' : 'Update password'}
       </button>
     </form>

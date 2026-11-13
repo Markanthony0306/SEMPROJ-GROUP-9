@@ -12,7 +12,8 @@ export default function Dialog({ title, children, onClose, busy = false, classNa
     const firstControl =
       autofocus ||
       dialog?.querySelector('input:not(:disabled), select:not(:disabled), button:not(:disabled)')
-    firstControl?.focus()
+    const focusTarget = firstControl || dialog
+    focusTarget?.focus()
     return () => {
       document.body.style.overflow = overflow
       previousFocus?.focus()
@@ -22,7 +23,7 @@ export default function Dialog({ title, children, onClose, busy = false, classNa
     if (event.key === 'Escape' && !busy) onClose()
     if (event.key !== 'Tab') return
     const controls = [
-      ...dialogRef.current.querySelectorAll('button, input, select, textarea, a[href]')
+      ...dialogRef.current.querySelectorAll('button, input, select, textarea, summary, a[href]')
     ].filter(
       (element) => !element.disabled && element.tabIndex !== -1 && element.getClientRects().length
     )

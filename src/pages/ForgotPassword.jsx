@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { apiRequest } from '../utils/api'
+import Spinner from '../components/Spinner'
 import './Login.css'
 
 export default function ForgotPassword({ navigate }) {
@@ -44,16 +45,19 @@ export default function ForgotPassword({ navigate }) {
                 onChange={(event) => setEmail(event.target.value)}
                 placeholder="john123@gmail.com"
                 required
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? 'forgot-error' : undefined}
               />
             </span>
           </label>
           {error && (
-            <p className="err show" role="alert">
+            <p className="err show" id="forgot-error" role="alert">
               {error}
             </p>
           )}
           {message && <p role="status">{message}</p>}
           <button className="btn lbtn" disabled={pending}>
+            {pending && <Spinner />}
             {pending ? 'Sending...' : 'Send reset link'}
           </button>
           <button className="btn ghost" type="button" onClick={() => navigate('login')}>

@@ -33,29 +33,37 @@ The duplicate Memberships sidebar page was removed. Use **Members → View membe
 
 Expired memberships remain in the admin/staff pages for review and renewal. Accounts
 are not automatically deleted after 15 days; deletion requires administrator
-confirmation. Restart the API after updating the code to stop the previous cleanup
-worker. No database migration is required for this change.
+confirmation. Apply [migration 013](migrations/013_member_id_account_deletion.sql)
+after migration 011 to install the deletion checks and cleanup triggers, including
+the setup from migration 006. Migration 013 also refreshes the Supabase Data API
+schema cache. Restart the API to load the updated deletion check.
 
-## Face verification and membership plan retirement
+## Face sign-in and membership plans
 
-1. Apply `migrations/002_face_enrollment.sql` and then `migrations/009_face_enrollment_and_plan_retirement.sql`. Migration 009 serializes enrollment updates and retires Unlimited Monthly for new memberships. Historical subscriptions and payments retain their original plan.
-2. Set `FACE_LOGIN_ENABLED=true` and configure a stable 32-byte hex `FACE_ENCRYPTION_KEY` in the API environment. Keep the key used for any existing enrollments.
-3. For members, open **Members → View → Face setup**. Confirm consent and check their photo ID. Staff can enroll their own face in **Settings → Face verification** using their current password.
-4. Sign out and sign back in. The API checks three camera frames against a single-use movement prompt and compares the face against enrolled accounts. It stores only an encrypted template, never the frames. Resolve any old duplicate enrollments before expecting those accounts to pass face sign-in.
+Apply the migrations through 012 in order. Configure a stable server-only
+`FACE_ENCRYPTION_KEY` and provision the administrator's ID portrait before face enrollment.
+Follow the [face sign-in setup guide](../docs/FACE_SIGN_IN.md) for provisioning,
+role-specific sign-in, and the checks to run before rollout.
 
-Use HTTPS or localhost for camera access. Try the live prompt on your target cameras and test both printed and screen-displayed photos. This gesture check is a prototype and can be fooled by replayed or synthetic camera frames. Use independently evaluated presentation attack detection before relying on it for production authentication.
+Migration 009 retires Unlimited Monthly for new memberships. Historical
+subscriptions and payments keep their original plan.
 
 ## Member ID checks
 
-1. Apply `010_member_id_verification.sql` to Supabase before restarting the updated API. It adds private verification and audit tables and links the approval to the member profile in the same database transaction.
-2. Set a stable server-only `ID_VERIFICATION_KEY` (32 random bytes encoded as hex), or keep the existing `FACE_ENCRYPTION_KEY` as the fallback. Changing the effective key without migrating stored numbers and fingerprints breaks duplicate checks for past records.
-3. Open **Members → Create Account**. Enter member details, select the ID type, record consent, and upload the photo on step 1. Compare the live face on step 2. Review the decision and create the approved account on step 3. Use **Members → ID Reviews** to see flagged cases and resume creation after an administrator approves.
-   After creating the account, use **Face setup** on the sign-in details screen or in the member's row to enroll their face for future sign-ins.
-4. Tesseract.js runs on the API server. It loads English language data on the first scan after startup. For offline use, set `ID_OCR_LANG_PATH` to a server directory containing `eng.traineddata.gz`. Uploaded images never go to the model download service.
+1. Apply `010_member_id_verification.sql` and `011_member_id_proof.sql` before restarting the updated API. Migration 011 adds private encrypted ID file rows, email rejection counts, and staged face enrollment. Profile creation and enrollment commit in one database transaction.
+2. Keep the existing server-only `ID_VERIFICATION_KEY` and `FACE_ENCRYPTION_KEY` (each 32 bytes encoded as hex). If the ID key is empty, the API uses the face key for ID files. Keep those keys backed up securely.
+3. Open **Members → Create Account**. Enter the member details, record consent, and upload both ID sides on step 1. Capture the member's face on step 2. FitPulse checks the files and captures a face template at creation. When the member signs in, the API compares the live face to the enrollment and the stored ID portrait.
+4. Use **Members → ID Reviews** to make manual decisions. The fifth rejection blocks creation and resubmission for that email. An admin can reset the count by email. Deleting a review also deletes the stored ID files. For an existing member, deletion ends their current session and requires a replacement ID before they can sign in again.
 
-The automatic rules target common Philippine passport, driver’s license, and National ID layouts. Student IDs and documents with no readable expiry require an administrator to inspect the original in person. Three document uploads and three live prompts are allowed per case. The audit trail records the actor, time, outcome, and attempt count. An ID match checks consistency and likeness. It does not validate authenticity with the issuing authority.
+Images require a separate JPG or PNG per side. A PDF can place the front and back on the first two pages or separate the images with a clear white gap on one page. The API runs Poppler's `pdftoppm` from its PATH for PDF files. Set `ID_PDF_RENDERER` to an absolute executable path if needed. For DOCX or Word 97–2003 DOC, insert the JPG or PNG scans in front-to-back order as embedded images. Keep each file at or below 5 MB. A readable upload and face match establish likeness. Authenticity requires inspecting the original ID.
 
-Images and webcam frames are discarded after processing. The ID portrait template stays in API memory for up to 15 minutes to allow retries. An API restart clears it, so reopen the case and upload again if attempts remain. Supabase keeps encrypted ID numbers, keyed fingerprints for duplicate checks, and the verification and review record. Test the checks against the gym’s supported documents and webcam before using them to make unattended decisions.
+Old reviews from migration 010 do not have stored images. Recover an existing member's ID from a trusted operator terminal with the private server key, after checking the original ID and getting the member's consent. Keep the input files outside Git.
+
+```powershell
+node scripts/recover-member-id.mjs admin@fitpulse.com member@example.com drivers_license 'C:\private\front.jpg' 'C:\private\back.jpg'
+```
+
+Pass one PDF, DOC, or DOCX path for a combined document. The command updates the existing member's proof. If the member also needs a face enrollment, use **Members → View → Face setup** with the member present. See [Strict face sign-in](../docs/FACE_SIGN_IN.md) for administrator setup.
 
 ## Webcam QR check-in
 
