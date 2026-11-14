@@ -58,9 +58,10 @@ FitPulse uses a private [PaddleOCR General OCR service](https://www.paddleocr.ai
 
 ```powershell
 python -m pip install 'paddlex[ocr,serving]'
-paddlex --serve --pipeline OCR --host 127.0.0.1 --port 8080 --device cpu
+npm run id-ocr
 ```
 
+Keep the OCR command running in a separate terminal alongside the API.
 Set `ID_PADDLE_OCR_URL` in the API environment to the full private `/ocr` endpoint. The default is `http://127.0.0.1:8080/ocr`. For deployments on separate hosts, use a private network and keep the endpoint inaccessible from the public internet. The API sends an ID image to this service, so keep request bodies out of logs. Browser OCR fills the review fields, and the API checks the images independently before saving the ID proof. Inspect the original document in person to check its authenticity.
 
 The browser downloads the two PP-OCRv5 model archives on first use and reads the captures locally. To serve the models with FitPulse, host `PP-OCRv5_mobile_det_onnx_infer.tar` and `PP-OCRv5_mobile_rec_onnx_infer.tar` in a public directory and set `VITE_ID_OCR_MODEL_DIRECTORY` to its URL before building the frontend.

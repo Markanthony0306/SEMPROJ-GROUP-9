@@ -101,6 +101,9 @@ function previewBox(box, source, video) {
 
 export function createCameraFaceScanner(faceapi) {
   const { canvas, context } = captureSurface()
+  const landmarkCanvas = document.createElement('canvas')
+  const landmarkContext = landmarkCanvas.getContext('2d')
+  if (!landmarkContext) throw new Error('Could not read eye landmarks.')
   const detector = new faceapi.TinyFaceDetectorOptions({
     inputSize: FACE_FRAME_WIDTH, scoreThreshold: PREVIEW_DETECTION_SCORE
   })
@@ -132,14 +135,35 @@ export function createCameraFaceScanner(faceapi) {
     let landmarks
     let points
     if (includeLandmarks && Math.min(box.width, box.height) >= FACE_MIN_CAMERA_FACE_SIZE / 2) {
-      const [face] = await faceapi.extractFaces(canvas, [detection])
-      landmarks = await faceapi.nets.faceLandmark68TinyNet.detectLandmarks(face)
-      const originX = Math.max(0, Math.floor(box.x))
-      const originY = Math.max(0, Math.floor(box.y))
+      // Read eyelid landmarks from original camera pixels.
+      // Keep the existing 224x168 server evidence format unchanged.
+      const scaleX = source.width / video.videoWidth
+      const scaleY = source.height / video.videoHeight
+      const sx = Math.max(0, (box.x - source.x) / scaleX)
+      const sy = Math.max(0, (box.y - source.y) / scaleY)
+      const sw = Math.min(video.videoWidth - sx, box.width / scaleX)
+      const sh = Math.min(video.videoHeight - sy, box.height / scaleY)
+
+      if (sw <= 0 || sh <= 0)
+        throw new Error('Eye landmarks are outside the camera image.')
+
+      landmarkCanvas.width = Math.ceil(sw)
+      landmarkCanvas.height = Math.ceil(sh)
+
+      landmarkContext.drawImage(
+        video, sx, sy, sw, sh,
+        0, 0, landmarkCanvas.width, landmarkCanvas.height
+      )
+
+      landmarks = await faceapi.nets.faceLandmark68TinyNet.detectLandmarks(landmarkCanvas)
+
       points = [36, 39, 42, 45, 30, 48, 54].map((index) => {
         const point = landmarks.positions[index]
         return previewBox({
-          x: originX + point.x, y: originY + point.y, width: 0, height: 0
+          x: source.x + (sx + point.x * sw / landmarkCanvas.width) * scaleX,
+          y: source.y + (sy + point.y * sh / landmarkCanvas.height) * scaleY,
+          width: 0,
+          height: 0
         }, source, video)
       })
     }
@@ -182,6 +206,26 @@ export async function captureLiveFace({ video, scan, actions, closeShot, isCurre
     if (video.currentTime !== lastVideoTime) {
       lastVideoTime = video.currentTime
       const position = await scan(video, true)
+      if (step === 'blink') {
+        const eyeRatio = (eye) => {
+          const d = (a, b) => Math.hypot(a.x - b.x, a.y - b.y)
+          return (d(eye[1], eye[5]) + d(eye[2], eye[4])) /
+            (2 * d(eye[0], eye[3]))
+        }
+        const eyes = position.landmarks
+          ? [
+              position.landmarks.getLeftEye(),
+              position.landmarks.getRightEye()
+            ].map(eyeRatio)
+          : []
+
+        console.info('[FitPulse Blink Debug]', {
+          scanMs: Math.round(performance.now() - started),
+          guide: position.guide,
+          eyeRatios: eyes.map((n) => Number(n.toFixed(3))),
+          counted: sequence.blinks
+        })
+      }
       if (!isCurrent()) return null
       if (performance.now() >= expiresAt) break
       onPosition(position)

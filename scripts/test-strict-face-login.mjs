@@ -51,20 +51,22 @@ function faceLandmarks(gesture, shift = 0) {
 
 const gestureFrames = (actions) => [
   null,
-  ...actions.flatMap((action) => action === 'blink'
-    ? Array.from({ length: 3 }, () => ['blink', 'blink', null]).flat()
-    : [action, null])
+  ...actions.flatMap((action) =>
+    action === 'blink'
+      ? Array.from({ length: 3 }, () => ['blink', null]).flat()
+      : [action, null]
+  )
 ]
 
-test('blink counts only on reopening after two closed samples and a shift is not a turn', () => {
+test('blink counts on reopening after one closed sample and a shift is not a turn', () => {
   const sequence = createFaceGestureSequence(['blink', 'right', 'left'])
   const sample = (gesture, shift) => sequence.observe(faceLandmarks(gesture, shift), () => gesture)
   sample(null)
   sample('blink')
   sample(null)
-  assert.equal(sequence.blinks, 0)
-  for (let index = 0; index < 3; index += 1) {
-    for (let closed = 0; closed < 5; closed += 1) sample('blink')
+  assert.equal(sequence.blinks, 1)
+  for (let index = 1; index < 3; index += 1) {
+    sample('blink')
     assert.equal(sequence.blinks, index)
     sample(null)
     sample(null)
@@ -259,6 +261,7 @@ test('admin skips Terms, member keeps Terms, and the API gates sessions on live 
       assert.deepEqual(options, { allowUnenrolledAdmin: true })
       return { token: 'password-session-fixture', user: { id: account.id } }
     },
+    identityVerificationEnabled: true,
     createAdminFaceChallenge: (account) =>
       challenges.issue(claim(account)),
     createTermsChallenge: (account) => challenges.issueTerms(claim(account))
@@ -273,6 +276,7 @@ test('admin skips Terms, member keeps Terms, and the API gates sessions on live 
     key,
     memberIdKey: key,
     staffFaceEnabled: false,
+    identityVerificationEnabled: true,
     authenticate: pass,
     requireRole: () => pass,
     rateLimit: () => pass,

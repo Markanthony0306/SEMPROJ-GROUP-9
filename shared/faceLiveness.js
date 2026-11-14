@@ -7,7 +7,7 @@ export const FACE_CLOSE_SCALE = 1.2
 
 export const faceActions = ['blink', 'left', 'right']
 export const FACE_BLINK_COUNT = 3
-export const FACE_CLOSED_SAMPLES = 2
+export const FACE_CLOSED_SAMPLES = 1
 export const FACE_TURN_DEGREES = 25
 export const FACE_FORWARD_DEGREES = 12
 export const FACE_STEP_MS = { align: 10_000, blink: 15_000, left: 10_000, right: 10_000 }
@@ -72,7 +72,7 @@ export function createFaceGestureSequence(actions) {
       const forward = Math.abs(yaw) <= FACE_FORWARD_DEGREES &&
         (!baseline || Math.abs(yaw - baseline.yaw) <= FACE_FORWARD_DEGREES)
       const open = eyes.every((ratio, eye) =>
-        ratio >= Math.max(0.21, (baseline?.eyes[eye] ?? 0) * 0.85))
+        ratio >= Math.max(0.14, (baseline?.eyes[eye] ?? 0) * 0.85))
       if (!baseline) {
         if (!forward || !open) return
         baseline = { eyes, yaw }
@@ -92,7 +92,7 @@ export function createFaceGestureSequence(actions) {
             if (blinks === FACE_BLINK_COUNT) index += 1
           }
           closedFrames.length = 0
-        } else if (eyes.every((ratio, eye) => ratio <= Math.min(0.19, baseline.eyes[eye] * 0.72))) {
+        } else if (eyes.every((ratio, eye) => ratio <= Math.min(0.28, baseline.eyes[eye] * 0.82))) {
           if (closedFrames.length < FACE_CLOSED_SAMPLES) {
             closedFrames.push({ frame: capture(), frontal: false })
           }

@@ -167,7 +167,7 @@ function labeled(lines, label, parse) {
 function cleanName(value) {
   const name = value.trim()
   return name.length <= 100 &&
-    /^[\p{L}\p{M} .,'’-]+$/u.test(name) &&
+    /^[\p{L}\p{M} .,'â€™-]+$/u.test(name) &&
     !/^(?:name|given names?|middle name|first name|last name|surname|sex|nationality|signature|address|date of birth)$/i.test(
       name
     )
@@ -219,11 +219,46 @@ function passportMrz(lines, today) {
   }
 }
 
+function readLabeledName(lines, label) {
+  const labelOnly =
+    /^(?:APELYIDO|SURNAME|LAST NAME|FIRST NAME|GIVEN NAMES?|MGA PANGALAN|PANGALAN|GITNANG APELYIDO|GITNANG PANGALAN|PANGGITNANG APELYIDO|MIDDLE NAME|FULL NAME|NAME|ADDRESS|TIRAHAN|SEX|NATIONALITY|DATE OF BIRTH)$/i
+
+  for (const [index, line] of lines.entries()) {
+    const match = label.exec(line.text)
+    if (!match) continue
+
+    const candidates = [
+      {
+        text: line.text.slice(match.index + match[0].length).trim(),
+        confidence: line.confidence
+      },
+      lines[index + 1],
+      lines[index + 2],
+      lines[index - 1]
+    ]
+
+    for (const candidate of candidates) {
+      if (!candidate) continue
+
+      const text = candidate.text.trim()
+      const normalized = text.replace(/[:.\-]+$/, '').trim()
+
+      if (labelOnly.test(normalized)) continue
+
+      const value = cleanName(text)
+      if (value) {
+        return { value, confidence: candidate.confidence }
+      }
+    }
+  }
+
+  return blank()
+}
 function readName(lines, type) {
-  const given = labeled(lines, givenNameLabel, cleanName)
-  const surname = labeled(lines, surnameLabel, cleanName)
+  const given = readLabeledName(lines, givenNameLabel)
+  const surname = readLabeledName(lines, surnameLabel)
   if (given.value && surname.value) {
-    const middle = labeled(lines, middleNameLabel, cleanName)
+    const middle = readLabeledName(lines, middleNameLabel)
     const parts = [given, middle, surname].filter((field) => field.value)
     return {
       value: parts.map((field) => field.value).join(' '),

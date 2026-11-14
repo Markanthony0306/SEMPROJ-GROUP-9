@@ -15,7 +15,7 @@ async function recognizeDocument(image) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       redirect: 'error',
-      signal: AbortSignal.timeout(20_000),
+      signal: AbortSignal.timeout(120_000),
       body: JSON.stringify({
         file: image.toString('base64'),
         fileType: 1,
@@ -57,10 +57,17 @@ async function recognizeDocument(image) {
       }
       return { text, confidence: Math.round(score * 100), polygon }
     })
-  } catch {
+  } catch (error) {
+    console.error(
+      '[FitPulse ID OCR] Recognition failed:',
+      error?.name,
+      error?.message
+    )
+
     throw new MemberIdError(
       503,
-      'The server ID reader is unavailable. Try again or contact the gym admin.',
+      'The server ID reader is offline. Ask the gym admin to start PaddleOCR or configure ' +
+        'ID_PADDLE_OCR_URL.',
       'ID_READER_UNAVAILABLE'
     )
   }
