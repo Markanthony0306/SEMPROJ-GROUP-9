@@ -1,7 +1,12 @@
 import jwt from 'jsonwebtoken'
+import { requiresFaceAndId } from '../lib/face-auth.js'
+import { hasActiveFaceEnrollment } from '../services/faceVerification.js'
 
-export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus }) {
-  function createSession(account) {
+export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus, supabase, identityVerificationEnabled = false }) {
+  function createSession(account, { faceVerified = false, allowUnenrolledAdmin = false } = {}) {
+    const passwordOnlyAdmin = account.role === 'admin' && allowUnenrolledAdmin
+    if (identityVerificationEnabled && requiresFaceAndId(account.role) && !faceVerified && !passwordOnlyAdmin)
+      throw new Error('A verified face is required to issue this session.')
     const user = {
       id: account.id,
       name: account.name,
@@ -19,7 +24,7 @@ export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus }) 
     return {
       user,
       role: user.role,
-      token: jwt.sign({ ...user, authVersion: account.authVersion || 0 }, jwtSecret, {
+      token: jwt.sign({ ...user, authVersion: account.authVersion || 0, faceVerified }, jwtSecret, {
         expiresIn: '8h',
         algorithm: 'HS256'
       })
@@ -40,6 +45,12 @@ export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus }) 
       const account = await loadAccount(claims.id)
       if (!account || account.status !== 'active' || (claims.authVersion || 0) !== (account.authVersion || 0))
         return res.status(401).json({ message: 'Your session has expired. Please log in again.' })
+      if (identityVerificationEnabled && requiresFaceAndId(account.role)) {
+        const passwordOnlyAdmin = account.role === 'admin' && claims.faceVerified === false
+        if (claims.role !== account.role || (claims.faceVerified !== true &&
+          (!passwordOnlyAdmin || await hasActiveFaceEnrollment(supabase, account.id))))
+          return res.status(401).json({ message: 'Log in again to complete face verification.' })
+      }
       const passwordChangeAllowed =
         (req.method === 'GET' && req.path === '/api/me') ||
         (req.method === 'POST' && req.path === '/api/profile/change-password')

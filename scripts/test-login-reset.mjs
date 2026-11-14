@@ -8,7 +8,8 @@ import { once } from 'node:events'
 import { test } from 'node:test'
 import jwt from 'jsonwebtoken'
 import { passwordPolicy } from '../shared/passwordPolicy.js'
-import { FACE_FRAME_BYTES } from '../shared/faceLiveness.js'
+import { FACE_EVIDENCE_COUNT, FACE_FRAME_BYTES } from '../shared/faceLiveness.js'
+import { encryptFaceDescriptor } from '../server/lib/face-auth.js'
 import { EQUIPMENT_CATEGORIES } from '../shared/equipmentCategories.js'
 import { createFaceChallenges } from '../server/services/faceVerification.js'
 
@@ -38,6 +39,8 @@ const project = {
   payments: [],
   attendance_logs: [],
   face_enrollments: [],
+  member_id_verifications: [],
+  member_id_rejected_emails: [],
   membership_reminders: [],
   gym_equipment: [],
   gym_maintenance: [],
@@ -128,7 +131,6 @@ Object.assign(process.env, {
   JWT_SECRET: 'isolated-login-regression-secret',
   FACE_LOGIN_ENABLED: 'true',
   FACE_ENCRYPTION_KEY: 'ab'.repeat(32),
-  FACE_MATCH_THRESHOLD: '0.5',
   CLIENT_URL: 'https://app.fixture.test',
   ADMIN_PASSWORD: 'Fixture-before-reset-123!',
   SCANNER_API_KEY: 'scanner-only-fixture-key-at-least-32-characters',
@@ -153,10 +155,13 @@ globalThis.fetch = async (input, options = {}) => {
     if (!saved.user.email_confirmed_at) return providerError('email_not_confirmed')
     return response(session(saved.user))
   }
+  if (url.pathname === '/auth/v1/admin/users' && method === 'GET')
+    return response({ users: [...credentials.values()].map(({ user }) => user) })
   if (url.pathname === '/auth/v1/admin/users' && method === 'POST') {
+    if (credentials.has(body.email)) return providerError('email_exists', 422)
     const user = {
       id: crypto.randomUUID(), email: body.email, aud: 'authenticated', role: 'authenticated',
-      email_confirmed_at: iso(0), user_metadata: body.user_metadata || {}
+      email_confirmed_at: iso(0), user_metadata: body.user_metadata || {}, app_metadata: body.app_metadata || {}
     }
     credentials.set(body.email, { user, password: body.password })
     return response(user)
@@ -187,12 +192,31 @@ globalThis.fetch = async (input, options = {}) => {
     )
     if (!saved) return providerError('user_not_found', 404)
     if (method === 'PUT' && body.password) saved.password = body.password
+    if (method === 'PUT' && body.email_confirm) saved.user.email_confirmed_at = iso(0)
+    if (method === 'DELETE') credentials.delete(saved.user.email)
     return response(saved.user)
   }
   if (url.pathname === '/rest/v1/rpc/claim_membership_reminder') {
     assert.equal(body.p_subscription_id, '00000000-0000-0000-0000-000000000000')
     assert.equal(body.p_membership_end, '1970-01-01T00:00:00.000Z')
     return response(false)
+  }
+  if (url.pathname === '/rest/v1/rpc/create_fitpulse_enrolled_member') {
+    const profile = { ...body.p_profile, status: 'active' }
+    const verification = project.member_id_verifications.find((row) => row.id === profile.id_verification_id)
+    if (!verification?.face_enrolled || !verification.document_passed || verification.member_id)
+      return response({ code: '23514', message: 'Member verification is required' }, 400)
+    project.users.push(profile)
+    verification.member_id = profile.id
+    const subscription = { ...body.p_subscription, user_id: profile.id, status: 'active', created_at: profile.created_at }
+    project.subscriptions.push(subscription)
+    if (body.p_payment) {
+      project.payments.push({
+        ...body.p_payment, subscription_id: subscription.subscription_id,
+        processed_by_user_id: profile.id_verification_actor, created_at: profile.created_at
+      })
+    }
+    return response(profile)
   }
   if (url.pathname === '/rest/v1/rpc/record_fitpulse_checkin') {
     assert.equal(headers.get('apikey'), 'fixture-admin-key')
@@ -222,19 +246,45 @@ globalThis.fetch = async (input, options = {}) => {
     const matches = (row) =>
       [...url.searchParams].every(([key, value]) => {
         if (value.startsWith('eq.')) return String(row[key]) === value.slice(3)
+        if (value === 'is.null') return row[key] == null
+        if (value === 'not.is.null') return row[key] != null
         if (value.startsWith('ilike.'))
           return String(row[key]).toLowerCase() === value.slice(6).toLowerCase()
         return true
       })
     let rows = project[table].filter(matches)
-    if (method === 'PATCH') rows.forEach((row) => Object.assign(row, body))
+    if (method === 'DELETE') project[table] = project[table].filter((row) => !matches(row))
+    if (method === 'PATCH') rows.forEach((row) => {
+      Object.assign(row, body)
+      if (table === 'member_id_verifications') {
+        row.revision += 1
+        row.updated_at = new Date().toISOString()
+      }
+    })
     if (method === 'POST') {
       const key = url.searchParams.get('on_conflict') || 'id'
       rows = Array.isArray(body) ? body : [body]
       for (const row of rows) {
+        if (table === 'member_id_verifications') {
+          row.id ||= crypto.randomUUID()
+          row.member_id ??= null
+          row.verification_status ||= 'awaiting_document'
+          row.document_attempts ??= 0
+          row.attempts ??= 0
+          row.has_documents ??= false
+          row.face_enrolled ??= false
+          row.reasons ??= []
+          row.revision ??= 0
+          row.updated_at ||= new Date().toISOString()
+        }
         const existing = project[table].find((item) => item[key] === row[key])
         if (existing) Object.assign(existing, row)
         else project[table].push(structuredClone(row))
+        // Simulate the profile-link trigger. PostgreSQL enforces this in migration 010.
+        if (table === 'users' && row.id_verification_id) {
+          const verification = project.member_id_verifications.find((item) => item.id === row.id_verification_id)
+          if (verification) verification.member_id = row.id
+        }
       }
     }
     return response(headers.get('accept')?.includes('vnd.pgrst.object') ? rows[0] || null : rows)
@@ -259,16 +309,35 @@ try {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...headers
         },
-        body: JSON.stringify(body)
+        body: Buffer.isBuffer(body) ? body : JSON.stringify(body)
       }
     )
     return { status: result.status, body: await result.json() }
   }
   const beginLogin = (email, password) => request('/auth/login', { email, password })
-  const login = async (email, password) => {
+  const continueLogin = async (email, password) => {
     const result = await beginLogin(email, password)
     if (!result.body.requiresTermsAcceptance) return result
     return request('/auth/accept-terms', { termsToken: result.body.termsToken, accepted: true })
+  }
+  const login = async (email, password) => {
+    const result = await continueLogin(email, password)
+    if (!result.body.requiresFaceVerification) return result
+    // This test fixture has no biometric references. Exercise password auth and
+    // use a fixture-only signed session for the downstream protected routes.
+    // The dedicated strict face suite exercises actual server session gating.
+    assert.equal(result.body.token, undefined)
+    const profile = project.users.find((row) => row.email === email.trim().toLowerCase())
+    const role = profile.role_id === 2 ? 'user' : roles.find((row) => row.role_id === profile.role_id).role_name
+    const user = { id: profile.id, role, mustChangePassword: Boolean(profile.must_change_password) }
+    return {
+      status: result.status,
+      body: {
+        user,
+        token: jwt.sign({ ...user, authVersion: profile.auth_version || 0, faceVerified: true },
+          process.env.JWT_SECRET, { expiresIn: '8h' })
+      }
+    }
   }
   const applicationTokens = new Map()
   let testWindow = 0
@@ -291,9 +360,53 @@ try {
     assert.equal((await request('/auth/accept-terms', { termsToken: result.body.termsToken, accepted: false })).status, 400)
     const accepted = await request('/auth/accept-terms', { termsToken: result.body.termsToken, accepted: true })
     assert.equal(accepted.status, 200)
-    assert.equal(accepted.body.user.id, member.id)
+    assert.equal(accepted.body.requiresFaceVerification, true)
+    assert.deepEqual([...accepted.body.actions].sort(), ['blink', 'left', 'right'])
+    assert.equal(accepted.body.token, undefined)
     assert.equal((await request('/auth/accept-terms', { termsToken: result.body.termsToken, accepted: true })).status, 401)
     assert.equal((await request('/auth/accept-terms', { termsToken: 'forged', accepted: true })).status, 401)
+  })
+
+  await run('Admin sign-in prompts for a face only after enrollment and blocks password-only sessions', async () => {
+    const password = credentials.get(administrator.email).password
+    const initial = await beginLogin(administrator.email, password)
+    assert.equal(initial.status, 200)
+    assert.equal(initial.body.requiresFaceVerification, undefined)
+    assert.equal(initial.body.user.id, administrator.id)
+    assert.ok(initial.body.token)
+    assert.equal((await request('/me', undefined, initial.body.token, {}, 'GET')).status, 200)
+
+    const enrollment = {
+      enrollment_id: crypto.randomUUID(),
+      user_id: administrator.id,
+      status: 'active',
+      id_portrait_encrypted: 'fixture-id-portrait',
+      descriptor_encrypted: null
+    }
+    project.face_enrollments.push(enrollment)
+    try {
+      const idOnly = await beginLogin(administrator.email, password)
+      assert.equal(idOnly.status, 200)
+      assert.equal(idOnly.body.challengeToken, undefined)
+      assert.ok(idOnly.body.token)
+      const status = await request('/profile/face-enrollment', undefined, idOnly.body.token, {}, 'GET')
+      assert.deepEqual(status.body, { enrolled: false })
+
+      enrollment.descriptor_encrypted = 'fixture-enrolled-face'
+      const result = await beginLogin(administrator.email, password)
+      assert.equal(result.status, 200)
+      assert.equal(result.body.requiresTermsAcceptance, undefined)
+      assert.equal(result.body.requiresFaceVerification, true)
+      assert.deepEqual([...result.body.actions].sort(), ['blink', 'left', 'right'])
+      assert.equal(result.body.token, undefined)
+      assert.equal((await request('/auth/accept-terms', { termsToken: result.body.challengeToken, accepted: true })).status, 401)
+      assert.equal((await request('/me', undefined, initial.body.token, {}, 'GET')).status, 401)
+      assert.equal((await request('/me', undefined, idOnly.body.token, {}, 'GET')).status, 401)
+      const legacyToken = jwt.sign({ id: administrator.id, role: 'admin', authVersion: 0 }, process.env.JWT_SECRET)
+      assert.equal((await request('/me', undefined, legacyToken, {}, 'GET')).status, 401)
+    } finally {
+      project.face_enrollments.pop()
+    }
   })
 
   await run('Expired terms and changed accounts cannot complete sign-in', async () => {
@@ -322,7 +435,7 @@ try {
     }
   })
 
-  await run('Public visitors, members, and staff cannot create accounts through either API', async () => {
+  await run('Only administrators can start and complete member enrollment', async () => {
     const before = structuredClone(project)
     const credentialsBefore = [...credentials.keys()]
     const body = {
@@ -331,12 +444,15 @@ try {
     }
     for (const [actorToken, status] of [
       [undefined, 401],
-      [applicationTokens.get(member.id), 403],
-      [applicationTokens.get(staff.id), 403]
+      [applicationTokens.get(member.id), 403]
     ]) {
-      for (const route of ['/auth/register', '/admin/members'])
+      for (const route of ['/auth/register', '/admin/members', '/admin/id-verifications'])
         assert.equal((await request(route, body, actorToken)).status, status)
     }
+    const staffToken = applicationTokens.get(staff.id)
+    assert.equal((await request('/auth/register', body, staffToken)).status, 403)
+    assert.equal((await request('/admin/members', body, staffToken)).status, 403)
+    assert.equal((await request('/admin/id-verifications', body, staffToken)).status, 403)
     assert.deepEqual(project, before)
     assert.deepEqual([...credentials.keys()], credentialsBefore)
   })
@@ -352,7 +468,17 @@ try {
     }
     assert.equal((await request('/auth/register', { ...body, email: 'invalid' }, token)).status, 400)
     assert.equal(credentials.has(body.email), false)
-    assert.equal((await request('/auth/register', body, token)).status, 201)
+    assert.equal((await request('/auth/register', body, token)).body.code, 'ID_VERIFICATION_REQUIRED')
+    const verification = {
+      id: crypto.randomUUID(), opened_by: administrator.id,
+      applicant_email: body.email, applicant_name: body.name,
+      verification_status: 'awaiting_face', has_documents: true, document_passed: true, face_enrolled: true,
+      staged_face_encrypted: encryptFaceDescriptor(
+        Array(128).fill(0.03), Buffer.from(process.env.FACE_ENCRYPTION_KEY, 'hex'), { liveEnrollment: true }
+      )
+    }
+    project.member_id_verifications.push(verification)
+    assert.equal((await request('/auth/register', { ...body, verificationId: verification.id }, token)).status, 201)
     const profile = project.users.find((item) => item.email === body.email)
     assert.equal(profile.role_id, 2)
     assert.ok(project.subscriptions.some((item) => item.user_id === profile.id))
@@ -634,12 +760,12 @@ try {
     assert.equal(afterTerms.body.requiresFaceVerification, true)
     assert.ok(afterTerms.body.challengeToken)
     assert.equal(afterTerms.body.token, undefined)
-    const result = await login(member.email, credentials.get(member.email).password)
+    const result = await continueLogin(member.email, credentials.get(member.email).password)
     assert.equal(result.status, 200)
     assert.equal(result.body.requiresFaceVerification, true)
     assert.ok(result.body.challengeToken)
     assert.equal(result.body.token, undefined)
-    assert.ok(['blink', 'mouth'].includes(result.body.action))
+    assert.deepEqual([...result.body.actions].sort(), ['blink', 'left', 'right'])
     const useChallengeAsSession = await request('/me', undefined, result.body.challengeToken, {}, 'GET')
     assert.equal(useChallengeAsSession.status, 401)
     const legacyChallenge = jwt.sign(
@@ -648,9 +774,12 @@ try {
       { expiresIn: '2m' }
     )
     assert.equal((await request('/me', undefined, legacyChallenge, {}, 'GET')).status, 401)
-    const frame = Buffer.alloc(FACE_FRAME_BYTES).toString('base64')
-    const capture = { challengeToken: result.body.challengeToken, frames: [frame, frame, frame] }
-    assert.equal((await request('/auth/face-verify', capture)).status, 401)
+    const frames = Array.from({ length: FACE_EVIDENCE_COUNT }, (_, index) =>
+      Buffer.alloc(FACE_FRAME_BYTES, index).toString('base64'))
+    const capture = { challengeToken: result.body.challengeToken, frames }
+    const rejected = await request('/auth/face-verify', capture)
+    assert.equal(rejected.status, 401)
+    assert.equal(rejected.body.code, 'FACE_NOT_DETECTED')
     assert.match((await request('/auth/face-verify', capture)).body.message, /expired/)
     project.face_enrollments.push({
       enrollment_id: crypto.randomUUID(),
@@ -658,9 +787,9 @@ try {
       status: 'active',
       created_at: iso(-1)
     })
-    assert.equal((await login(staff.email, credentials.get(staff.email).password)).body.requiresFaceVerification, true)
+    assert.equal((await continueLogin(staff.email, credentials.get(staff.email).password)).body.requiresFaceVerification, true)
   })
-  await run('Creating a member returns a strong temporary password once and retires the old plan', async () => {
+  await run('Member creation requires staged ID and face, then the temporary password must be changed', async () => {
     const token = applicationTokens.get(administrator.id)
     const plans = await request('/admin/membership-plans', undefined, token, {}, 'GET')
     assert.deepEqual(plans.body.membershipPlans.map((plan) => plan.plan_name), ['Monthly'])
@@ -668,18 +797,83 @@ try {
       name: member.name, email: 'new-member@fixture.test',
       plan: 'Monthly', recordPayment: true, method: 'Cash'
     }
-    const rejected = await request('/admin/members', { ...details, plan: 'Unlimited Monthly' }, token)
+    const staffToken = applicationTokens.get(staff.id)
+    const opening = await request('/admin/id-verifications', { ...details, consent: true }, token)
+    assert.equal(opening.status, 201)
+    const verificationId = opening.body.verification.id
+    const verificationPath = `/admin/id-verifications/${verificationId}`
+    assert.equal((await request(verificationPath + '/face', {}, staffToken)).status, 403)
+    assert.equal((await request(verificationPath + '/face/challenge', {}, staffToken)).status, 403)
+    assert.equal((await request('/admin/members', { ...details, verificationId }, token)).status, 409)
+    const invalidMultipart = Buffer.from([
+      ...['front', 'back'].flatMap((side) => [
+        '--fixture',
+        `Content-Disposition: form-data; name="${side}"; filename="${side}.png"`,
+        'Content-Type: image/png',
+        '',
+        'This is not an image.'
+      ]),
+      '--fixture--',
+      ''
+    ].join('\r\n'))
+    const upload = await request(
+      verificationPath + '/document?type=student_id',
+      invalidMultipart, token, { 'Content-Type': 'multipart/form-data; boundary=fixture' }
+    )
+    assert.equal(upload.status, 422)
+    assert.equal(upload.body.code, 'ID_UNREADABLE')
+    const staged = project.member_id_verifications.find((row) => row.id === verificationId)
+    Object.assign(staged, { has_documents: true, document_passed: true, id_type: 'student_id', verification_status: 'awaiting_face' })
+    assert.equal((await request('/admin/members', { ...details, verificationId }, token)).status, 409)
+    const challenge = await request(verificationPath + '/face/challenge', {}, token)
+    assert.equal(challenge.status, 200)
+    assert.deepEqual([...challenge.body.actions].sort(), ['blink', 'left', 'right'])
+    const still = await request(verificationPath + '/face', {
+      challengeToken: challenge.body.challengeToken,
+      enrollmentFrame: Buffer.alloc(FACE_FRAME_BYTES).toString('base64')
+    }, token)
+    assert.equal(still.body.code, 'FACE_CAPTURE_INVALID')
+    assert.equal(staged.face_enrolled, false)
+    const descriptor = Array(128).fill(0.02)
+    const encrypted = (liveEnrollment = false) =>
+      encryptFaceDescriptor(descriptor, Buffer.from(process.env.FACE_ENCRYPTION_KEY, 'hex'), { liveEnrollment })
+    staged.face_enrolled = true
+    staged.staged_face_encrypted = encrypted()
+    const verifiedDetails = { ...details, verificationId }
+    assert.equal((await request('/admin/members', verifiedDetails, token)).body.code, 'FACE_RECAPTURE_REQUIRED')
+    staged.staged_face_encrypted = encrypted(true)
+    assert.equal((await request('/admin/members', {
+      ...verifiedDetails, email: 'different-member@fixture.test'
+    }, token)).status, 409)
+    const rejected = await request('/admin/members', { ...verifiedDetails, plan: 'Unlimited Monthly' }, token)
     assert.equal(rejected.status, 400)
-    const created = await request('/admin/members', details, token)
+    project.face_enrollments.push({
+      enrollment_id: crypto.randomUUID(),
+      user_id: otherMember.id,
+      status: 'active',
+      descriptor_encrypted: encrypted()
+    })
+    const duplicate = await request('/admin/members', verifiedDetails, token)
+    assert.equal(duplicate.status, 409)
+    assert.equal(duplicate.body.code, 'FACE_ALREADY_ENROLLED')
+    assert.equal(credentials.has(details.email), false)
+    project.face_enrollments.pop()
+    // Simulate a process interruption after creating Auth but before linking a profile.
+    const orphan = { id: crypto.randomUUID(), email: details.email, app_metadata: { fitpulse_member_signup: true } }
+    credentials.set(details.email, { user: orphan, password: 'interrupted-fixture' })
+    const created = await request('/admin/members', verifiedDetails, token)
     assert.equal(created.status, 201)
+    assert.equal(created.body.message, 'Successful creation of a new member')
+    assert.equal(credentials.get(details.email).user.id, orphan.id)
     const { temporaryPassword, member: createdMember } = created.body
+    assert.equal(createdMember.idVerified, true)
     assert.equal(temporaryPassword.length, 16)
     assert.ok(passwordPolicy(temporaryPassword))
     assert.equal(credentials.get(details.email).password, temporaryPassword)
     assert.ok(project.users.find((item) => item.id === createdMember.id).must_change_password)
     const subscription = project.subscriptions.find((item) => item.user_id === createdMember.id)
     assert.ok(project.payments.some((item) => item.subscription_id === subscription.subscription_id))
-    assert.equal((await request('/admin/members', details, token)).status, 409)
+    assert.equal((await request('/admin/members', verifiedDetails, token)).status, 409)
     const listing = await request('/members', undefined, token, {}, 'GET')
     assert.ok(!JSON.stringify(listing.body).includes(temporaryPassword))
 
@@ -693,6 +887,29 @@ try {
     assert.equal(changed.body.session.user.mustChangePassword, false)
     assert.equal((await login(details.email, temporaryPassword)).status, 401)
     assert.equal((await request('/me/qr', undefined, changed.body.session.token, {}, 'GET')).status, 200)
+  })
+  await run('An abandoned draft and legacy rejection history do not reserve an email', async () => {
+    const adminToken = applicationTokens.get(administrator.id)
+    const details = { name: 'Draft Fixture', email: 'draft@fixture.test', plan: 'Monthly', consent: true }
+    project.member_id_rejected_emails.push({ email: details.email, rejected_attempts: 5 })
+    const first = await request('/admin/id-verifications', details, adminToken)
+    assert.equal(first.status, 201)
+    const second = await request('/admin/id-verifications', { ...details, name: 'Updated Draft' }, adminToken)
+    assert.equal(second.status, 201)
+    assert.notEqual(first.body.verification.id, second.body.verification.id)
+    assert.equal(credentials.has(details.email), false)
+    const route = `/admin/id-verifications/${first.body.verification.id}`
+    for (const [method, suffix] of [['GET', ''], ['POST', '/review'], ['POST', '/request-review']]) {
+      const result = await fetch(apiOrigin + '/api' + route + suffix, {
+        method, headers: { Authorization: 'Bearer ' + adminToken }
+      })
+      assert.equal(result.status, 404)
+    }
+    const discarded = await fetch(apiOrigin + '/api' + route + '/draft', {
+      method: 'DELETE', headers: { Authorization: 'Bearer ' + adminToken }
+    })
+    assert.equal(discarded.status, 204)
+    assert.equal(project.member_id_verifications.some((row) => row.id === first.body.verification.id), false)
   })
 } finally {
   if (server) {

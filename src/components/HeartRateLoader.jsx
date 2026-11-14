@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
-import { createLoaderTimer, LOADER_DURATION_MS } from '../utils/loaderTiming'
+import { createLoaderTimer } from '../utils/loaderTiming'
+import Spinner from './Spinner'
 import './HeartRateLoader.css'
 
 export default function HeartRateLoader({ message = 'Getting things ready', onComplete }) {
@@ -17,7 +18,6 @@ export default function HeartRateLoader({ message = 'Getting things ready', onCo
   return (
     <div
       className="loading-overlay"
-      style={{ '--loader-duration': `${LOADER_DURATION_MS}ms` }}
       role="status"
       aria-live="polite"
     >
@@ -26,14 +26,9 @@ export default function HeartRateLoader({ message = 'Getting things ready', onCo
           Fit<span>Pulse</span>
           <i aria-hidden="true" />
         </div>
-        <svg className="loading-pulse" viewBox="0 0 240 60" fill="none" aria-hidden="true">
-          <path d="M0 30h55l12-12 14 29 19-44 19 54 17-27h104" />
-        </svg>
+        <Spinner large />
         <strong>{message}</strong>
         <small>Your next session starts here.</small>
-        <div className="loading-track" aria-hidden="true">
-          <span />
-        </div>
       </div>
     </div>
   )

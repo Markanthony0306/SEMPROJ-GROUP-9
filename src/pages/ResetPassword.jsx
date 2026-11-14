@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { apiRequest } from '../utils/api'
 import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, passwordPolicy, passwordPolicyMessage } from '../../shared/passwordPolicy'
 import PasswordToggle from '../components/PasswordToggle'
+import Spinner from '../components/Spinner'
 import './Login.css'
 
 export default function ResetPassword({ navigate }) {
@@ -150,6 +151,7 @@ export default function ResetPassword({ navigate }) {
           {message && <p role="status">{message}</p>}
 
           <button className="btn lbtn" disabled={pending || Boolean(message)}>
+            {pending && <Spinner />}
             {pending ? 'Updating...' : 'Update password'}
           </button>
         </form>

@@ -80,28 +80,14 @@ export function welcomeEmail({ name, email, temporaryPassword, loginUrl }) {
   }
 }
 
-export function expiryEmail({ name, plan, expiryDate, expired, loginUrl }) {
+export function expiryEmail({ name, expiryDate, expired }) {
   const message = expired
-    ? 'Your membership has ended, but your momentum doesn’t have to. Visit the front desk to renew your plan and get back to your next session.'
-    : 'Your membership is coming up for renewal. Drop by the front desk before it ends so you can keep training without missing a beat.'
+    ? `Dear ${name}, your FitPulse membership expired on ${expiryDate}. Please renew to restore your access. Thank you. - FitPulse`
+    : `Dear ${name}, your FitPulse membership expires on ${expiryDate}. Please renew before this date to continue your access. Thank you. - FitPulse`
   return {
-    subject: expired
-      ? 'Ready for your next session? Renew your FitPulse membership'
-      : 'Keep your momentum — your FitPulse renewal is coming up',
-    text: `Hi ${name},\n\n${message}\n\nPlan: ${plan}\n${expired ? 'Expired' : 'Expires'}: ${expiryDate}\n\nView your membership: ${loginUrl}\n\nIf you have already renewed, please ask the front desk to check your record.`,
-    ...emailLayout({
-      eyebrow: 'A FRIENDLY MEMBERSHIP REMINDER',
-      title: expired ? 'Let’s get you moving again.' : 'Keep your good thing going.',
-      name,
-      message,
-      details: [
-        ['Your plan', plan],
-        [expired ? 'Expired on' : 'Valid until', expiryDate]
-      ],
-      actionUrl: loginUrl,
-      actionLabel: 'View my membership',
-      note: 'Already renewed? Thank you! Ask the front desk to confirm your updated membership record. Payments and renewals are handled at the gym.'
-    })
+    subject: 'Membership Expiry Reminder',
+    text: message,
+    html: `<p>${escapeHtml(message)}</p>`
   }
 }
 

@@ -10,12 +10,14 @@ import { MemberRegistrationRepository } from '../repositories/MemberRegistration
 import { AccountSeedRepository } from '../repositories/AccountSeedRepository.js'
 import { AccountSeedWorkflow } from '../services/AccountSeedWorkflow.js'
 import { SupabaseDatabaseGateway } from '../repositories/SupabaseDatabaseGateway.js'
+import { VerifiedMemberRegistrationWorkflow } from '../services/VerifiedMemberRegistrationWorkflow.js'
+import { VerifiedMemberRegistrationRepository } from '../repositories/VerifiedMemberRegistrationRepository.js'
 import { generateTemporaryPassword } from '../lib/temporaryPassword.js'
 import { passwordPolicy, passwordPolicyMessage } from '../../shared/passwordPolicy.js'
 import { isRetiredPlan } from '../../shared/membershipPlans.js'
 import { availablePlan, publicAccount, membershipStatus, addMembershipDays, validAccountInput, paymentMethod, emailPattern } from '../lib/accountRules.js'
 
-export function createDependencies({ supabase, jwtSecret, isProduction }) {
+export function createDependencies({ supabase, jwtSecret, isProduction, identityVerificationEnabled = false }) {
   const databaseGateway = new SupabaseDatabaseGateway(supabase)
   const loadDatabase = (sections) => databaseGateway.loadDatabase(sections)
   const loadAccount = (id) => databaseGateway.loadAccount(id)
@@ -29,6 +31,10 @@ export function createDependencies({ supabase, jwtSecret, isProduction }) {
   })
 
   const faceChallenges = createFaceChallenges()
+  const verifiedRegistrationWorkflow = new VerifiedMemberRegistrationWorkflow({
+    repository: new VerifiedMemberRegistrationRepository(supabase),
+    authAdmin: supabase.auth.admin, generateTemporaryPassword
+  })
   const memberRegistrationService = new MemberRegistrationService({
     validAccountInput, paymentMethod, availablePlan
   })
@@ -40,7 +46,7 @@ export function createDependencies({ supabase, jwtSecret, isProduction }) {
   })
   const adminNotifications = createAdminNotificationService({ supabase, loadDatabase })
   const { createSession, authenticate, requireRole, rateLimit } = createSessionAuth({
-    jwtSecret, loadAccount, membershipStatus
+    jwtSecret, loadAccount, membershipStatus, supabase, identityVerificationEnabled
   })
   const accountSeedWorkflow = new AccountSeedWorkflow({
     repository: new AccountSeedRepository({ supabase, loadDatabase, saveDatabase }),
@@ -49,7 +55,7 @@ export function createDependencies({ supabase, jwtSecret, isProduction }) {
 
   return {
     supabase, databaseGateway, loadDatabase, loadAccount, saveDatabase,
-    membershipRenewalWorkflow, memberRegistrationService, memberRegistrationWorkflow,
+    membershipRenewalWorkflow, memberRegistrationService, memberRegistrationWorkflow, verifiedRegistrationWorkflow,
     adminNotifications, faceChallenges,
     createSession, authenticate, requireRole, rateLimit,
     accountSeedWorkflow, availablePlan, publicAccount, membershipStatus,

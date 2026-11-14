@@ -2,11 +2,15 @@ import {
   authenticatePassword,
   PasswordAuthenticationError
 } from '../services/passwordAuthentication.js'
+import { hasActiveFaceEnrollment } from '../services/faceVerification.js'
 
 export function passwordLoginHandler({
   createAuthClient,
   supabase,
   loadAccount,
+  createSession,
+  identityVerificationEnabled = false,
+  createAdminFaceChallenge,
   createTermsChallenge
 }) {
   return async (req, res) => {
@@ -44,6 +48,7 @@ export function passwordLoginHandler({
       const account = await loadAccount(profile.id)
       if (
         !account ||
+        account.role !== (roleName === 'member' ? 'user' : roleName) ||
         account.email.trim().toLowerCase() !== email ||
         account.authUserId !== authUser.id
       )
@@ -54,6 +59,19 @@ export function passwordLoginHandler({
             code: 'PROFILE_LINK_INVALID'
           })
       res.set('Cache-Control', 'no-store')
+      if (roleName === 'admin' && identityVerificationEnabled) {
+        if (!(await hasActiveFaceEnrollment(supabase, account.id))) {
+          return res.json(createSession(account, { allowUnenrolledAdmin: true }))
+        }
+        const challenge = createAdminFaceChallenge(account)
+        if (!challenge) {
+          return res.status(503).json({
+            code: 'FACE_SERVICE_UNAVAILABLE',
+            message: 'Face verification is temporarily unavailable. Please contact the gym.'
+          })
+        }
+        return res.json({ requiresFaceVerification: true, ...challenge })
+      }
       return res.json({ requiresTermsAcceptance: true, ...createTermsChallenge(account) })
     } catch (error) {
       if (error instanceof PasswordAuthenticationError) {

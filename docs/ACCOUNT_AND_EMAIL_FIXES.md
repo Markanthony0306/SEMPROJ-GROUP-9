@@ -3,10 +3,12 @@
 ## Enable the database changes
 
 Apply `supabase/migrations/005_admin_notifications.sql` to enable the automatic
-reminder tables and delivery tracking if it has not been run yet. Then apply
-`supabase/migrations/006_delete_member_accounts.sql` in the Supabase SQL Editor.
-Migration 006 requires migration 001's Auth-to-profile cascade. These migrations
-must be applied before testing live reminders and account deletion.
+reminder tables and delivery tracking if it has not been run yet. For account
+deletion, apply `supabase/migrations/013_member_id_account_deletion.sql` in the
+Supabase SQL Editor after migrations 001 and 011. It includes the setup from
+migration 006, gives the ID cleanup trigger the permissions it needs during
+Auth deletion, and refreshes the Data API schema cache. Then apply
+`supabase/migrations/015_audit_member_account_deletion.sql` and restart the API.
 
 Apply `supabase/migrations/007_admin_managed_accounts.sql` to keep account and
 membership writes behind the API's role checks, including databases with older
@@ -21,8 +23,9 @@ clearing function and refreshes the Data API schema cache without clearing data.
 Migration 006 adds a private readiness check and a trigger (a function PostgreSQL
 runs when a profile is deleted). Supabase Auth deletes the login and cascades to
 the linked profile. The trigger removes that member's payments, subscriptions,
-attendance, saved face template, legacy notifications, and QR credentials in the
-same transaction. A database error rolls back those database changes. Existing
+attendance, saved face template, legacy notifications, and QR credentials. The
+member's linked ID review, files, and audit history are removed in the same
+transaction. A database error rolls back those database changes. Existing
 row-level security stays enabled; browser clients cannot call the readiness check.
 
 No existing member is deleted by applying the migration. Do not test deletion on
@@ -34,22 +37,20 @@ and old session no longer work afterward.
 - Members cannot delete their own accounts; the button is removed and the API
   returns 403 for self-deletion.
 - Administrators: **Members → Delete account** in a member's Actions column.
-- Manual deletion requires the administrator's current password and typing `DELETE`.
+- With an active administrator session, typing `DELETE` starts deletion immediately.
 - Only administrators can create accounts. Staff cannot create or delete accounts.
   Administrator and staff accounts cannot be
   deleted through these member controls.
 
-The frontend sends the confirmation to Express. The API rechecks the role,
-verifies the current password with Supabase Auth, checks the linked account and
-database setup, removes the private avatar folder, and calls the server-only Auth
-Admin API. Secret keys and temporary passwords are never returned to the browser.
-Old FitPulse sessions and downloaded QR passes fail because the API checks whether
-the account still exists on every authenticated request.
+The frontend sends the confirmation to Express. Express checks the session and
+admin role. The database rechecks the role and session version, then deletes the
+login and dependent rows and records the administrator ID, member ID, and time
+in the same transaction. Old FitPulse sessions and QR passes fail once the
+account is removed.
 
-Storage and Auth cannot share a database transaction. Photos are removed first
-because owned Storage objects can prevent Auth deletion. If Auth deletion fails
-after that step, the login and database records remain, but photos may need to be
-uploaded again. The API reports failure and allows a retry.
+Private avatars use Supabase Storage. The API removes the files after the database
+commits and marks the audit entry complete. A Storage failure keeps cleanup
+pending. Retrying the request or leaving the API running resumes photo cleanup.
 
 ## Membership expiry keeps the account
 

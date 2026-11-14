@@ -1,5 +1,7 @@
 
 import { Router } from 'express'
+import { MemberIdError } from '../services/memberIdRecords.js'
+import { FaceVerificationError } from '../services/faceVerification.js'
 
 import {
   MemberRegistrationError
@@ -18,6 +20,9 @@ export function memberRegistrationRoutes({
   paymentMethod,
   registrationService,
   registrationWorkflow,
+  verifiedRegistrationWorkflow,
+  identityVerificationEnabled = false,
+  faceKey,
   publicAccount
 }) {
   const router = Router()
@@ -37,6 +42,14 @@ export function memberRegistrationRoutes({
         if (preliminaryInput.error) {
           return res.status(400).json({
             message: preliminaryInput.error
+          })
+        }
+
+        if (identityVerificationEnabled &&
+            (typeof body.verificationId !== 'string' || !body.verificationId)) {
+          return res.status(409).json({
+            code: 'ID_VERIFICATION_REQUIRED',
+            message: 'Complete ID and face verification before creating this account.'
           })
         }
 
@@ -90,18 +103,32 @@ export function memberRegistrationRoutes({
           })
         }
 
-        // 5. Create Auth account and save registration atomically.
-        const {
-          persisted,
-          authUserId,
-          temporaryPassword
-        } = await registrationWorkflow.execute({
-          actorId: req.user.id,
-          prepared
-        })
+        // 5. Use the staged, ID-verified enrollment transaction when enabled.
+        let persisted, authUserId, temporaryPassword, member
+        if (identityVerificationEnabled) {
+          const result = await verifiedRegistrationWorkflow.execute({
+            actor: req.user, prepared, verificationId: body.verificationId, faceKey
+          })
+          authUserId = result.authUserId
+          temporaryPassword = result.temporaryPassword
+          persisted = {
+            member_id: result.profile.id,
+            member_code: result.profile.member_code,
+            plan_name: prepared.planRecord.plan_name,
+            created_at: result.profile.created_at,
+            start_date: result.now,
+            end_date: result.membershipEnd,
+            subscription_id: result.subscriptionId,
+            plan_id: prepared.planRecord.plan_id
+          }
+        } else {
+          ;({ persisted, authUserId, temporaryPassword } = await registrationWorkflow.execute({
+            actorId: req.user.id, prepared
+          }))
+        }
 
         // 6. Reconstruct the existing frontend-compatible member object.
-        const member = {
+        member = {
           id: persisted.member_id,
           authUserId,
           memberCode: persisted.member_code,
@@ -118,7 +145,8 @@ export function memberRegistrationRoutes({
           subscriptionCreatedAt: persisted.created_at,
           planId: persisted.plan_id,
           mustChangePassword: true,
-          authVersion: 0
+          authVersion: 0,
+          idVerified: identityVerificationEnabled
         }
 
         // 7. Return the same response format as the original route.
@@ -139,10 +167,11 @@ export function memberRegistrationRoutes({
         // Known registration errors return appropriate HTTP statuses.
         if (
           error instanceof MemberRegistrationError ||
-          error instanceof MemberRegistrationWorkflowError
+          error instanceof MemberRegistrationWorkflowError ||
+          error instanceof MemberIdError || error instanceof FaceVerificationError
         ) {
           return res.status(error.status).json({
-            message: error.message
+            message: error.message, code: error.code
           })
         }
 

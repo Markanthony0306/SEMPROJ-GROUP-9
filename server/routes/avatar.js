@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import express from 'express'
+import { withMemberAccountLock } from '../lib/memberAccountLock.js'
 
 // The browser crops and re-encodes uploads as JPEG; never accept executable SVG.
 function isJpeg(buffer) {
@@ -45,7 +46,7 @@ export function avatarRoutes({
     authenticate,
     rateLimit({ windowMs: 60000, max: 10 }),
     express.raw({ type: 'image/jpeg', limit: '256kb' }),
-    async (req, res) => {
+    async (req, res) => withMemberAccountLock(req.user.id, async () => {
       if (!isJpeg(req.body))
         return res
           .status(400)
@@ -86,7 +87,7 @@ export function avatarRoutes({
         if (error) console.error('Previous avatar cleanup failed:', error.message)
       }
       res.set('Cache-Control', 'no-store').json({ avatarId })
-    }
+    })
   )
   const servePhoto = async (req, res) => {
     const { data: account, error: accountError } = await supabase

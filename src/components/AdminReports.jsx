@@ -125,7 +125,7 @@ function RecordForm({ kind, record, data, busy, onSubmit, onClose }) {
               : 'You are correcting an existing check-in. Scanner details stay attached to the record.'}
         </p>
         <div className="ma">
-          <button className="btn ghost" type="button" onClick={onClose}>
+          <button className="btn ghost cancel-button" type="button" onClick={onClose}>
             Cancel
           </button>
           <button className="btn" type="submit">
@@ -326,11 +326,7 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
             ? `${report.rows.length} ${title.toLowerCase()}`
             : `Total: ${new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(total)}`}
         </strong>
-        <small>
-          {membership
-            ? 'Membership reports reflect account and subscription records.'
-            : 'Changes update the source records, including dashboard totals.'}
-        </small>
+        {!membership && <small>Changes update the source records, including dashboard totals.</small>}
       </div>
       {deletion && (
         <RecordDeleteDialog

@@ -29,21 +29,49 @@ Report clearing is for historical entries. Members use account editing and statu
 
 The duplicate Memberships sidebar page was removed. Use **Members → View member → Renew membership**, or the renewal actions in Reports. Membership fields and the shared renewal dialog remain available.
 
-## Member account deletion
+## Member account deactivation (not permanent deletion)
 
-Expired memberships remain in the admin/staff pages for review and renewal. Accounts
-are not automatically deleted after 15 days; deletion requires administrator
-confirmation. Restart the API after updating the code to stop the previous cleanup
-worker. No database migration is required for this change.
+Member accounts are deactivated through the administrator's existing password-confirmed
+workflow, retaining membership history, payments, and attendance. Do **not** apply
+older teammate migrations `013_member_id_account_deletion.sql` or
+`015_audit_member_account_deletion.sql`: permanent deletion remains disabled
+in this integration.
 
-## Face verification and membership plan retirement
+## Face sign-in and membership plans
 
-1. Apply `migrations/002_face_enrollment.sql` and then `migrations/009_face_enrollment_and_plan_retirement.sql`. Migration 009 serializes enrollment updates and retires Unlimited Monthly for new memberships. Historical subscriptions and payments retain their original plan.
-2. Set `FACE_LOGIN_ENABLED=true` and configure a stable 32-byte hex `FACE_ENCRYPTION_KEY` in the API environment. Keep the key used for any existing enrollments.
-3. For members, open **Members → View → Face setup**. Confirm consent and check their photo ID. Staff can enroll their own face in **Settings → Face verification** using their current password.
-4. Sign out and sign back in. The API checks three camera frames against a single-use movement prompt and compares the face against enrolled accounts. It stores only an encrypted template, never the frames. Resolve any old duplicate enrollments before expecting those accounts to pass face sign-in.
+For ID verification, review OOP migrations 010–016 followed by integration migrations 019–022. Configure a stable server-only
+`FACE_ENCRYPTION_KEY` and provision the administrator's ID portrait before face enrollment.
+Follow the [face sign-in setup guide](../docs/FACE_SIGN_IN.md) for provisioning,
+role-specific sign-in, and the checks to run before rollout.
 
-Use HTTPS or localhost for camera access. Try the live prompt on your target cameras and test both printed and screen-displayed photos. This gesture check is a prototype and can be fooled by replayed or synthetic camera frames. Use independently evaluated presentation attack detection before relying on it for production authentication.
+Migration 009 retires Unlimited Monthly for new memberships. Historical
+subscriptions and payments keep their original plan.
+
+## Member ID checks
+
+1. After validating OOP migrations 010–016 on FitPulse-Test, review [019](migrations/019_member_id_verification.sql), [020](migrations/020_member_id_proof.sql), [021](migrations/021_admin_face_provisioning.sql), then [022](migrations/022_member_enrollment.sql) in order. Migration 022 adds the new ID types and allows a fresh enrollment to use the same email as an abandoned draft.
+2. When ready to enable, set backend `ID_VERIFICATION_ENABLED=true` and frontend `VITE_ID_VERIFICATION_ENABLED=true` together. Keep the existing server-only `ID_VERIFICATION_KEY` and `FACE_ENCRYPTION_KEY` (each 32 bytes encoded as hex). If the ID key is empty, the API uses the face key for ID files. Keep those keys backed up securely.
+3. As an administrator, open **Members → Create Account**. Enter the member details, choose the ID type, and record consent. Hold the front of the ID in the camera guide and flip it when prompted. Check the extracted details against the original ID.
+4. Run the normal-distance live face check and move closer when prompted. FitPulse compares the live face to the ID portrait before creating the account. When the member signs in, the API compares the live face to both the enrollment and the stored ID portrait.
+
+FitPulse uses a private [PaddleOCR General OCR service](https://www.paddleocr.ai/main/en/version3.x/inference_deployment/serving/serving.html) for server-side verification. Install PaddlePaddle for your platform, then install PaddleX with the OCR and serving extras in a separate Python environment. Start the General OCR pipeline on the same host for local development:
+
+```powershell
+python -m pip install 'paddlex[ocr,serving]'
+paddlex --serve --pipeline OCR --host 127.0.0.1 --port 8080 --device cpu
+```
+
+Set `ID_PADDLE_OCR_URL` in the API environment to the full private `/ocr` endpoint. The default is `http://127.0.0.1:8080/ocr`. For deployments on separate hosts, use a private network and keep the endpoint inaccessible from the public internet. The API sends an ID image to this service, so keep request bodies out of logs. Browser OCR fills the review fields, and the API checks the images independently before saving the ID proof. Inspect the original document in person to check its authenticity.
+
+The browser downloads the two PP-OCRv5 model archives on first use and reads the captures locally. To serve the models with FitPulse, host `PP-OCRv5_mobile_det_onnx_infer.tar` and `PP-OCRv5_mobile_rec_onnx_infer.tar` in a public directory and set `VITE_ID_OCR_MODEL_DIRECTORY` to its URL before building the frontend.
+
+For an existing member whose enrollment predates encrypted ID storage, recover the ID from a trusted operator terminal with the private server key. Check the original ID and get the member's consent first. Keep the input files outside Git.
+
+```powershell
+node scripts/recover-member-id.mjs admin@fitpulse.com member@example.com drivers_license 'C:\private\front.jpg' 'C:\private\back.jpg'
+```
+
+Pass one PDF, DOC, or DOCX path for a combined document. The command updates the existing member's proof. If the member also needs a face enrollment, use **Members → View → Face setup** with the member present. See [Strict face sign-in](../docs/FACE_SIGN_IN.md) for administrator setup.
 
 ## Webcam QR check-in
 

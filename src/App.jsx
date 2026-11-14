@@ -4,7 +4,6 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { apiRequest } from './utils/api'
 import ForgotPassword from './pages/ForgotPassword'
 import Login from './pages/Login'
-import Register from './pages/Register'
 import ResetPassword from './pages/ResetPassword'
 import ChangePasswordPage from './pages/ChangePasswordPage'
 // Load dashboard styles up front; the shared shell owns the entrance timing.
@@ -72,8 +71,8 @@ export default function App() {
     'forgot-password': <ForgotPassword navigate={navigate} />,
     'reset-password': <ResetPassword navigate={navigate} />,
     register: (
-      <ProtectedRoute navigate={navigate} roles={['admin']}>
-        <Register navigate={navigate} />
+      <ProtectedRoute key="register" navigate={navigate} roles={['admin']}>
+        <AdminStaffPage user={user} onSignOut={handleLogout} navigate={navigate} startMemberCreation />
       </ProtectedRoute>
     ),
     user: (

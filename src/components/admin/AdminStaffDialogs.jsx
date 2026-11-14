@@ -1,3 +1,5 @@
+import MemberIdWizard from './MemberIdWizard'
+import { useAuth } from '../../auth/AuthContext'
 import RecordDeleteDialog from '../RecordDeleteControls'
 import AccountDeleteDialog from '../AccountDeleteDialog'
 import AdminMemberDialogs from './AdminMemberDialogs'
@@ -27,6 +29,8 @@ export default function AdminStaffDialogs({
   requestFaceChallenge,
   recordPayment
 }) {
+  const { token } = useAuth()
+  const idVerificationEnabled = import.meta.env.VITE_ID_VERIFICATION_ENABLED === 'true'
   return (
     <>
       {modal?.kind === 'deactivate-account' && currentUser?.role === 'admin' && (
@@ -55,7 +59,19 @@ export default function AdminStaffDialogs({
           onNotice={setNotice}
         />
       )}
+      {idVerificationEnabled && modal?.kind === 'create' && currentUser?.role === 'admin' && (
+        <MemberIdWizard
+          token={token}
+          plans={data.membershipPlans}
+          planOptionLabel={planOptionLabel}
+          pending={pending}
+          error={error}
+          onClose={() => setModal(null)}
+          onCreate={createMember}
+        />
+      )}
       <AdminMemberDialogs
+        idVerificationEnabled={idVerificationEnabled}
         modal={modal}
         setModal={setModal}
         pending={pending}

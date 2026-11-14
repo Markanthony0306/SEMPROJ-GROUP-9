@@ -265,7 +265,7 @@ test('skips staff, inactive accounts, invalid dates, invalid email and future me
   assert.equal(reminderType(memberFixture(), 31, baseTime), null)
 })
 
-test('worker loads real account mappings, sends branded mail and stores a receipt', async () => {
+test('worker loads real account mappings, sends the formal reminder and stores a receipt', async () => {
   const f = fixture()
   f.addMember({ membershipEnd: iso(0.5) })
   f.addMember({ role: 'admin' })
@@ -273,9 +273,9 @@ test('worker loads real account mappings, sends branded mail and stores a receip
   assert.deepEqual(await f.service.runDue(), { sent: 1, failed: 0 })
   assert.equal(f.state.messages.length, 1)
   const message = f.state.messages[0]
-  assert.match(message.text, /Oct 22, 2026/)
-  assert.match(message.html, /View my membership/)
-  assert.match(message.text, /https:\/\/app.fixture.test/)
+  assert.equal(message.subject, 'Membership Expiry Reminder')
+  assert.equal(message.text, 'Dear Test Member, your FitPulse membership expires on Oct 22, 2026. Please renew before this date to continue your access. Thank you. - FitPulse')
+  assert.equal(message.html, `<p>${message.text}</p>`)
   assert.ok([...f.state.receipts.values()][0].sent_at)
 })
 
@@ -313,7 +313,7 @@ test('sends one expired reminder and a renewal starts a new reminder period', as
   f.state.time = baseTime + DAY_MS
   assert.equal((await f.service.runDue()).sent, 1)
   assert.equal((await f.service.runDue()).sent, 0)
-  assert.match(f.state.messages[1].text, /has ended/)
+  assert.match(f.state.messages[1].text, /expired on/)
   const subscription = f.project.subscriptions.find(
     (row) => row.subscription_id === member.subscriptionId
   )

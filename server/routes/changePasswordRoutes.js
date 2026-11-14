@@ -23,7 +23,10 @@ export function registerChangePasswordRoutes(app, { authenticate, rateLimit, pas
         })
         return res.json({
           message: 'Password updated.',
-          session: createSession(account)
+          session: createSession(account, {
+            faceVerified: req.user.faceVerified === true,
+            allowUnenrolledAdmin: req.user.role === 'admin' && req.user.faceVerified !== true
+          })
         })
       } catch (error) {
         if (error instanceof ChangePasswordError) {

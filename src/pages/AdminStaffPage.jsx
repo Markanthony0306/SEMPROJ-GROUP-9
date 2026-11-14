@@ -157,6 +157,11 @@ export default function AdminStaffPage({ user, onSignOut }) {
 
       const result = await apiRequest(path, { token, ...options })
 
+      if (result.signInRequired) {
+        onSignOut()
+        return true
+      }
+
       // Immediately display the updated profile.
       if (path === '/profile' && result?.user) {
         setCurrentUser(result.user)
@@ -235,17 +240,19 @@ export default function AdminStaffPage({ user, onSignOut }) {
     }
   }, [token, load])
 
-  const createMember = (event) => {
-    event.preventDefault()
-    const form = new FormData(event.currentTarget)
-    act(
+  const createMember = (eventOrDetails) => {
+    const isFormEvent = typeof eventOrDetails?.preventDefault === 'function'
+    if (isFormEvent) eventOrDetails.preventDefault()
+    const details = isFormEvent
+      ? (() => { const form = new FormData(eventOrDetails.currentTarget); return {
+          ...Object.fromEntries(form), recordPayment: form.get('recordPayment') === 'on'
+        } })()
+      : eventOrDetails
+    return act(
       '/admin/members',
       {
         method: 'POST',
-        body: JSON.stringify({
-          ...Object.fromEntries(form),
-          recordPayment: form.get('recordPayment') === 'on'
-        })
+        body: JSON.stringify(details)
       },
       'Member account created.',
       (result) => {

@@ -45,7 +45,12 @@ export function createRuntimeConfig() {
   }
 
   const faceLoginEnabled = process.env.FACE_LOGIN_ENABLED === 'true'
+  const identityVerificationEnabled = process.env.ID_VERIFICATION_ENABLED === 'true'
   const faceEncryptionKey = parseFaceEncryptionKey()
+  const memberIdKey = parseFaceEncryptionKey(process.env.ID_VERIFICATION_KEY || process.env.FACE_ENCRYPTION_KEY)
+  if (identityVerificationEnabled && (!faceEncryptionKey || !memberIdKey)) {
+    throw new Error('FACE_ENCRYPTION_KEY and ID_VERIFICATION_KEY must be valid 64-character hex keys for ID verification.')
+  }
   const configuredFaceThreshold = Number(process.env.FACE_MATCH_THRESHOLD || 0.5)
   if (faceLoginEnabled && !faceEncryptionKey) {
     throw new Error('FACE_ENCRYPTION_KEY must be a 64-character hex key when FACE_LOGIN_ENABLED=true.')
@@ -62,5 +67,5 @@ export function createRuntimeConfig() {
     .map((origin) => origin.trim())
     .filter(Boolean)
 
-  return { port, isProduction, clientUrl, jwtSecret, faceLoginEnabled, faceEncryptionKey, faceMatchThreshold, corsOrigins }
+  return { port, isProduction, clientUrl, jwtSecret, faceLoginEnabled, identityVerificationEnabled, memberIdKey, faceEncryptionKey, faceMatchThreshold, corsOrigins }
 }

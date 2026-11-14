@@ -1,7 +1,8 @@
 export default function CreatedMemberCredentials({
   member,
   temporaryPassword,
-  onDismiss
+  onDismiss,
+  onFaceSetup
 }) {
   return (
     <section className="created-credentials" aria-label="New member sign-in details">
@@ -28,9 +29,16 @@ export default function CreatedMemberCredentials({
         </div>
       </dl>
       <p>The member must choose a new password before accessing their dashboard.</p>
-      <button type="button" className="btn" onClick={onDismiss}>
-        Done
-      </button>
+      <div className="ma">
+        {onFaceSetup && (
+          <button type="button" className="btn" onClick={onFaceSetup}>
+            Face setup
+          </button>
+        )}
+        <button type="button" className={onFaceSetup ? 'btn ghost' : 'btn'} onClick={onDismiss}>
+          Done
+        </button>
+      </div>
     </section>
   )
 }

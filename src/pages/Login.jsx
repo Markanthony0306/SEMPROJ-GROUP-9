@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from '../components/brand/useTheme'
-import FaceCapture from '../components/FaceCapture'
+import FaceCapture, { preloadFaceCapture } from '../components/FaceCapture'
+import Dialog from '../components/Dialog'
+import Spinner from '../components/Spinner'
 import { apiRequest } from '../utils/api'
 import './Login.css'
+
+const FAILED_LOGIN_LIMIT = 5
 
 const ICONS = {
   alert: (
@@ -156,6 +160,9 @@ export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false)
   const [capsLock, setCapsLock] = useState(false)
   const [pending, setPending] = useState(false)
+  const [failedAttempts, setFailedAttempts] = useState(0)
+  const [showLockAlert, setShowLockAlert] = useState(false)
+  const loginLocked = failedAttempts >= FAILED_LOGIN_LIMIT
   const [facePending, setFacePending] = useState(false)
   const [termsToken, setTermsToken] = useState(null)
   const [termsPending, setTermsPending] = useState(false)
@@ -174,38 +181,12 @@ export default function Login({ onLogin }) {
   const passwordRef = useRef(null)
   const stepHeadingRef = useRef(null)
   const submissionLock = useRef(false)
-  const resetDialogRef = useRef(null)
+
+  useEffect(preloadFaceCapture, [])
 
   useEffect(() => {
     if (termsToken || faceChallenge) stepHeadingRef.current?.focus({ preventScroll: true })
   }, [termsToken, faceChallenge])
-
-  useEffect(() => {
-    if (!resetOpen) return
-    const previousFocus = document.activeElement
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setResetOpen(false)
-      if (event.key !== 'Tab') return
-      const controls = resetDialogRef.current?.querySelectorAll(
-        'button:not(:disabled), input:not(:disabled)'
-      )
-      if (!controls?.length) return
-      const first = controls[0]
-      const last = controls[controls.length - 1]
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      previousFocus?.focus()
-    }
-  }, [resetOpen])
 
   const clearErrors = () => setErrors({ email: '', password: '', general: '' })
   const finishLogin = (session) => {
@@ -219,7 +200,7 @@ export default function Login({ onLogin }) {
   }
   const submit = async (event) => {
     event.preventDefault()
-    if (submissionLock.current) return
+    if (submissionLock.current || loginLocked) return
     // Read what is actually in the inputs. Browser/password-manager autofill can
     // update their DOM values without first updating React's state.
     const form = new FormData(event.currentTarget)
@@ -247,25 +228,40 @@ export default function Login({ onLogin }) {
         setTermsAccepted(false)
         setTermsError('')
         setTermsToken(session.termsToken)
-        setPassword('')
-        setShaking(false)
-        setPending(false)
-        submissionLock.current = false
-        return
+      } else if (session.requiresFaceVerification && session.challengeToken) {
+        setFaceChallenge(session)
+      } else if (session.token && session.user) {
+        finishLogin(session)
+      } else {
+        throw new Error('Unable to start sign-in. Please try again.')
       }
-      throw new Error('Unable to start sign-in. Please try again.')
+      setFailedAttempts(0)
+      setPassword('')
+      setShaking(false)
     } catch (error) {
       setShowPassword(false)
+      if (error.code === 'INVALID_CREDENTIALS') {
+        const nextAttempts = failedAttempts + 1
+        setFailedAttempts(nextAttempts)
+        if (nextAttempts >= FAILED_LOGIN_LIMIT) {
+          setPassword('')
+          setShaking(false)
+          setErrors({ email: '', password: '', general: 'Refresh the page to try logging in again.' })
+          setShowLockAlert(true)
+          return
+        }
+      }
       setErrors({
         email: '',
         password: '',
         general: error.message || 'We could not log you in. Please try again.'
       })
       setShaking(true)
-      submissionLock.current = false
-      setPending(false)
       // Wait for disabled inputs to re-enable before moving keyboard focus.
       window.requestAnimationFrame(() => passwordRef.current?.focus())
+    } finally {
+      submissionLock.current = false
+      setPending(false)
     }
   }
   const acceptTerms = async () => {
@@ -278,7 +274,7 @@ export default function Login({ onLogin }) {
         body: JSON.stringify({ termsToken, accepted: true })
       })
       if (result.requiresFaceVerification && result.challengeToken) {
-        setFaceChallenge({ challengeToken: result.challengeToken, action: result.action })
+        setFaceChallenge(result)
         setTermsToken(null)
       } else if (result.token && result.user) {
         finishLogin(result)
@@ -303,10 +299,18 @@ export default function Login({ onLogin }) {
   const verifyFace = async (capture) => {
     setFacePending(true)
     try {
-      const session = await apiRequest('/auth/face-verify', {
+      const { verificationToken } = await apiRequest('/auth/face-verify', {
         method: 'POST',
         body: JSON.stringify(capture)
       })
+      if (!verificationToken) throw new Error('The server could not complete face verification. Please log in again.')
+      const session = await apiRequest('/auth/face-session', {
+        method: 'POST',
+        body: JSON.stringify({ verificationToken })
+      })
+      if (!session.token || !session.user) {
+        throw new Error('The server could not complete face verification. Please log in again.')
+      }
       finishLogin(session)
     } finally {
       setFacePending(false)
@@ -407,9 +411,10 @@ export default function Login({ onLogin }) {
               </label>
               {termsError && <p className="form-error" role="alert">{termsError}</p>}
               <button className="btn" type="button" disabled={!termsAccepted || termsPending} onClick={acceptTerms}>
+                {termsPending && <Spinner />}
                 {termsPending ? 'Continuing…' : 'Continue'}
               </button>
-              <button className="login-face-back" type="button" disabled={termsPending} onClick={backToLogin}>
+              <button className="login-face-back cancel-button" type="button" disabled={termsPending} onClick={backToLogin}>
                 Back to password login
               </button>
             </div>
@@ -418,11 +423,12 @@ export default function Login({ onLogin }) {
               <FaceCapture
                 getChallenge={() => faceChallenge}
                 onCaptured={verifyFace}
+                singleUseChallenge
                 disabled={facePending}
                 actionLabel={facePending ? 'Verifying…' : 'Verify and continue'}
               />
               <button
-                className="login-face-back"
+                className="login-face-back cancel-button"
                 type="button"
                 disabled={facePending}
                 onClick={backToLogin}
@@ -446,7 +452,7 @@ export default function Login({ onLogin }) {
                   <Icon name="mail" />
                   <input
                     ref={emailRef}
-                    disabled={pending}
+                    disabled={pending || loginLocked}
                     aria-labelledby="login-email-label"
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={errors.email ? 'login-email-error' : undefined}
@@ -473,7 +479,7 @@ export default function Login({ onLogin }) {
                   <Icon name="lock" />
                   <input
                     ref={passwordRef}
-                    disabled={pending}
+                    disabled={pending || loginLocked}
                     aria-labelledby="login-password-label"
                     aria-invalid={Boolean(errors.password)}
                     aria-describedby={errors.password ? 'login-password-error' : undefined}
@@ -493,7 +499,7 @@ export default function Login({ onLogin }) {
                   <button
                     className="eye"
                     type="button"
-                    disabled={pending}
+                    disabled={pending || loginLocked}
                     onClick={() => setShowPassword((value) => !value)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     aria-pressed={showPassword}
@@ -514,7 +520,7 @@ export default function Login({ onLogin }) {
                   <label>
                     <input
                       type="checkbox"
-                      disabled={pending}
+                      disabled={pending || loginLocked}
                       checked={remember}
                       onChange={(event) => setRemember(event.target.checked)}
                     />{' '}
@@ -523,7 +529,7 @@ export default function Login({ onLogin }) {
                   <button
                     className="forgot-link"
                     type="button"
-                    disabled={pending}
+                    disabled={pending || loginLocked}
                     onClick={() => {
                       setResetEmail(email)
                       setResetError('')
@@ -534,12 +540,12 @@ export default function Login({ onLogin }) {
                   </button>
                 </div>
                 <button
-                  className={`btn lbtn login-submit${pending ? ' load' : ''}`}
+                  className="btn lbtn login-submit"
                   type="submit"
-                  disabled={pending}
+                  disabled={pending || loginLocked}
                   aria-busy={pending}
                 >
-                  <span className="sp" aria-hidden="true" />
+                  {pending && <Spinner />}
                   <span className="tx" aria-live="polite">
                     {pending ? 'Logging in' : 'Log in'}
                   </span>
@@ -550,27 +556,18 @@ export default function Login({ onLogin }) {
           )}
         </section>
       </div>
+      {showLockAlert && (
+        <Dialog title="OOPS" onClose={() => setShowLockAlert(false)} alert>
+          <p className="modal-copy">Too many failed attempts. Please refresh the page to try again.</p>
+          <div className="ma">
+            <button className="btn" type="button" onClick={() => window.location.reload()} data-autofocus>
+              Refresh page
+            </button>
+          </div>
+        </Dialog>
+      )}
       {resetOpen && (
-        <div
-          ref={resetDialogRef}
-          className="modal show"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="reset-title"
-          onMouseDown={(event) => event.target === event.currentTarget && setResetOpen(false)}
-        >
-          <div className="clay" id="mbody">
-            <div className="mh">
-              <h2 id="reset-title">Reset password</h2>
-              <button
-                className="ib sm"
-                type="button"
-                onClick={() => setResetOpen(false)}
-                aria-label="Close"
-              >
-                ×
-              </button>
-            </div>
+        <Dialog title="Reset password" onClose={() => setResetOpen(false)} busy={resetPending}>
             <form onSubmit={sendReset}>
               <p className="modal-copy">
                 Enter your account email and we'll send you a reset link.
@@ -579,27 +576,29 @@ export default function Login({ onLogin }) {
                 Email
                 <input
                   className="clay-in"
-                  autoFocus
+                  data-autofocus
                   autoComplete="email"
                   required
                   type="email"
                   placeholder="you@example.com"
+                  aria-invalid={resetError === 'Enter a valid email address'}
+                  aria-describedby={resetError ? 'login-reset-error' : undefined}
                   value={resetEmail}
                   onChange={(event) => setResetEmail(event.target.value)}
                 />
               </label>
-              {resetError && <p className="reset-error">{resetError}</p>}
+              {resetError && <p id="login-reset-error" className="reset-error" role="alert">{resetError}</p>}
               <div className="ma">
                 <button className="btn" type="submit" disabled={resetPending}>
+                  {resetPending && <Spinner />}
                   {resetPending ? 'Sending...' : 'Send reset link'}
                 </button>
-                <button className="btn ghost" type="button" onClick={() => setResetOpen(false)}>
+                <button className="btn ghost cancel-button" type="button" onClick={() => setResetOpen(false)}>
                   Cancel
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Dialog>
       )}
       <div role="status" aria-live="polite" id="toast" className={`clay${toast ? ' show' : ''}`}>
         {toast}

@@ -47,6 +47,44 @@ try {
   assert.ok(!login.includes('member123'))
   console.log('PASS: Login renders without development credentials.')
 
+  const MemberIdWizard = await load('components/admin/MemberIdWizard')
+  const wizard = render(MemberIdWizard, { plans: [], planOptionLabel: (plan) => plan.plan_name })
+  assert.match(wizard, /Step 1 of 5/)
+  assert.match(wizard, /Choose ID type/)
+  for (const label of [
+    'Driver’s License', 'Passport', 'Senior Citizen ID', 'SSS ID', 'PWD ID', 'School ID', 'National ID / PhilSys ID'
+  ]) assert.ok(wizard.includes(label))
+  assert.doesNotMatch(wizard, /type="file"/)
+
+  const DataTable = await load('components/DataTable')
+  const rows = Array.from({ length: 12 }, (_, index) =>
+    React.createElement('tr', { key: index }, React.createElement('td', null, 'Member ' + (index + 1)))
+  )
+  const table = render(DataTable, { headings: ['Name'], children: rows })
+  assert.match(table, /Member 12/)
+  assert.doesNotMatch(table, /table-pagination|Page 1 of/)
+
+  const { validateMemberIdFile } = await vite.ssrLoadModule('/src/utils/memberIdUpload.js')
+  const renamedText = new File(['text data'], 'not-a-photo.jpg', { type: 'image/jpeg' })
+  await assert.rejects(validateMemberIdFile(renamedText, 'front'), /checks the file contents/)
+  const pdf = new File(['%PDF-1.7\n'], 'both-sides.pdf', { type: 'application/pdf' })
+  assert.equal(await validateMemberIdFile(pdf, 'document'), pdf)
+  await assert.rejects(validateMemberIdFile(pdf, 'back'), /Choose a valid JPG or PNG image/)
+  const largeFile = new File([new Uint8Array(5 * 1024 * 1024 + 1)], 'large.jpg', {
+    type: 'image/jpeg'
+  })
+  await assert.rejects(validateMemberIdFile(largeFile, 'front'), /no larger than 5 MB/)
+  const CreatedMemberCredentials = await load('components/CreatedMemberCredentials')
+  const credentials = render(CreatedMemberCredentials, {
+    member: { name: 'Test Member', email: 'member@fixture.test' },
+    temporaryPassword: 'fixture-password',
+    onFaceSetup: () => {},
+    onDismiss: () => {}
+  })
+  assert.match(credentials, />Face setup<\/button>/)
+  assert.match(credentials, />Done<\/button>/)
+  console.log('PASS: Member creation lists seven ID types, validates uploads, and displays credentials.')
+
   for (const [path, role, heading] of [
     ['pages/AdminStaffPage', 'admin', 'Gym activity'],
     ['pages/UserPage', 'member', 'Your activity']
@@ -145,7 +183,7 @@ try {
     })
     assert.ok(dialog.includes('role="dialog"') && dialog.includes('aria-modal="true"'))
     assert.ok(dialog.includes('pattern="CLEAR"') && dialog.includes('name="confirmation"'))
-    assert.ok(dialog.includes('every page and records hidden by search'))
+    assert.ok(dialog.includes('records hidden by search'))
     if (category === 'renewals') assert.ok(dialog.includes('Only renewal payments are included.'))
     if (category === 'maintenance')
       assert.ok(dialog.includes('Equipment and its current condition stay unchanged.'))
@@ -246,15 +284,17 @@ try {
   assert.ok(accountDeletion.includes('role="dialog"'))
   assert.ok(accountDeletion.includes('Delete member account?'))
   assert.ok(accountDeletion.includes('Test &lt;Member&gt;'))
-  assert.ok(accountDeletion.includes('type="password"'))
-  assert.ok(accountDeletion.includes('pattern="DELETE"'))
+  assert.doesNotMatch(accountDeletion, /current password|type="password"/i)
+  assert.match(accountDeletion, /name="confirmation"/)
+  assert.match(accountDeletion, /Type DELETE to delete immediately/)
+  assert.doesNotMatch(accountDeletion, /type="submit"/)
   assert.ok(accountDeletion.includes('payments, and attendance history'))
-  console.log('PASS: Account deletion explains permanent data loss and requires password and confirmation.')
+  console.log('PASS: Account deletion explains permanent data loss and requires typed confirmation.')
 
   const Loader = await load('components/HeartRateLoader')
   const loader = render(Loader, { message: 'Opening your dashboard' })
-  assert.ok(loader.includes('--loader-duration:1000ms') && loader.includes('loading-pulse'))
-  console.log('PASS: The heartbeat loader renders with the shared one-second duration.')
+  assert.ok(loader.includes('spinner spinner-large') && loader.includes('Opening your dashboard'))
+  console.log('PASS: The loading overlay renders the shared circular spinner.')
 } finally {
   await vite.close()
 }

@@ -5,7 +5,7 @@ import { membershipState } from '../../utils/membership'
 import { Pill, memberBadge } from './AdminStatus'
 import { Modal } from './AdminDialogParts'
 
-export default function AdminMemberDialogs({ modal, setModal, pending, error, renewals, money, date, createMember, updateMember, data, planOptionLabel, recordPayment, members, currentUser, act }) {
+export default function AdminMemberDialogs({ modal, setModal, pending, error, renewals, money, date, createMember, updateMember, data, planOptionLabel, recordPayment, members, currentUser, act, idVerificationEnabled = false }) {
   return (
     <>
       {modal?.kind === 'view' && (
@@ -24,6 +24,7 @@ export default function AdminMemberDialogs({ modal, setModal, pending, error, re
                 {modal.member.memberCode || modal.member.id}
               </span>
               <Pill status={memberBadge(modal.member)} />
+              {modal.member.idVerified && <span className="pill p-ok">ID verified</span>}
             </div>
           </div>
           <section className="member-profile-section" aria-label="Contact details">
@@ -93,7 +94,7 @@ export default function AdminMemberDialogs({ modal, setModal, pending, error, re
           </section>
         </Modal>
       )}
-      {modal?.kind === 'create' && currentUser?.role === 'admin' && (
+      {!idVerificationEnabled && modal?.kind === 'create' && currentUser?.role === 'admin' && (
         <Modal
           busy={pending}
           error={error}
@@ -188,7 +189,7 @@ export default function AdminMemberDialogs({ modal, setModal, pending, error, re
           <CreatedMemberCredentials
             member={modal.member}
             temporaryPassword={modal.temporaryPassword}
-            onDismiss={() => setModal({ kind: 'face', member: modal.member })}
+            onDismiss={() => idVerificationEnabled ? setModal(null) : setModal({ kind: 'face', member: modal.member })}
           />
         </Modal>
       )}

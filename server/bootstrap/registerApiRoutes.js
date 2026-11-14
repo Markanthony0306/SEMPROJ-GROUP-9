@@ -1,3 +1,4 @@
+import { memberIdVerificationRoutes } from '../routes/memberIdVerification.js'
 import { registerFaceEnrollmentRoutes } from '../routes/faceEnrollmentSettingsRoutes.js'
 import { registerPasswordRecoveryRoutes } from '../routes/passwordRecoveryRoutes.js'
 import { registerCurrentUserRoutes } from '../routes/currentUserRoutes.js'
@@ -26,13 +27,13 @@ import { memberRegistrationRoutes } from '../routes/memberRegistration.js'
 export function registerApiRoutes(app, dependencies, config) {
   const {
     supabase, loadDatabase, loadAccount, saveDatabase,
-    membershipRenewalWorkflow, memberRegistrationService, memberRegistrationWorkflow,
+    membershipRenewalWorkflow, memberRegistrationService, memberRegistrationWorkflow, verifiedRegistrationWorkflow,
     adminNotifications, faceChallenges,
     createSession, authenticate, requireRole, rateLimit,
     availablePlan, publicAccount, validAccountInput, paymentMethod, emailPattern,
     passwordPolicy, passwordPolicyMessage, isRetiredPlan
   } = dependencies
-  const { jwtSecret, isProduction, clientUrl, faceLoginEnabled, faceEncryptionKey, faceMatchThreshold } = config
+  const { jwtSecret, isProduction, clientUrl, faceLoginEnabled, faceEncryptionKey, memberIdKey, identityVerificationEnabled, faceMatchThreshold } = config
 
 
   app.use('/api', accountRoutes({
@@ -83,6 +84,9 @@ export function registerApiRoutes(app, dependencies, config) {
     paymentMethod,
     registrationService: memberRegistrationService,
     registrationWorkflow: memberRegistrationWorkflow,
+    verifiedRegistrationWorkflow,
+    identityVerificationEnabled,
+    faceKey: faceEncryptionKey,
     publicAccount
   }))
 
@@ -112,15 +116,27 @@ export function registerApiRoutes(app, dependencies, config) {
     createAuthClient: createSupabaseAuthClient,
     supabase,
     loadAccount,
+    createSession,
+    identityVerificationEnabled,
+    createAdminFaceChallenge: (account) => faceEncryptionKey && faceChallenges.issue({
+      userId: account.id, authVersion: account.authVersion || 0, role: account.role
+    }),
     createTermsChallenge: (account) =>
-      faceChallenges.issueTerms({ userId: account.id, authVersion: account.authVersion || 0 })
+      faceChallenges.issueTerms({ userId: account.id, authVersion: account.authVersion || 0, role: account.role })
   }))
 
   app.use('/api', faceVerificationRoutes({
     supabase, authenticate, requireRole, rateLimit, loadAccount, createSession,
-    enabled: faceLoginEnabled, key: faceEncryptionKey, threshold: faceMatchThreshold,
+    staffFaceEnabled: faceLoginEnabled, identityVerificationEnabled, key: faceEncryptionKey, memberIdKey,
     challenges: faceChallenges, createAuthClient: createSupabaseAuthClient
   }))
+
+  if (identityVerificationEnabled) {
+    app.use('/api', memberIdVerificationRoutes({
+      supabase, authenticate, requireRole, rateLimit, validAccountInput,
+      key: memberIdKey, faceKey: faceEncryptionKey, challenges: faceChallenges
+    }))
+  }
 
   registerFaceEnrollmentRoutes(app, { authenticate, requireRole, rateLimit, supabase })
 
