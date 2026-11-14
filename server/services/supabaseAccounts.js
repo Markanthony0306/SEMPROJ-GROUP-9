@@ -4,7 +4,7 @@ const PROFILE_COLUMNS =
 export function getProviderRole(role) {
   const normalizedRole = typeof role === 'string' ? role.toLowerCase() : ''
   if (normalizedRole === 'user') return 'member'
-  return ['admin', 'staff', 'member'].includes(normalizedRole) ? normalizedRole : null
+  return ['admin', 'member'].includes(normalizedRole) ? normalizedRole : null
 }
 
 function serviceError(message, status = 503, code = 'SUPABASE_UNAVAILABLE') {

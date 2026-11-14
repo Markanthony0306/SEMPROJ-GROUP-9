@@ -1,57 +1,65 @@
+
 import { useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
 import Dialog from './Dialog'
 
-export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
+export default function AccountDeleteDialog({ account, onClose, onDeactivated }) {
   const { token } = useAuth()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const actionLock = useRef(false)
 
-  const remove = async (event) => {
+  const deactivate = async (event) => {
     event.preventDefault()
     if (actionLock.current) return
+
     const values = new FormData(event.currentTarget)
-    if (values.get('confirmation') !== 'DELETE') {
-      setError('Type DELETE to confirm account deletion.')
+
+    if (values.get('confirmation') !== 'DEACTIVATE') {
+      setError('Type DEACTIVATE to confirm account deactivation.')
       return
     }
+
     actionLock.current = true
     setBusy(true)
     setError('')
+
     try {
-      await apiRequest(`/admin/members/${account.id}`, {
+      await apiRequest(`/admin/members/${account.id}/deactivate`, {
         token,
-        method: 'DELETE',
+        method: 'POST',
         body: JSON.stringify({
           confirmation: values.get('confirmation'),
           currentPassword: values.get('currentPassword')
         })
       })
     } catch (cause) {
-      setError(cause.message || 'Unable to delete the account. Please try again.')
+      setError(
+        cause.message || 'Unable to deactivate the account. Please try again.'
+      )
       actionLock.current = false
       setBusy(false)
       return
     }
-    // Report success separately from refreshing the view: a failed refresh
-    // must not invite the user to repeat an already completed deletion.
-    onDeleted()
+
+    // Deactivation succeeded; refreshing must not repeat the action.
+    onDeactivated()
   }
 
   return (
     <Dialog
-      title="Delete member account?"
+      title="Deactivate member account?"
       busy={busy}
       onClose={onClose}
     >
-      <form className="mf" onSubmit={remove}>
+      <form className="mf" onSubmit={deactivate}>
         <p className="modal-copy">
-          Permanently delete <strong>{account.name}</strong> ({account.email}), including the login,
-          profile photos, saved face data, membership, payments, and attendance history. This cannot
-          be undone.
+          Deactivate <strong>{account.name}</strong> ({account.email}).
+          This will prevent the member from logging in or recording attendance.
+          Their profile, membership, payments, and attendance history will be preserved.
         </p>
+
         <label className="field">
           Your current password
           <input
@@ -64,29 +72,42 @@ export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
             data-autofocus
           />
         </label>
+
         <label className="field">
-          Type DELETE to confirm
+          Type DEACTIVATE to confirm
           <input
             className="clay-in"
             name="confirmation"
             autoComplete="off"
             spellCheck={false}
-            pattern="DELETE"
+            pattern="DEACTIVATE"
             required
             disabled={busy}
           />
         </label>
+
         {error && (
           <p className="form-error" role="alert">
             {error}
           </p>
         )}
+
         <div className="ma">
-          <button className="btn ghost" type="button" disabled={busy} onClick={onClose}>
+          <button
+            className="btn ghost"
+            type="button"
+            disabled={busy}
+            onClick={onClose}
+          >
             Cancel
           </button>
-          <button className="btn danger" type="submit" disabled={busy}>
-            {busy ? 'Deleting...' : 'Delete account permanently'}
+
+          <button
+            className="btn danger"
+            type="submit"
+            disabled={busy}
+          >
+            {busy ? 'Deactivating...' : 'Deactivate account'}
           </button>
         </div>
       </form>

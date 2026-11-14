@@ -175,12 +175,13 @@ export default function DashboardShell({
   notificationCount = 0,
   loading = false,
   children,
-  className = ''
+  className = '',
+  profileLoading = false,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [modal, setModal] = useState('')
   const { dark, toggle } = useTheme()
-  const isAdmin = ['admin', 'staff'].includes(role)
+  const isAdmin = role === 'admin'
   const navigation = isAdmin ? ADMIN_NAVIGATION : MEMBER_NAVIGATION
   const select = (section) => {
     setSidebarOpen(false)
@@ -242,13 +243,41 @@ export default function DashboardShell({
           >
             <Icon name={dark ? 'sun' : 'moon'} />
           </button>
-          <button className="chip" type="button" onClick={() => setModal('profile')}>
+
+          <button
+            className="chip"
+            type="button"
+            onClick={() => setModal('profile')}
+            disabled={profileLoading}
+          >
             <div>
-              <b>{user?.name || 'FitPulse User'}</b>
-              <small>{isAdmin ? 'Administrator' : 'FitPulse member'}</small>
+              <b>
+                {profileLoading
+                  ? 'Loading profile...'
+                  : user?.name || 'FitPulse User'}
+              </b>
+
+              <small>
+                {isAdmin ? 'Administrator' : 'FitPulse member'}
+              </small>
             </div>
-            <ProfileAvatar user={user} />
+
+            {profileLoading ? (
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-block',
+                  width: 42,
+                  height: 42,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.12)'
+                }}
+              />
+            ) : (
+              <ProfileAvatar user={user} />
+            )}
           </button>
+
         </header>
         <div className="dashboard-stage">
           <section

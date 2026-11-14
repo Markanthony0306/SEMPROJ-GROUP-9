@@ -73,7 +73,7 @@ export function faceVerificationRoutes({
 
   const path = '/admin/members/:id/face-enrollment'
   const enrollmentAccess = [
-    authenticate, requireRole('admin', 'staff'), rateLimit({ max: 10 }), checkEnabled,
+    authenticate, requireRole('admin'), rateLimit({ max: 10 }), checkEnabled,
     async (req, res, next) => {
       const account = await loadAccount(req.params.id)
       if (!account || account.status !== 'active' ||

@@ -109,6 +109,6 @@ export function avatarRoutes({
     return res.send(Buffer.from(await photo.arrayBuffer()))
   }
   router.get('/profile/avatar', authenticate, servePhoto)
-  router.get('/members/:id/avatar', authenticate, requireRole('admin', 'staff'), servePhoto)
+  router.get('/members/:id/avatar', authenticate, requireRole('admin'), servePhoto)
   return router
 }

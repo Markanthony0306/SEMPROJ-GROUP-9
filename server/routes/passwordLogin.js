@@ -37,7 +37,7 @@ export function passwordLoginHandler({
         .maybeSingle()
       if (roleError || !roleRecord) throw new Error('Unable to verify account permissions.')
       const roleName = String(roleRecord.role_name).toLowerCase()
-      if (!['admin', 'member', 'staff'].includes(roleName))
+      if (!['admin', 'member'].includes(roleName))
         return res
           .status(403)
           .json({ message: 'This account does not have an application role.', code: 'ROLE_DENIED' })

@@ -4,6 +4,7 @@ server/data.json
 .env
 .env.*
 .env.example
+.env.fitpulse-test
 server/uploads/
 hardware/**/secrets.h
 hardware/**/.pio/

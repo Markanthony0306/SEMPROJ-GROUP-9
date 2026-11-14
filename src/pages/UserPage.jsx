@@ -17,22 +17,22 @@ const validDate = (value) => value && !Number.isNaN(new Date(value).getTime())
 const date = (value) =>
   validDate(value)
     ? new Date(value).toLocaleDateString('en-PH', {
-        timeZone: 'Asia/Manila',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      })
+      timeZone: 'Asia/Manila',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
     : 'Not set'
 const time = (value) =>
   validDate(value)
     ? new Date(value).toLocaleString('en-PH', {
-        timeZone: 'Asia/Manila',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        year: 'numeric'
-      })
+      timeZone: 'Asia/Manila',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      year: 'numeric'
+    })
     : 'Date unavailable'
 const money = (value) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(value || 0))
@@ -103,7 +103,7 @@ export default function UserPage({ user, onSignOut }) {
   }, [load])
   useEffect(() => {
     if (!['user', 'member'].includes(currentUser?.role) || !currentUser?.membershipEnd) return
-    getMemberQr(currentUser, token).catch(() => {})
+    getMemberQr(currentUser, token).catch(() => { })
   }, [
     currentUser?.id,
     currentUser?.membershipStart,
@@ -132,9 +132,18 @@ export default function UserPage({ user, onSignOut }) {
     setNotice('')
     setError('')
     try {
-      await apiRequest(path, { token, ...options })
+
+      const result = await apiRequest(path, { token, ...options })
+
+      // Immediately display the updated profile.
+      if (path === '/profile' && result?.user) {
+        setCurrentUser(result.user)
+      }
+
       setNotice(message)
       await load()
+
+
       return true
     } catch (cause) {
       setError(cause.message)
@@ -387,6 +396,7 @@ export default function UserPage({ user, onSignOut }) {
   }
   return (
     <DashboardShell
+      profileLoading={loading}
       className="member-app"
       role={currentUser?.role || 'user'}
       user={currentUser}

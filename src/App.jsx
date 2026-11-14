@@ -54,7 +54,7 @@ export default function App() {
 
   const handleLogin = (session) => {
     const account = session.user
-    const destination = ['admin', 'staff'].includes(account.role) ? 'admin' : 'user'
+    const destination = account.role === 'admin' ? 'admin' : 'user'
     login(session)
     navigate(destination)
   }
@@ -82,7 +82,7 @@ export default function App() {
       </ProtectedRoute>
     ),
     admin: (
-      <ProtectedRoute navigate={navigate} roles={['admin', 'staff']}>
+      <ProtectedRoute navigate={navigate} roles={['admin']}>
         <AdminStaffPage user={user} onSignOut={handleLogout} navigate={navigate} />
       </ProtectedRoute>
     )

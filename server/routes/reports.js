@@ -1,105 +1,139 @@
-import crypto from 'node:crypto'
+
 import { Router } from 'express'
-import { REPORT_COLLECTIONS, reportRecordInput } from '../services/reportRecords.js'
 
-export function reportRoutes({ authenticate, requireRole, loadDatabase, supabase, rateLimit }) {
+import {
+  ReportService
+} from '../services/ReportService.js'
+
+import {
+  ReportRepository
+} from '../repositories/ReportRepository.js'
+
+import {
+  ReportWorkflow
+} from '../services/ReportWorkflow.js'
+
+export function reportRoutes({
+  authenticate,
+  requireRole,
+  loadDatabase,
+  supabase,
+  rateLimit
+}) {
   const router = Router()
-  router.use('/admin/reports', authenticate, requireRole('admin', 'staff'), rateLimit({ max: 100 }))
 
-  router.param('kind', (req, res, next, kind) => {
-    if (!Object.hasOwn(REPORT_COLLECTIONS, kind))
-      return res.status(404).json({ message: 'Report type not found.' })
-    req.reportCollection = REPORT_COLLECTIONS[kind]
-    next()
-  })
-  router.param('id', (req, res, next, id) => {
-    if (!/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(id))
-      return res.status(400).json({ message: 'Invalid record identifier.' })
-    next()
+  // Initialize the OOP report workflow.
+  const workflow = new ReportWorkflow({
+    service: new ReportService(),
+
+    repository: new ReportRepository({
+      supabase,
+      loadDatabase
+    })
   })
 
-  router.get('/admin/reports/:kind', async (req, res) => {
-    const database = await loadDatabase(req.reportCollection.sections)
-    const records = database[req.params.kind].map(
-      ({ qrTokenId, scannerRequestId, ...record }) => record
-    )
-    res.json({ records })
-  })
+  // Preserve authentication, roles, and rate limits.
+  router.use(
+    '/admin/reports',
+    authenticate,
+    requireRole('admin'),
+    rateLimit({ max: 100 })
+  )
 
-  async function writeRecord(req, res) {
-    if (req.params.kind === 'attendance' && !req.params.id)
-      return res.status(403).json({ message: 'Check-in must be recorded by the entrance scanner.' })
-    const { table, key, sections } = req.reportCollection
-    const database = await loadDatabase(sections)
-    const existing = req.params.id
-      ? database[req.params.kind].find((row) => row.id === req.params.id)
-      : undefined
-    if (req.params.id && !existing)
-      return res.status(404).json({ message: 'Record not found. Refresh the report.' })
-    let values
-    try {
-      values = reportRecordInput(req.params.kind, req.body, database, {
-        existing,
+  // Handle known errors without exposing database details.
+  const handle = (operation) =>
+    async (req, res, next) => {
+      try {
+        await operation(req, res)
+      } catch (error) {
+        if (
+          Number.isInteger(error?.status) &&
+          error.status >= 400 &&
+          error.status <= 599
+        ) {
+          return res.status(error.status).json({
+            message: error.message
+          })
+        }
+
+        return next(error)
+      }
+    }
+
+  // GET: Retrieve report records.
+  router.get(
+    '/admin/reports/:kind',
+    handle(async (req, res) => {
+      const records =
+        await workflow.getRecords(req.params.kind)
+
+      return res.json({ records })
+    })
+  )
+
+  // POST: Create a report record.
+  router.post(
+    '/admin/reports/:kind',
+    handle(async (req, res) => {
+      const result = await workflow.save({
+        kind: req.params.kind,
+        body: req.body,
         actorId: req.user.id
       })
-    } catch (error) {
-      if (error.status === 400) return res.status(400).json({ message: error.message })
-      throw error
-    }
-    const id = existing?.id || crypto.randomUUID()
-    const query = existing
-      ? supabase.from(table).update(values).eq(key, id)
-      : supabase.from(table).insert({ [key]: id, ...values })
-    const { data, error } = await query.select(key)
-    if (error) {
-      console.error('Report record save failed:', error.message)
-      return res
-        .status(error.code === '23503' ? 409 : 500)
-        .json({ message: 'Unable to save this record. Refresh the report and try again.' })
-    }
-    if (!data?.length)
-      return res.status(404).json({ message: 'Record not found. Refresh the report.' })
-    res
-      .status(existing ? 200 : 201)
-      .json({ id, message: existing ? 'Record updated.' : 'Record created.' })
-  }
-  router.post('/admin/reports/:kind', writeRecord)
-  router.patch('/admin/reports/:kind/:id', writeRecord)
-  router.delete('/admin/reports/:kind', requireRole('admin'), async (req, res) => {
-    const category = req.body?.category
-    const allowed = req.params.kind === 'payments' ? ['payments', 'renewals'] : [req.params.kind]
-    if (!allowed.includes(category) || req.body?.confirmation !== 'CLEAR')
-      return res
-        .status(400)
-        .json({ message: 'Choose a report category and type CLEAR to confirm.' })
 
-    const { data, error } = await supabase.rpc('clear_fitpulse_report_records', {
-      p_category: category
-    })
-    if (error) {
-      console.error('Report category clear failed:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint
+      return res.status(result.status).json({
+        id: result.id,
+        message: result.message
       })
-    }
-    res.json({ deleted: data, category, message: 'Report records cleared.' })
-  })
-  router.delete('/admin/reports/:kind/:id', requireRole('admin'), async (req, res) => {
-    const { table, key } = req.reportCollection
-    const { data, error } = await supabase.from(table).delete().eq(key, req.params.id).select(key)
-    if (error) {
-      console.error('Report record deletion failed:', error.message)
-      return res
-        .status(409)
-        .json({ message: 'Unable to delete this record. It may be linked to other records.' })
-    }
-    if (!data?.length)
-      return res
-        .status(404)
-        .json({ message: 'Record not found. It may already have been deleted.' })
-    res.json({ message: 'Record deleted.' })
-  })
+    })
+  )
+
+  // PATCH: Update a report record.
+  router.patch(
+    '/admin/reports/:kind/:id',
+    handle(async (req, res) => {
+      const result = await workflow.save({
+        kind: req.params.kind,
+        recordId: req.params.id,
+        body: req.body,
+        actorId: req.user.id
+      })
+
+      return res.status(result.status).json({
+        id: result.id,
+        message: result.message
+      })
+    })
+  )
+
+  // DELETE: Clear a report category.
+  // Only administrators may delete records.
+  router.delete(
+    '/admin/reports/:kind',
+    requireRole('admin'),
+    handle(async (req, res) => {
+      const result = await workflow.clear({
+        kind: req.params.kind,
+        body: req.body
+      })
+
+      return res.json(result)
+    })
+  )
+
+  // DELETE: Remove an individual report record.
+  router.delete(
+    '/admin/reports/:kind/:id',
+    requireRole('admin'),
+    handle(async (req, res) => {
+      const result = await workflow.delete({
+        kind: req.params.kind,
+        recordId: req.params.id
+      })
+
+      return res.json(result)
+    })
+  )
+
   return router
 }

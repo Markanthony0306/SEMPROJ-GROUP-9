@@ -51,7 +51,7 @@ function accountFromRow(row, roleById, subscription, planById) {
     phone: row.phone_number || '',
     emergencyContact: row.emergency_contact || '',
     role: roleName === 'member' ? 'user' : roleName,
-    plan: plan?.plan_name || (roleName === 'admin' || roleName === 'staff' ? 'Staff access' : 'Plan not assigned'),
+    plan: plan?.plan_name || (roleName === 'admin' ? 'Admin access' : 'Plan not assigned'),
     status: row.status || 'active',
     joined: row.created_at || null,
     membershipStart: subscription?.start_date || null,

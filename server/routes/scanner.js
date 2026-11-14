@@ -2,18 +2,24 @@ import crypto from 'node:crypto'
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import QRCode from 'qrcode'
+
+import {
+  AttendanceService,
+  AttendanceError,
+  membershipFailure
+} from '../services/AttendanceService.js'
+
+import {
+  AttendanceRepository
+} from '../repositories/AttendanceRepository.js'
+
+import {
+  AttendanceWorkflow
+} from '../services/AttendanceWorkflow.js'
+
 import { supabase } from '../lib/supabase.js'
 
-export function membershipFailure(member, now = Date.now()) {
-  if (!member || !['user', 'member'].includes(member.role)) return 'MEMBER_NOT_FOUND'
-  if (member.status !== 'active') return 'MEMBERSHIP_INACTIVE'
-  const start = Date.parse(member.membershipStart || member.joined)
-  const end = Date.parse(member.membershipEnd)
-  if (!Number.isFinite(start) || !Number.isFinite(end)) return 'MEMBERSHIP_DATES_MISSING'
-  if (start > now) return 'MEMBERSHIP_NOT_STARTED'
-  if (end <= now) return 'MEMBERSHIP_EXPIRED'
-  return ''
-}
+export { membershipFailure }
 
 export function scannerRoutes({ loadAccount, authenticate, requireRole, rateLimit, jwtSecret }) {
   const router = express.Router()
@@ -21,6 +27,20 @@ export function scannerRoutes({ loadAccount, authenticate, requireRole, rateLimi
   const qrSecret = crypto.createHmac('sha256', jwtSecret).update('fitpulse-qr-v1').digest('hex')
   const scannerKey = process.env.SCANNER_API_KEY || ''
   const deviceId = process.env.SCANNER_DEVICE_ID || 'entrance-esp32-cam'
+
+
+  // OOP attendance workflow.
+  const attendanceWorkflow = new AttendanceWorkflow({
+    service: new AttendanceService({
+      qrSecret
+    }),
+
+    repository: new AttendanceRepository({
+      supabase,
+      loadAccount
+    })
+  })
+
 
   router.get('/me/qr', authenticate, rateLimit({ windowMs: 60000, max: 20 }), async (req, res) => {
     res.set('Cache-Control', 'no-store')
@@ -88,94 +108,43 @@ export function scannerRoutes({ loadAccount, authenticate, requireRole, rateLimi
     next()
   }
 
+
+  // Process scanner check-ins through the OOP workflow.
   const checkIn = (source, getDeviceId) => async (req, res) => {
     res.set('Cache-Control', 'no-store')
-    const { qrToken, requestId } = req.body || {}
-    const scanDeviceId = getDeviceId(req)
-    if (
-      !scanDeviceId ||
-      typeof requestId !== 'string' ||
-      !/^[a-zA-Z0-9-]{16,80}$/.test(requestId) ||
-      typeof qrToken !== 'string' ||
-      qrToken.length > 2048
-    ) {
-      return res
-        .status(400)
-        .json({ allowed: false, code: 'INVALID_SCAN', message: 'Invalid scan request.' })
-    }
-    let claims
+
     try {
-      claims = jwt.verify(qrToken, qrSecret, {
-        algorithms: ['HS256'],
-        audience: 'fitpulse-scanner'
+      const result = await attendanceWorkflow.execute({
+        qrToken: req.body?.qrToken,
+        requestId: req.body?.requestId,
+        deviceId: getDeviceId(req),
+        source
       })
-      if (typeof claims.sub !== 'string' || typeof claims.jti !== 'string')
-        throw new Error('Invalid claims')
-    } catch {
-      return res.status(403).json({
-        allowed: false,
-        code: 'QR_INVALID_OR_EXPIRED',
-        message: 'Refresh the member QR code and scan again.'
-      })
-    }
-    const member = await loadAccount(claims.sub)
-    const code = membershipFailure(member)
-    if (code)
-      return res.status(403).json({
-        allowed: false,
-        code,
-        message: 'Membership could not be verified. Please contact the front desk.'
-      })
-    if (
-      claims.iat !== Math.floor(Date.parse(member.membershipStart || member.joined) / 1000) ||
-      claims.exp !== Math.floor(Date.parse(member.membershipEnd) / 1000)
-    )
-      return res.status(403).json({
-        allowed: false,
-        code: 'QR_INVALID_OR_EXPIRED',
-        message: 'The membership changed. Refresh the member QR and scan again.'
-      })
-    const { data, error } = await supabase.rpc('record_fitpulse_checkin', {
-      p_member_id: member.id,
-      p_member_name: member.name,
-      p_date: new Date().toISOString(),
-      p_source: source,
-      p_device_id: scanDeviceId,
-      p_request_id: requestId,
-      p_qr_token_id: claims.jti
-    })
-    if (error) {
-      console.error('Supabase could not record the scanner check-in:', error.message)
+
+      return res.status(result.status).json(result.body)
+
+    } catch (error) {
+      // Known attendance failures have specific HTTP codes.
+      if (error instanceof AttendanceError) {
+        return res.status(error.status).json({
+          allowed: false,
+          code: error.code,
+          message: error.message
+        })
+      }
+
+      // Unexpected errors must not expose internal details.
+      console.error(
+        'Scanner check-in failed:',
+        error?.code || 'UNEXPECTED_ERROR'
+      )
+
       return res.status(503).json({
         allowed: false,
         code: 'CHECK_IN_UNAVAILABLE',
         message: 'Attendance storage is unavailable. Please try again.'
       })
     }
-    const result = data?.[0]
-    if (!result) return res.status(503).json({
-      allowed: false,
-      code: 'CHECK_IN_UNAVAILABLE',
-      message: 'Attendance storage is unavailable. Please try again.'
-    })
-    if (result.result_code === 'REQUEST_CONFLICT')
-      return res.status(409).json({
-        allowed: false,
-        code: result.result_code,
-        message: 'Use a new request ID for each scan.'
-      })
-    if (result.result_code === 'CHECK_IN_COOLDOWN')
-      return res.status(409).json({
-        allowed: false,
-        code: result.result_code,
-        message: 'A check-in was just recorded for this member.'
-      })
-    return res.status(result.result_code === 'CHECK_IN_RECORDED' ? 201 : 200).json({
-      allowed: true,
-      code: result.result_code,
-      attendanceId: result.attendance_id,
-      memberName: member.name
-    })
   }
 
   router.post(
@@ -187,7 +156,7 @@ export function scannerRoutes({ loadAccount, authenticate, requireRole, rateLimi
   router.post(
     '/admin/attendance/scan',
     authenticate,
-    requireRole('admin', 'staff'),
+    requireRole('admin'),
     rateLimit({ windowMs: 60_000, max: 60 }),
     checkIn('Staff', (req) => 'webcam:' + req.user.id)
   )

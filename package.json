@@ -16,7 +16,9 @@
     "admin:password": "node scripts/admin-password.mjs",
     "format": "prettier --write .",
     "migrate:json-data": "node scripts/migrate-json-data.mjs",
-    "migrate:demo-auth": "node scripts/migrate-demo-auth.mjs"
+    "migrate:demo-auth": "node scripts/migrate-demo-auth.mjs",
+    "test:models": "node --test server/models/Membership.test.js",
+    "test:services": "node --test server/services/MembershipService.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
@@ -35,4 +37,5 @@
     "prettier": "^3.3.3",
     "vite": "^7.0.0"
   }
+  
 }

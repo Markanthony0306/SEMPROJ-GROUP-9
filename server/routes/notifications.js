@@ -10,7 +10,7 @@ export function notificationRoutes({
   router.use(
     '/admin/notifications',
     authenticate,
-    requireRole('admin', 'staff'),
+    requireRole('admin'),
     rateLimit({ max: 100 })
   )
   router.get('/admin/notifications', async (req, res) => {
