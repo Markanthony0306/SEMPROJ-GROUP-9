@@ -6,6 +6,7 @@ import cors from 'cors'
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import { accountRoutes } from './routes/accounts.js'
+import { startMemberPhotoCleanup } from './services/accountDeletion.js'
 import { scannerRoutes } from './routes/scanner.js'
 import { avatarRoutes } from './routes/avatar.js'
 import { demoAccountRoutes } from './routes/demo-accounts.js'
@@ -22,7 +23,7 @@ import {
 } from './services/faceVerification.js'
 import { faceVerificationRoutes } from './routes/faceVerification.js'
 import { memberIdVerificationRoutes } from './routes/memberIdVerification.js'
-import { assertUniqueStagedFace, attemptLimitError, MemberIdError, requireMemberIdApproval } from './services/memberIdRecords.js'
+import { assertUniqueStagedFace, MemberIdError, requireMemberIdProof } from './services/memberIdRecords.js'
 import { passwordLoginHandler } from './routes/passwordLogin.js'
 import { authenticatePassword, PasswordAuthenticationError } from './services/passwordAuthentication.js'
 import { createSupabaseAuthClient } from './lib/authClient.js'
@@ -192,20 +193,20 @@ function createSession(account, { faceVerified = false, allowUnenrolledAdmin = f
   }
 }
 
-async function authenticate(req, res, next) {
+async function authenticate(req, res, next, unauthorizedStatus = 401) {
   const token = req.headers.authorization?.replace(/^Bearer\s+/i, '')
-  if (!token) return res.status(401).json({ message: 'Authentication is required.' })
+  if (!token) return res.status(unauthorizedStatus).json({ message: 'Authentication is required.' })
   let claims
   try {
     claims = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] })
     if (claims.purpose || typeof claims.id !== 'string') throw new Error('Invalid session claims')
   } catch {
-    return res.status(401).json({ message: 'Your session is invalid or has expired.' })
+    return res.status(unauthorizedStatus).json({ message: 'Your session is invalid or has expired.' })
   }
   try {
     const account = await loadAccount(claims.id)
     if (!account || account.status !== 'active' || (claims.authVersion || 0) !== (account.authVersion || 0))
-      return res.status(401).json({ message: 'Your session has expired. Please log in again.' })
+      return res.status(unauthorizedStatus).json({ message: 'Your session has expired. Please log in again.' })
     if (requiresFaceAndId(account.role)) {
       const passwordOnlyAdmin = account.role === 'admin' && claims.faceVerified === false
       if (
@@ -213,7 +214,7 @@ async function authenticate(req, res, next) {
         (claims.faceVerified !== true &&
           (!passwordOnlyAdmin || await hasActiveFaceEnrollment(supabase, account.id)))
       ) {
-        return res.status(401).json({ message: 'Log in again to complete face verification.' })
+        return res.status(unauthorizedStatus).json({ message: 'Log in again to complete face verification.' })
       }
     }
     const passwordChangeAllowed =
@@ -261,10 +262,7 @@ function rateLimit({ windowMs = 15 * 60 * 1000, max = 10 } = {}) {
 
 // ---------------------------------------------------------------- routes
 
-app.use('/api', accountRoutes({
-  authenticate, requireRole, rateLimit, loadAccount, supabase,
-  createAuthClient: createSupabaseAuthClient
-}))
+app.use('/api', accountRoutes({ authenticate, requireRole, rateLimit, supabase }))
 app.use('/api', reportRoutes({ authenticate, requireRole, loadDatabase, supabase, rateLimit }))
 app.use('/api', notificationRoutes({
   authenticate, requireRole, rateLimit, notifications: adminNotifications
@@ -297,69 +295,31 @@ app.post('/api/auth/register', authenticate, requireRole('admin'), async (req, r
     return res.status(400).json({
       message: passwordPolicyMessage
     })
-  let authUserId = null
-  try {
-    const idVerificationId = await requireMemberIdApproval(supabase, req.user, { name, email }, req.body.verificationId)
-    const database = await loadDatabase(['accounts'])
-    const planRecord = database.membershipPlans.find(
-      (plan) => availablePlan(plan, 'Monthly')
-    )
-    if (!planRecord)
-      return res.status(503).json({ message: 'The default membership plan is unavailable.' })
-    const now = new Date().toISOString()
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { name }
-    })
-    if (authError || !authData.user) {
-      const duplicate = /already|registered|exists/i.test(authError?.message || '')
-      return res.status(duplicate ? 409 : 400).json({
-        message: duplicate
-          ? 'An account with this email already exists.'
-          : 'Unable to create the account. Please try again.'
+  return withMemberAccountLock(`create-member:${email}`, async () => {
+    try {
+      const idVerificationId = await requireMemberIdProof(supabase, req.user, { name, email }, req.body.verificationId)
+      const database = await loadDatabase(['accounts'])
+      const planRecord = database.membershipPlans.find(
+        (plan) => availablePlan(plan, 'Monthly')
+      )
+      if (!planRecord)
+        return res.status(503).json({ message: 'The default membership plan is unavailable.' })
+      await createEnrolledMember({
+        input: { name, email }, actorId: req.user.id, idVerificationId,
+        planRecord, password, mustChangePassword: false
       })
+      return res.status(201).json({ message: 'Account created. Please log in.' })
+    } catch (error) {
+      if (error instanceof MemberIdError || error instanceof FaceVerificationError)
+        return res.status(error.status).json({ message: error.message, code: error.code })
+      console.error('Registration failed:', error.message)
+      return res.status(503).json({ message: 'Unable to create the account. Please try again.' })
     }
-    authUserId = authData.user.id
-    const member = {
-      id: crypto.randomUUID(),
-      authUserId,
-      name,
-      email,
-      role: 'user',
-      plan: planRecord.plan_name,
-      status: 'active',
-      phone: '',
-      joined: now,
-      membershipStart: now,
-      membershipEnd: addMembershipDays(now, planRecord.duration_days),
-      subscriptionId: crypto.randomUUID(),
-      subscriptionCreatedAt: now,
-      planId: planRecord.plan_id,
-      idVerificationId,
-      idVerificationActor: req.user.id,
-      mustChangePassword: false,
-      authVersion: 0
-    }
-    database.accounts.push(member)
-    await withFaceEnrollmentLock(async () => {
-      await assertUniqueStagedFace(supabase, idVerificationId, faceEncryptionKey)
-      await saveDatabase(database)
-    })
-    return res.status(201).json({ message: 'Account created. Please log in.' })
-  } catch (cause) {
-    if (authUserId) await supabase.auth.admin.deleteUser(authUserId)
-    const error = cause.code === 'P5405' ? attemptLimitError() : cause
-    if (error instanceof MemberIdError || error instanceof FaceVerificationError)
-      return res.status(error.status).json({ message: error.message, code: error.code })
-    console.error('Registration failed:', error.message)
-    return res.status(503).json({ message: 'Unable to create the account. Please try again.' })
-  }
+  })
 })
 
 
-app.post('/api/auth/login', rateLimit({ max: 10 }), passwordLoginHandler({
+app.post('/api/auth/login', passwordLoginHandler({
   createAuthClient: createSupabaseAuthClient,
   supabase,
   loadAccount,
@@ -682,242 +642,66 @@ app.get('/api/admin/membership-plans', authenticate, requireRole('admin', 'staff
 app.post(
   '/api/admin/members',
   authenticate,
-  requireRole('admin', 'staff'),
+  requireRole('admin'),
   async (req, res) => {
-    let authUserId = null
-    let profileId = null
+    const input = validAccountInput(req.body)
+    if (input.error) return res.status(400).json({ message: input.error })
+    return withMemberAccountLock(`create-member:${input.email}`, async () => {
+      try {
+        const idVerificationId = await requireMemberIdProof(supabase, req.user, input, req.body.verificationId)
 
-    try {
-      const input = validAccountInput(req.body)
+        const method = paymentMethod(req.body)
 
-      if (input.error) {
-        return res.status(400).json({ message: input.error })
-      }
-      const idVerificationId = await requireMemberIdApproval(supabase, req.user, input, req.body.verificationId)
+        const recordPayment = req.body.recordPayment === true
 
-      const method = paymentMethod(req.body)
-
-      const recordPayment = req.body.recordPayment === true
-
-      if (recordPayment && !method) {
-        return res.status(400).json({
-          message: 'Choose Cash or GCash for a recorded payment.'
-        })
-      }
-
-      const database = await loadDatabase(['accounts', 'payments'])
-      const planRecord = database.membershipPlans.find(
-        (plan) => availablePlan(plan, input.plan)
-      )
-      if (!planRecord) {
-        return res.status(400).json({
-          message: `The ${input.plan} membership plan is not active in Supabase.`
-        })
-      }
-      if (recordPayment && !database.paymentMethods.some(
-        (item) => String(item.method_name).toLowerCase() === String(method).toLowerCase()
-      )) {
-        return res.status(400).json({ message: `The ${method} payment method is not configured in Supabase.` })
-      }
-
-      if (
-        database.accounts.some(
-          (account) => account.email.toLowerCase() === input.email
-        )
-      ) {
-        return res.status(409).json({
-          message: 'An account with this email already exists.'
-        })
-      }
-
-      // Check for an existing Supabase profile.
-      const { data: existingProfile, error: lookupError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', input.email)
-        .maybeSingle()
-
-      if (lookupError) {
-        console.error('Supabase email lookup failed:', lookupError.message)
-        return res.status(500).json({
-          message: 'Unable to check the member account.'
-        })
-      }
-
-      if (existingProfile) {
-        return res.status(409).json({
-          message: 'An account with this email already exists.'
-        })
-      }
-
-      // Show this temporary credential only in the authenticated creation response.
-      const temporaryPassword = generateTemporaryPassword()
-
-      // Create the member's Supabase Auth account.
-      const { data: authData, error: authError } =
-        await supabase.auth.admin.createUser({
-          email: input.email,
-          password: temporaryPassword,
-          email_confirm: true,
-          user_metadata: { name: input.name }
-        })
-
-      if (authError || !authData.user) {
-        console.error(
-          'Supabase Auth account creation failed:',
-          authError?.message
-        )
-
-        return res.status(400).json({
-          message: 'Unable to create the member login. Check whether the email is already registered.'
-        })
-      }
-
-      authUserId = authData.user.id
-
-      // Insert the linked profile and its first membership period.
-      const memberId = crypto.randomUUID()
-      const now = new Date().toISOString()
-      const roleId = await getRoleId('member')
-
-      const { data: profile, error: profileError } = await withFaceEnrollmentLock(async () => {
-        await assertUniqueStagedFace(supabase, idVerificationId, faceEncryptionKey)
-        return supabase.from('users').insert({
-          id: memberId,
-          auth_user_id: authUserId,
-          role_id: roleId,
-          name: input.name,
-          email: input.email,
-          phone_number: input.phone || null,
-          status: 'active',
-          must_change_password: true,
-          id_verification_id: idVerificationId,
-          id_verification_actor: req.user.id,
-          created_at: now
-        })
-        .select('id, member_code, name, email, phone_number, status, created_at')
-        .single()
-      })
-
-      if (profileError || !profile) {
-        console.error(
-          'Supabase member profile creation failed:',
-          profileError?.message
-        )
-
-        // Roll back the Auth account if profile creation fails.
-        const { error: rollbackError } =
-          await supabase.auth.admin.deleteUser(authUserId)
-
-        if (rollbackError) {
-          console.error(
-            'Supabase Auth rollback failed:',
-            rollbackError.message
-          )
-        }
-
-        authUserId = null
-
-        if (profileError?.code === 'P5405') {
-          const error = attemptLimitError()
-          return res.status(error.status).json({ message: error.message, code: error.code })
-        }
-
-        if (['23505', '23514'].includes(profileError?.code)) {
-          return res.status(409).json({
-            message: 'The ID approval or account is no longer available. Review the verification and try again.'
+        if (recordPayment && !method) {
+          return res.status(400).json({
+            message: 'Choose Cash or GCash for a recorded payment.'
           })
         }
 
+        const database = await loadDatabase(['accounts', 'payments'])
+        const planRecord = database.membershipPlans.find(
+          (plan) => availablePlan(plan, input.plan)
+        )
+        if (!planRecord) {
+          return res.status(400).json({
+            message: `The ${input.plan} membership plan is not active in Supabase.`
+          })
+        }
+        const methodRecord = recordPayment
+          ? database.paymentMethods.find((item) => String(item.method_name).toLowerCase() === method.toLowerCase())
+          : null
+        if (recordPayment && !methodRecord) {
+          return res.status(400).json({ message: `The ${method} payment method is not configured in Supabase.` })
+        }
+
+        const temporaryPassword = generateTemporaryPassword()
+        const { profile, member } = await createEnrolledMember({
+          input, actorId: req.user.id, idVerificationId, planRecord, methodRecord,
+          password: temporaryPassword, mustChangePassword: true
+        })
+
+        res.set('Cache-Control', 'no-store')
+        return res.status(201).json({
+          temporaryPassword,
+          message: 'Successful creation of a new member',
+          member: {
+            ...publicAccount(member),
+            memberCode: profile.member_code,
+            accountStatus: profile.status,
+            createdAt: profile.created_at
+          }
+        })
+      } catch (error) {
+        if (error instanceof MemberIdError || error instanceof FaceVerificationError)
+          return res.status(error.status).json({ message: error.message, code: error.code })
+        console.error('Unable to create member:', error.message)
         return res.status(500).json({
-          message: 'Unable to create the member profile.'
+          message: 'Unable to create the member account.'
         })
       }
-
-      profileId = profile.id
-
-      const member = {
-        id: profile.id,
-        authUserId,
-        memberCode: profile.member_code || '',
-        name: profile.name,
-        email: profile.email,
-        phone: profile.phone_number || '',
-        role: 'user',
-        plan: planRecord.plan_name,
-        status: 'active',
-        joined: now,
-        membershipStart: now,
-        membershipEnd: addMembershipDays(now, planRecord.duration_days),
-        subscriptionId: crypto.randomUUID(),
-        subscriptionCreatedAt: now,
-        planId: planRecord.plan_id,
-        mustChangePassword: true,
-        idVerified: true,
-        authVersion: 0
-      }
-
-      database.accounts.push(member)
-
-      if (recordPayment) {
-        database.payments.push({
-          id: crypto.randomUUID(),
-          memberId: member.id,
-          memberName: member.name,
-          amount: Number(planRecord.price),
-          method,
-          plan: planRecord.plan_name,
-          type: 'New',
-          date: now,
-          subscriptionId: member.subscriptionId,
-          processedByUserId: req.user.id
-        })
-      }
-
-      await saveDatabase(database)
-
-      res.set('Cache-Control', 'no-store')
-      return res.status(201).json({
-        temporaryPassword,
-        message: 'Member account created.',
-        member: {
-          ...publicAccount(member),
-          memberCode: profile.member_code,
-          accountStatus: profile.status,
-          createdAt: profile.created_at
-        }
-      })
-    } catch (error) {
-      // Attempt cleanup if creation failed after creating the Auth user.
-      if (profileId) {
-        const { error: profileRollbackError } = await supabase
-          .from('users')
-          .delete()
-          .eq('id', profileId)
-
-        if (profileRollbackError) {
-          console.error('Supabase profile rollback failed:', profileRollbackError.message)
-        }
-      }
-      if (authUserId) {
-        const { error: rollbackError } =
-          await supabase.auth.admin.deleteUser(authUserId)
-
-        if (rollbackError) {
-          console.error(
-            'Supabase Auth rollback failed:',
-            rollbackError.message
-          )
-        }
-      }
-
-      if (error instanceof MemberIdError || error instanceof FaceVerificationError)
-        return res.status(error.status).json({ message: error.message, code: error.code })
-      console.error('Unable to create member:', error.message)
-      return res.status(500).json({
-        message: 'Unable to create the member account.'
-      })
-    }
+    })
   }
 )
 
@@ -1545,6 +1329,93 @@ app.post('/api/admin/payments', authenticate, requireRole('admin', 'staff'), asy
 
 // ---------------------------------------------------------------- seed & start
 
+async function createEnrolledMember({
+  input, actorId, idVerificationId, planRecord, methodRecord, password, mustChangePassword
+}) {
+  const { email, name, phone } = input
+  const roleId = await getRoleId('member')
+  const now = new Date().toISOString()
+  const memberId = crypto.randomUUID()
+  const subscriptionId = crypto.randomUUID()
+  const membershipEnd = addMembershipDays(now, planRecord.duration_days)
+
+  const { data: auth, error: authError } = await createMemberAuth({ email, password, name })
+  if (authError || !auth?.user) {
+    if (['email_exists', 'user_already_exists'].includes(authError?.code))
+      throw new MemberIdError(409, 'An account with this email already exists.')
+    throw new MemberIdError(503, 'Unable to create the member login. Please try again.')
+  }
+
+  try {
+    const { data: profile, error } = await withFaceEnrollmentLock(async () => {
+      await assertUniqueStagedFace(supabase, idVerificationId, faceEncryptionKey)
+      return supabase.rpc('create_fitpulse_enrolled_member', {
+        p_profile: {
+          id: memberId, auth_user_id: auth.user.id, role_id: roleId, name, email,
+          phone_number: phone || null, must_change_password: mustChangePassword,
+          id_verification_id: idVerificationId, id_verification_actor: actorId, created_at: now
+        },
+        p_subscription: {
+          subscription_id: subscriptionId, plan_id: planRecord.plan_id,
+          start_date: now, end_date: membershipEnd
+        },
+        p_payment: methodRecord ? {
+          payment_id: crypto.randomUUID(), method_id: methodRecord.method_id,
+          amount_paid: Number(planRecord.price), legacy_plan_name: planRecord.plan_name
+        } : null
+      }).single()
+    })
+    if (['23505', '23514'].includes(error?.code))
+      throw new MemberIdError(409, 'The ID or email is already linked, or the enrollment changed.')
+    if (error?.code === 'PGRST202')
+      throw new MemberIdError(503, 'Member creation needs Supabase migration 014.')
+    if (error || !profile) throw error || new Error('Member profile was not returned.')
+    return {
+      profile,
+      member: {
+        id: profile.id, authUserId: auth.user.id, memberCode: profile.member_code || '',
+        name, email, phone: phone || '', role: 'user', plan: planRecord.plan_name,
+        status: 'active', joined: now, membershipStart: now, membershipEnd, subscriptionId,
+        subscriptionCreatedAt: now, planId: planRecord.plan_id, mustChangePassword,
+        idVerified: true, authVersion: 0
+      }
+    }
+  } catch (error) {
+    // The database may have committed before a network response was lost.
+    // Keep Auth if the lookup fails or the profile already exists.
+    const { data: profile, error: lookupError } = await supabase
+      .from('users').select('id').eq('auth_user_id', auth.user.id).maybeSingle()
+    if (!lookupError && !profile) {
+      const { error: rollbackError } = await supabase.auth.admin.deleteUser(auth.user.id)
+      if (rollbackError) console.error('Member Auth rollback failed:', rollbackError.code)
+    }
+    throw error
+  }
+}
+
+async function createMemberAuth({ email, password, name }) {
+  const attributes = {
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { name },
+    app_metadata: { fitpulse_member_signup: true }
+  }
+  const result = await supabase.auth.admin.createUser(attributes)
+  if (!['email_exists', 'user_already_exists'].includes(result.error?.code)) return result
+
+  const existing = await findAuthUser(email)
+  if (existing?.app_metadata?.fitpulse_member_signup !== true) return result
+  const { data: profile, error } = await supabase
+    .from('users')
+    .select('id')
+    .eq('auth_user_id', existing.id)
+    .maybeSingle()
+  if (error) throw error
+  if (profile) return result
+  return supabase.auth.admin.updateUserById(existing.id, attributes)
+}
+
 async function findAuthUser(email) {
   for (let page = 1; ; page += 1) {
     const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 })
@@ -1694,6 +1565,7 @@ app.use((error, req, res, next) => {
 export const serverReady = ensureSeedData()
   .then(() => {
     const server = app.listen(port, () => console.log(`FitPulse API listening on ${port}`))
+    server.once('close', startMemberPhotoCleanup(supabase))
     return server
   })
   .catch((error) => {

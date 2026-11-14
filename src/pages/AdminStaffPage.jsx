@@ -208,8 +208,10 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
         method: 'POST',
         body: JSON.stringify(details)
       },
-      'Member account created.',
+      'Successful creation of a new member',
       (result) => {
+        setQuery('')
+        setSection('Members')
         if (result.member) setModal({ kind: 'credentials', member: result.member, temporaryPassword: result.temporaryPassword })
       }
     )
@@ -276,7 +278,7 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
               is moving.
             </p>
             <div className="dashboard-quick-actions">
-              {['admin', 'staff'].includes(currentUser?.role) && (
+              {currentUser?.role === 'admin' && (
                 <button className="btn" type="button" onClick={() => setModal({ kind: 'create' })}>
                   <Icon name="users" size={16} />
                   Add a member
@@ -399,15 +401,10 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
               onChange={(event) => setQuery(event.target.value)}
             />
           </label>
-          {['admin', 'staff'].includes(currentUser?.role) && (
-            <>
-              <button className="btn ghost" type="button" onClick={() => setModal({ kind: 'id-reviews' })}>
-                ID Reviews
-              </button>
-              <button className="btn" type="button" onClick={() => setModal({ kind: 'create' })}>
-                Create Account
-              </button>
-            </>
+          {currentUser?.role === 'admin' && (
+            <button className="btn" type="button" onClick={() => setModal({ kind: 'create' })}>
+              Create Account
+            </button>
           )}
         </div>
         <DataTable
@@ -742,7 +739,7 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
       />
     ),
     Settings: (
-      <section className="grid g2">
+      <section className="grid g2 settings-cards">
         <article className="card clay">
           <h2>Profile</h2>
           <ProfilePhoto user={currentUser} onSaved={setCurrentUser} />

@@ -4,8 +4,15 @@ export default defineConfig({
   base: process.env.BASE_PATH || '/',
   plugins: [react()],
   optimizeDeps: {
-    // Prepare the lazy-loaded camera library before serving its first import.
-    include: ['face-api.js']
+    // Prebundle the camera libraries and Paddle's CommonJS dependency.
+    include: [
+      'face-api.js',
+      'jscanify/client',
+      '@techstark/opencv-js',
+      '@paddleocr/paddleocr-js > clipper-lib'
+    ],
+    // Paddle's ONNX loader resolves its WASM runtime next to the SDK bundle.
+    exclude: ['@paddleocr/paddleocr-js']
   },
   server: {
     fs: {

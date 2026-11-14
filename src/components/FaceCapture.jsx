@@ -22,8 +22,10 @@ export default function FaceCapture({
   onCaptureError,
   getChallenge,
   onReset,
+  onCloseUp,
   purpose = 'verification',
   singleUseChallenge = false,
+  closeShot = false,
   disabled = false,
   actionLabel = 'Capture face'
 }) {
@@ -196,9 +198,13 @@ export default function FaceCapture({
         video: videoRef.current,
         scan,
         actions: challenge.actions,
+        closeShot,
         isCurrent: () => operation === operationRef.current,
         onPrompt: setMessage,
-        onProgress: setProgress,
+        onProgress: (next) => {
+          setProgress(next)
+          if (next.step === 'close') onCloseUp?.()
+        },
         onPosition: ({ guide, message, box, points }) => setPosition({ guide, message, box, points })
       })
       if (!frames) return
@@ -295,7 +301,7 @@ export default function FaceCapture({
           )
         )}
       </ol>
-      <div className="face-viewport">
+      <div className="face-viewport" data-close-up={progress?.step === 'close' || undefined}>
         <video ref={videoRef} autoPlay muted playsInline aria-label="Face camera preview" />
         <div className="face-guide" data-position={livePosition?.guide} aria-hidden="true" />
         {livePosition?.box && (
@@ -343,7 +349,7 @@ export default function FaceCapture({
                 {complete && <span className="face-gesture-check" aria-label="Completed">✓</span>}
                 {step === 'blink' && (current || complete)
                   ? `Blink ${progress.blinks}/${FACE_BLINK_COUNT}`
-                  : faceStepLabels[step]}
+                  : step === 'close' ? 'Move closer' : faceStepLabels[step]}
               </li>
             )
           })}

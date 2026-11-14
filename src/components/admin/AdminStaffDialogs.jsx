@@ -9,7 +9,6 @@ import RecordDeleteDialog from '../RecordDeleteControls'
 import AccountDeleteDialog from '../AccountDeleteDialog'
 import EquipmentCategorySelect from '../EquipmentCategorySelect'
 import MemberIdWizard from './MemberIdWizard'
-import MemberIdReviews from './MemberIdReviews'
 import { membershipState } from '../../utils/membership'
 
 function Modal({ title, children, onClose, busy, error, className }) {
@@ -137,18 +136,26 @@ export default function AdminStaffDialogs({
   requestFaceChallenge,
   recordPayment
 }) {
+  const [accountDeleted, setAccountDeleted] = useState(false)
+
   return (
     <>
+      {accountDeleted && (
+        <div className="dashboard-feedback account-deletion-toast" role="status">
+          <span>Member account deleted.</span>
+          <button type="button" aria-label="Dismiss message" onClick={() => setAccountDeleted(false)}>
+            &times;
+          </button>
+        </div>
+      )}
       {modal?.kind === 'delete-account' && currentUser?.role === 'admin' && (
         <AccountDeleteDialog
           account={modal.member}
           onClose={() => setModal(null)}
           onDeleted={async () => {
             setModal(null)
-            const refreshed = await load()
-            setNotice(
-              `Member account deleted. ${refreshed === false ? 'Refresh failed. Reload to see the latest records.' : 'Records refreshed.'}`
-            )
+            await load()
+            setAccountDeleted(true)
           }}
         />
       )}
@@ -176,7 +183,7 @@ export default function AdminStaffDialogs({
                 {modal.member.memberCode || modal.member.id}
               </span>
               <Pill status={memberBadge(modal.member)} />
-              {modal.member.idVerified && <span className="pill p-ok">ID review linked</span>}
+              {modal.member.idVerified && <span className="pill p-ok">ID verified</span>}
             </div>
           </div>
           <section className="member-profile-section" aria-label="Contact details">
@@ -291,25 +298,15 @@ export default function AdminStaffDialogs({
           </form>
         </Modal>
       )}
-      {modal?.kind === 'create' && ['admin', 'staff'].includes(currentUser?.role) && (
+      {modal?.kind === 'create' && currentUser?.role === 'admin' && (
         <MemberIdWizard
           token={token}
           plans={data.membershipPlans}
           planOptionLabel={planOptionLabel}
-          initialCase={modal.verification}
-          canEnrollFace={currentUser.role === 'admin'}
           pending={pending}
           error={error}
           onClose={() => setModal(null)}
           onCreate={createMember}
-        />
-      )}
-      {modal?.kind === 'id-reviews' && ['admin', 'staff'].includes(currentUser?.role) && (
-        <MemberIdReviews
-          token={token}
-          isAdmin={currentUser.role === 'admin'}
-          onClose={() => setModal(null)}
-          onResume={(verification) => setModal({ kind: 'create', verification })}
         />
       )}
       {modal?.kind === 'edit' && (
@@ -340,7 +337,12 @@ export default function AdminStaffDialogs({
         </Modal>
       )}
       {modal?.kind === 'credentials' && (
-        <Modal title="Member sign-in details" onClose={() => setModal(null)}>
+        <Modal title="Create member account" className="id-check-dialog" onClose={() => setModal(null)}>
+          <div className="id-check-success" role="status">
+            <span aria-hidden="true">✓</span>
+            <h3>Successful creation of a new member</h3>
+            <p>Face enrollment is complete.</p>
+          </div>
           <CreatedMemberCredentials
             member={modal.member}
             temporaryPassword={modal.temporaryPassword}

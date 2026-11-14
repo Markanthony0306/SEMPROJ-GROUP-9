@@ -1,7 +1,7 @@
 import { randomInt, randomUUID } from 'node:crypto'
 import { fileURLToPath } from 'node:url'
 import {
-  FACE_EVIDENCE_COUNT, FACE_FRAME_BYTES, FACE_FRAME_HEIGHT, FACE_FRAME_WIDTH, FACE_MIN_CAMERA_FACE_SIZE,
+  FACE_CLOSE_MIN_SIZE, FACE_CLOSE_SCALE, FACE_EVIDENCE_COUNT, FACE_FRAME_BYTES, FACE_FRAME_HEIGHT, FACE_FRAME_WIDTH, FACE_MIN_CAMERA_FACE_SIZE,
   createFaceGestureSequence, faceActions, validFaceActions
 } from '../../shared/faceLiveness.js'
 import {
@@ -262,8 +262,8 @@ async function describeCameraFrame({ data, landmarks }) {
   }
 }
 
-export async function readLiveFace(frames, actions) {
-  if (!Array.isArray(frames) || frames.length !== FACE_EVIDENCE_COUNT || !validFaceActions(actions)) {
+export async function readLiveFace(frames, actions, { closeShot = false } = {}) {
+  if (!Array.isArray(frames) || frames.length !== FACE_EVIDENCE_COUNT + Number(closeShot) || !validFaceActions(actions)) {
     throw new FaceVerificationError('FACE_CAPTURE_INVALID', 'The camera capture is incomplete.', 400)
   }
   const captured = frames.map(decodeCameraFrame)
@@ -272,11 +272,14 @@ export async function readLiveFace(frames, actions) {
   }
 
   const sequence = createFaceGestureSequence(actions)
-  for (const data of captured) {
+  let normalSize
+  const sizeOf = ({ box }) => Math.min(box.width, box.height)
+  for (const data of captured.slice(0, FACE_EVIDENCE_COUNT)) {
     const { landmarks, detection } = await readCameraFace(data)
+    if (sequence.step === 'align') normalSize = sizeOf(detection)
     sequence.observe(landmarks, () => ({ data, landmarks, score: detection.score }))
   }
-  if (!sequence.complete || sequence.evidence.length !== captured.length) {
+  if (!sequence.complete || sequence.evidence.length !== FACE_EVIDENCE_COUNT) {
     throw new FaceVerificationError('FACE_LIVENESS_FAILED', 'The camera did not capture all requested blinks and turns in order.')
   }
 
@@ -287,6 +290,14 @@ export async function readLiveFace(frames, actions) {
   for (const [index, { frame, frontal }] of sequence.evidence.entries()) {
     descriptors.push(await describeCameraFrame(frame))
     if (frontal && frame.score > sequence.evidence[bestIndex].frame.score) bestIndex = index
+  }
+  if (closeShot) {
+    const data = captured.at(-1)
+    const { landmarks, detection } = await readCameraFace(data)
+    if (sizeOf(detection) < Math.max(FACE_CLOSE_MIN_SIZE, normalSize * FACE_CLOSE_SCALE)) {
+      throw new FaceVerificationError('FACE_TOO_FAR', 'Move closer for the final shot and try again.')
+    }
+    descriptors.push(await describeCameraFrame({ data, landmarks }))
   }
   if (!descriptors.every((sample, index) =>
     descriptors.slice(index + 1).every((other) => facesMatch(sample, other)))) {

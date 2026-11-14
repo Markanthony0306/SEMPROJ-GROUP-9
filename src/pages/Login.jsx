@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from '../components/brand/useTheme'
 import FaceCapture, { preloadFaceCapture } from '../components/FaceCapture'
+import Dialog from '../components/Dialog'
 import Spinner from '../components/Spinner'
 import { apiRequest } from '../utils/api'
 import './Login.css'
+
+const FAILED_LOGIN_LIMIT = 5
 
 const ICONS = {
   alert: (
@@ -157,6 +160,9 @@ export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false)
   const [capsLock, setCapsLock] = useState(false)
   const [pending, setPending] = useState(false)
+  const [failedAttempts, setFailedAttempts] = useState(0)
+  const [showLockAlert, setShowLockAlert] = useState(false)
+  const loginLocked = failedAttempts >= FAILED_LOGIN_LIMIT
   const [facePending, setFacePending] = useState(false)
   const [termsToken, setTermsToken] = useState(null)
   const [termsPending, setTermsPending] = useState(false)
@@ -175,40 +181,12 @@ export default function Login({ onLogin }) {
   const passwordRef = useRef(null)
   const stepHeadingRef = useRef(null)
   const submissionLock = useRef(false)
-  const resetDialogRef = useRef(null)
 
   useEffect(preloadFaceCapture, [])
 
   useEffect(() => {
     if (termsToken || faceChallenge) stepHeadingRef.current?.focus({ preventScroll: true })
   }, [termsToken, faceChallenge])
-
-  useEffect(() => {
-    if (!resetOpen) return
-    const previousFocus = document.activeElement
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') setResetOpen(false)
-      if (event.key !== 'Tab') return
-      const controls = resetDialogRef.current?.querySelectorAll(
-        'button:not(:disabled), input:not(:disabled)'
-      )
-      if (!controls?.length) return
-      const first = controls[0]
-      const last = controls[controls.length - 1]
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault()
-        last.focus()
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault()
-        first.focus()
-      }
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown)
-      previousFocus?.focus()
-    }
-  }, [resetOpen])
 
   const clearErrors = () => setErrors({ email: '', password: '', general: '' })
   const finishLogin = (session) => {
@@ -222,7 +200,7 @@ export default function Login({ onLogin }) {
   }
   const submit = async (event) => {
     event.preventDefault()
-    if (submissionLock.current) return
+    if (submissionLock.current || loginLocked) return
     // Read what is actually in the inputs. Browser/password-manager autofill can
     // update their DOM values without first updating React's state.
     const form = new FormData(event.currentTarget)
@@ -257,10 +235,22 @@ export default function Login({ onLogin }) {
       } else {
         throw new Error('Unable to start sign-in. Please try again.')
       }
+      setFailedAttempts(0)
       setPassword('')
       setShaking(false)
     } catch (error) {
       setShowPassword(false)
+      if (error.code === 'INVALID_CREDENTIALS') {
+        const nextAttempts = failedAttempts + 1
+        setFailedAttempts(nextAttempts)
+        if (nextAttempts >= FAILED_LOGIN_LIMIT) {
+          setPassword('')
+          setShaking(false)
+          setErrors({ email: '', password: '', general: 'Refresh the page to try logging in again.' })
+          setShowLockAlert(true)
+          return
+        }
+      }
       setErrors({
         email: '',
         password: '',
@@ -462,7 +452,7 @@ export default function Login({ onLogin }) {
                   <Icon name="mail" />
                   <input
                     ref={emailRef}
-                    disabled={pending}
+                    disabled={pending || loginLocked}
                     aria-labelledby="login-email-label"
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={errors.email ? 'login-email-error' : undefined}
@@ -489,7 +479,7 @@ export default function Login({ onLogin }) {
                   <Icon name="lock" />
                   <input
                     ref={passwordRef}
-                    disabled={pending}
+                    disabled={pending || loginLocked}
                     aria-labelledby="login-password-label"
                     aria-invalid={Boolean(errors.password)}
                     aria-describedby={errors.password ? 'login-password-error' : undefined}
@@ -509,7 +499,7 @@ export default function Login({ onLogin }) {
                   <button
                     className="eye"
                     type="button"
-                    disabled={pending}
+                    disabled={pending || loginLocked}
                     onClick={() => setShowPassword((value) => !value)}
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                     aria-pressed={showPassword}
@@ -530,7 +520,7 @@ export default function Login({ onLogin }) {
                   <label>
                     <input
                       type="checkbox"
-                      disabled={pending}
+                      disabled={pending || loginLocked}
                       checked={remember}
                       onChange={(event) => setRemember(event.target.checked)}
                     />{' '}
@@ -539,7 +529,7 @@ export default function Login({ onLogin }) {
                   <button
                     className="forgot-link"
                     type="button"
-                    disabled={pending}
+                    disabled={pending || loginLocked}
                     onClick={() => {
                       setResetEmail(email)
                       setResetError('')
@@ -552,7 +542,7 @@ export default function Login({ onLogin }) {
                 <button
                   className="btn lbtn login-submit"
                   type="submit"
-                  disabled={pending}
+                  disabled={pending || loginLocked}
                   aria-busy={pending}
                 >
                   {pending && <Spinner />}
@@ -566,27 +556,18 @@ export default function Login({ onLogin }) {
           )}
         </section>
       </div>
+      {showLockAlert && (
+        <Dialog title="OOPS" onClose={() => setShowLockAlert(false)} alert>
+          <p className="modal-copy">Too many failed attempts. Please refresh the page to try again.</p>
+          <div className="ma">
+            <button className="btn" type="button" onClick={() => window.location.reload()} data-autofocus>
+              Refresh page
+            </button>
+          </div>
+        </Dialog>
+      )}
       {resetOpen && (
-        <div
-          ref={resetDialogRef}
-          className="modal show"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="reset-title"
-          onMouseDown={(event) => event.target === event.currentTarget && setResetOpen(false)}
-        >
-          <div className="clay" id="mbody">
-            <div className="mh">
-              <h2 id="reset-title">Reset password</h2>
-              <button
-                className="ib sm"
-                type="button"
-                onClick={() => setResetOpen(false)}
-                aria-label="Close"
-              >
-                ×
-              </button>
-            </div>
+        <Dialog title="Reset password" onClose={() => setResetOpen(false)} busy={resetPending}>
             <form onSubmit={sendReset}>
               <p className="modal-copy">
                 Enter your account email and we'll send you a reset link.
@@ -595,7 +576,7 @@ export default function Login({ onLogin }) {
                 Email
                 <input
                   className="clay-in"
-                  autoFocus
+                  data-autofocus
                   autoComplete="email"
                   required
                   type="email"
@@ -617,8 +598,7 @@ export default function Login({ onLogin }) {
                 </button>
               </div>
             </form>
-          </div>
-        </div>
+        </Dialog>
       )}
       <div role="status" aria-live="polite" id="toast" className={`clay${toast ? ' show' : ''}`}>
         {toast}

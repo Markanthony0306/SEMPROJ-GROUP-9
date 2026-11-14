@@ -1,52 +1,69 @@
-import { mkdtemp, readFile, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import sharp from 'sharp'
-import { createWorker } from 'tesseract.js'
 import { memberIdImageLimit, memberIdImageTypes } from '../../shared/memberIdTypes.js'
-import { faceDescriptorDistance } from '../lib/face-auth.js'
-import { readDocumentPortrait, readLiveFace } from './faceVerification.js'
+import { readDocumentPortrait } from './faceVerification.js'
 import { parseMemberId } from './memberIdParsing.js'
+import { MemberIdError } from './memberIdRecords.js'
 
 export class MemberIdImageError extends Error {}
 
-const englishModelUrl =
-  'https://cdn.jsdelivr.net/npm/@tesseract.js-data/eng@1.0.0/4.0.0_best_int/eng.traineddata.gz'
-let englishModel
-
-function loadEnglishModel() {
-  englishModel ||= (async () => {
-    if (process.env.ID_OCR_LANG_PATH) {
-      await readFile(join(process.env.ID_OCR_LANG_PATH, 'eng.traineddata.gz'))
-      return process.env.ID_OCR_LANG_PATH
+async function recognizeDocument(image) {
+  const endpoint = process.env.ID_PADDLE_OCR_URL || 'http://127.0.0.1:8080/ocr'
+  try {
+    const url = new URL(endpoint)
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error('Invalid OCR URL.')
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      redirect: 'error',
+      signal: AbortSignal.timeout(20_000),
+      body: JSON.stringify({
+        file: image.toString('base64'),
+        fileType: 1,
+        useDocOrientationClassify: false,
+        useDocUnwarping: false,
+        useTextlineOrientation: false,
+        visualize: false
+      })
+    })
+    if (!response.ok) throw new Error('OCR request failed.')
+    const payload = await response.json()
+    const result = payload?.result?.ocrResults?.[0]?.prunedResult
+    const { rec_texts: texts, rec_scores: scores, rec_polys: polygons } = result ?? {}
+    if (
+      !Array.isArray(texts) ||
+      !Array.isArray(scores) ||
+      !Array.isArray(polygons) ||
+      texts.length !== scores.length ||
+      texts.length !== polygons.length
+    ) {
+      throw new Error('Invalid OCR response.')
     }
-    const response = await fetch(englishModelUrl, { signal: AbortSignal.timeout(20_000) })
-    if (!response.ok) throw new Error('English OCR model could not be loaded.')
-    const data = new Uint8Array(await response.arrayBuffer())
-    if (data.length > 16 * 1024 * 1024 || data[0] !== 0x1f || data[1] !== 0x8b)
-      throw new Error('Invalid English OCR model.')
-    const directory = await mkdtemp(join(tmpdir(), 'fitpulse-ocr-'))
-    await writeFile(join(directory, 'eng.traineddata.gz'), data)
-    return directory
-  })().catch((error) => {
-    englishModel = undefined
-    throw error
-  })
-  return englishModel
-}
 
-async function createIdWorker() {
-  const langPath = await loadEnglishModel()
-  let rejectStartup
-  const startupError = new Promise((_, reject) => {
-    rejectStartup = reject
-  })
-  const startup = createWorker('eng', 1, {
-    langPath,
-    cacheMethod: 'none',
-    errorHandler: () => rejectStartup(new Error('The OCR worker failed.'))
-  })
-  return Promise.race([startup, startupError])
+    return texts.map((text, index) => {
+      const score = scores[index]
+      const polygon = polygons[index]
+      if (
+        typeof text !== 'string' ||
+        !Number.isFinite(score) ||
+        score < 0 ||
+        score > 1 ||
+        !Array.isArray(polygon) ||
+        polygon.length < 4 ||
+        !polygon.every(
+          (point) => Array.isArray(point) && point.length === 2 && point.every(Number.isFinite)
+        )
+      ) {
+        throw new Error('Invalid OCR line.')
+      }
+      return { text, confidence: Math.round(score * 100), polygon }
+    })
+  } catch {
+    throw new MemberIdError(
+      503,
+      'The server ID reader is unavailable. Try again or contact the gym admin.',
+      'ID_READER_UNAVAILABLE'
+    )
+  }
 }
 
 function checkQuality(data, width, height) {
@@ -75,24 +92,23 @@ function checkQuality(data, width, height) {
     )
 }
 
-function hasClippedText(tsv, width, height) {
-  return (tsv || '').split('\n').some((line) => {
-    const columns = line.split('\t')
-    if (columns[0] !== '5' || Number(columns[10]) < 60 || !/\p{L}{2}/u.test(columns[11] || ''))
-      return false
-    const [x, y, boxWidth, boxHeight] = columns.slice(6, 10).map(Number)
-    return x < 2 || y < 2 || x + boxWidth > width - 2 || y + boxHeight > height - 2
-  })
+function hasClippedText(lines, width, height) {
+  return lines.some(
+    ({ text, confidence, polygon }) =>
+      confidence >= 60 &&
+      /\p{L}{2}/u.test(text) &&
+      polygon.some(([x, y]) => x < 2 || y < 2 || x > width - 2 || y > height - 2)
+  )
 }
 
-export async function scanMemberId(image, mimeType, idType) {
+export async function scanMemberId(image, mimeType, idType, { front = true } = {}) {
   if (
     !Buffer.isBuffer(image) ||
     image.length === 0 ||
     image.length > memberIdImageLimit ||
     !memberIdImageTypes.includes(mimeType)
   ) {
-    throw new MemberIdImageError('Upload a JPG or PNG image up to 5 MB.')
+    throw new MemberIdImageError('Capture a JPG or PNG image up to 5 MB.')
   }
 
   let decoded
@@ -100,10 +116,10 @@ export async function scanMemberId(image, mimeType, idType) {
     const input = sharp(image, { limitInputPixels: 20_000_000, failOn: 'warning' })
     const metadata = await input.metadata()
     if (mimeType !== `image/${metadata.format}` || (metadata.pages || 1) > 1)
-      throw new MemberIdImageError('Upload a single, valid JPG or PNG image.')
+      throw new MemberIdImageError('Capture a single, valid JPG or PNG image.')
     if (
-      Math.min(metadata.width, metadata.height) < 360 ||
-      Math.max(metadata.width, metadata.height) < 560
+      Math.min(metadata.width, metadata.height) < 300 ||
+      Math.max(metadata.width, metadata.height) < 500
     )
       throw new MemberIdImageError('The image is too small. Retake it with the entire ID in frame.')
     decoded = await input
@@ -117,7 +133,7 @@ export async function scanMemberId(image, mimeType, idType) {
   } catch (error) {
     if (error instanceof MemberIdImageError) throw error
     throw new MemberIdImageError(
-      'The image could not be read. Retake the photo and upload a JPG or PNG.'
+      'The image could not be read. Rescan that side of the ID.'
     )
   }
   const {
@@ -133,51 +149,25 @@ export async function scanMemberId(image, mimeType, idType) {
     .toBuffer({ resolveWithObject: true })
   checkQuality(quality.data, quality.info.width, quality.info.height)
 
-  const portrait = await readDocumentPortrait({ data, width, height })
-  if (!portrait) {
+  const portrait = front ? await readDocumentPortrait({ data, width, height }) : null
+  if (front && !portrait) {
     throw new MemberIdImageError(
       'Could not find one clear, uncropped ID portrait. Retake the photo with all four edges visible.'
     )
   }
 
   const prepared = await rgb().greyscale().normalise().png().toBuffer()
-  const worker = await createIdWorker()
-  try {
-    const result = await worker.recognize(prepared, {}, { text: true, tsv: true })
-    if (hasClippedText(result.data.tsv, width, height))
-      throw new MemberIdImageError(
-        'Text appears cut off at the edge. Retake the photo with all four edges visible.'
-      )
-    const parsed = parseMemberId(idType, result.data)
-    if (parsed.lineCount < 3) {
-      throw new MemberIdImageError(
-        'Too little text was readable. Retake the photo without glare and include the entire ID.'
-      )
-    }
-    return { ...parsed, portrait }
-  } finally {
-    await worker.terminate()
+  const lines = await recognizeDocument(prepared)
+  if (hasClippedText(lines, width, height)) {
+    throw new MemberIdImageError(
+      'Text appears cut off at the edge. Retake the photo with all four edges visible.'
+    )
   }
-}
-
-export async function compareMemberIdFace(frames, actions, portrait, threshold) {
-  const live = await readLiveFace(frames, actions)
-  if (!live)
-    return {
-      status: 'needs_review',
-      score: null,
-      reason: 'The live gesture could not be confirmed.'
-    }
-  const distance = faceDescriptorDistance(portrait, live)
-  // This is an inverse distance score, not a probability of identity.
-  const score = Math.round(100 / (1 + distance))
-  if (distance <= threshold) return { status: 'verified', score, reason: null }
-  return {
-    status: distance > threshold + 0.25 ? 'rejected' : 'needs_review',
-    score,
-    reason:
-      distance > threshold + 0.25
-        ? 'The live face differs substantially from the ID portrait.'
-        : 'The face similarity is too close to the cutoff. Retake the scan or request admin review.'
+  const parsed = parseMemberId(idType, { lines })
+  if (front && parsed.lineCount < 3) {
+    throw new MemberIdImageError(
+      'Too little text was readable. Retake the photo without glare and include the entire ID.'
+    )
   }
+  return { ...parsed, portrait }
 }

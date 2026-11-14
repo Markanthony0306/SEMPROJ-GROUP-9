@@ -60,7 +60,7 @@ export default function ForgotPassword({ navigate }) {
             {pending && <Spinner />}
             {pending ? 'Sending...' : 'Send reset link'}
           </button>
-          <button className="btn ghost" type="button" onClick={() => navigate('login')}>
+          <button className="btn ghost cancel-button" type="button" onClick={() => navigate('login')}>
             Back to login
           </button>
         </form>

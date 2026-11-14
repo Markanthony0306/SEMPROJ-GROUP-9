@@ -1,6 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes } from 'node:crypto'
 import sharp from 'sharp'
-import { memberIdRejectedAttemptLimit } from '../../shared/memberIdTypes.js'
 import { assertUniqueFace, readDocumentPortrait } from './faceVerification.js'
 import { cacheFaceDescriptor, decryptFaceDescriptor } from '../lib/face-auth.js'
 import { memberIdFrontImage, MemberIdFileError } from './memberIdFiles.js'
@@ -10,7 +9,6 @@ export const memberIdTable = 'member_id_verifications'
 export const verificationUuid = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i
 export const memberIdProofColumns = 'has_documents,face_enrolled'
 const fileTable = 'member_id_verification_files'
-const rejectedEmailTable = 'member_id_rejected_emails'
 
 export class MemberIdError extends Error {
   constructor(status, message, code) {
@@ -18,28 +16,6 @@ export class MemberIdError extends Error {
     this.status = status
     this.code = code
   }
-}
-
-export const attemptLimitError = () =>
-  new MemberIdError(
-    409,
-    'Too many rejected attempts. Please contact the gym admin.',
-    'ID_ATTEMPT_LIMIT'
-  )
-
-export async function rejectedIdAttempts(supabase, email) {
-  const { data, error } = await supabase
-    .from(rejectedEmailTable)
-    .select('rejected_attempts')
-    .eq('email', email.trim().toLowerCase())
-    .maybeSingle()
-  if (error) throw error
-  return data?.rejected_attempts || 0
-}
-
-export async function checkIdAttemptLimit(supabase, email) {
-  if ((await rejectedIdAttempts(supabase, email)) >= memberIdRejectedAttemptLimit)
-    throw attemptLimitError()
 }
 
 function fileKey(key) {
@@ -114,21 +90,27 @@ export async function getMemberIdPortrait(supabase, memberId, key) {
   )
     throw unreadable()
 
+  return readStoredIdPortrait(supabase, proof.id, key)
+}
+
+export async function readStoredIdPortrait(supabase, id, key) {
+  const unreadable = () =>
+    new MemberIdError(422, 'The saved ID portrait could not be read. Retake the front photo.', 'ID_UNREADABLE')
   const { data, error } = await supabase
     .from(fileTable)
     .select('side,mime_type,encrypted_file')
-    .eq('verification_id', proof.id)
+    .eq('verification_id', id)
     .in('side', ['front', 'document'])
     .maybeSingle()
   if (error) throw error
   if (typeof data?.encrypted_file !== 'string') throw unreadable()
   if (!key) throw new Error('ID encryption is unavailable.')
   const digest = createHash('sha256').update(data.encrypted_file).digest('hex')
-  const version = JSON.stringify([proof.id, data.side, data.mime_type, digest])
+  const version = JSON.stringify([id, data.side, data.mime_type, digest])
   const portrait = await cacheFaceDescriptor(key, version, async () => {
     let file
     try {
-      file = unprotectFile(key, proof.id, data)
+      file = unprotectFile(key, id, data)
     } catch {
       throw unreadable()
     }
@@ -177,8 +159,7 @@ export async function idNumberInUse(supabase, fingerprint) {
   return Boolean(data)
 }
 
-export async function requireMemberIdApproval(supabase, actor, input, verificationId) {
-  await checkIdAttemptLimit(supabase, input.email)
+export async function requireMemberIdProof(supabase, actor, input, verificationId) {
   const required = () =>
     new MemberIdError(
       409,
@@ -189,7 +170,7 @@ export async function requireMemberIdApproval(supabase, actor, input, verificati
   const { data, error } = await supabase
     .from(memberIdTable)
     .select(
-      'id,member_id,opened_by,applicant_name,applicant_email,verification_status,expiry_date,id_fingerprint,' +
+      'id,member_id,opened_by,applicant_name,applicant_email,verification_status,expiry_date,id_fingerprint,document_passed,' +
         memberIdProofColumns
     )
     .eq('id', verificationId)
@@ -200,8 +181,10 @@ export async function requireMemberIdApproval(supabase, actor, input, verificati
     data.member_id ||
     !data.has_documents ||
     !data.face_enrolled ||
-    !['awaiting_face', 'verified', 'approved'].includes(data.verification_status) ||
-    (actor.role !== 'admin' && data.opened_by !== actor.id) ||
+    !data.document_passed ||
+    data.verification_status !== 'awaiting_face' ||
+    actor.role !== 'admin' ||
+    data.opened_by !== actor.id ||
     data.applicant_name !== input.name ||
     data.applicant_email !== input.email ||
     (data.expiry_date && data.expiry_date < manilaDate())

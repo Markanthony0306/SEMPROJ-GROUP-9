@@ -8,11 +8,10 @@
   --ui-duration: 200ms;
   --ui-action-orange: #b45309;
   --ui-error: #ab2633;
-  --ui-cancel-text: #8c3905;
+  --ui-action-red: #d62828;
 }
 [data-theme='dark'] {
   --ui-error: #ff98a0;
-  --ui-cancel-text: #ffb465;
 }
 .app .field,
 #login .field,
@@ -66,20 +65,6 @@
 .app .btn:not(.ghost, .danger),
 #login .btn:not(.ghost, .danger) {
   background-image: linear-gradient(145deg, var(--ui-action-orange), var(--red));
-}
-#login .forgot-link {
-  color: var(--ui-cancel-text);
-}
-.app .cancel-button,
-#login .cancel-button {
-  transition: transform var(--ui-duration) ease, background-color var(--ui-duration) ease,
-    color var(--ui-duration) ease;
-}
-.app .cancel-button:hover:not(:disabled),
-#login .cancel-button:hover:not(:disabled) {
-  transform: translateY(-2px);
-  background-color: var(--card2);
-  color: var(--ui-cancel-text);
 }
 #login .login-face-back.cancel-button {
   padding-inline: var(--ui-space-2);
@@ -260,8 +245,7 @@
     inset -2px -2px 5px var(--il);
 }
 .app .experience-dialog,
-.app #mbody,
-#login #mbody {
+#login .experience-dialog {
   width: min(550px, 100%);
   padding: clamp(var(--ui-space-3), 4vw, var(--ui-space-4));
   max-height: calc(100svh - 32px);
@@ -278,9 +262,7 @@
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.experience-dialog .mh .ib {
-  flex-shrink: 0;
-}
+
 .experience-dialog .form-error {
   margin-bottom: 16px;
   padding: 12px;
@@ -554,43 +536,6 @@
   }
 }
 @media (max-width: 760px) {
-  .app:not(.admin-app) .table-wrap {
-    overflow: visible;
-    border: 0;
-    border-radius: 0;
-  }
-  .app:not(.admin-app) .data-table table {
-    min-width: 0;
-  }
-  .app:not(.admin-app) .data-table tbody tr {
-    margin-bottom: 12px;
-    padding: 12px 16px;
-    border: 1px solid var(--id);
-    border-radius: 18px;
-    background: var(--card2);
-  }
-  .app:not(.admin-app) .data-table td,
-  .app:not(.admin-app) .data-table td:first-child,
-  .app:not(.admin-app) .data-table td:last-child,
-  .app:not(.admin-app) .data-table tbody tr:nth-child(even) td {
-    border-radius: 0;
-    padding: 9px 0;
-    background: transparent;
-    border: 0;
-    min-width: 0;
-    max-width: none;
-    text-align: left;
-    white-space: normal;
-  }
-  .app:not(.admin-app) .data-table td + td {
-    border-top: 1px solid var(--id);
-  }
-  .app:not(.admin-app) .data-table .table-cell-actions {
-    justify-content: flex-start;
-  }
-  .app:not(.admin-app) .data-table tbody tr:hover td {
-    background: transparent;
-  }
   .app:not(.admin-app) .experience-dialog {
     padding: 22px;
   }
@@ -648,5 +593,116 @@
     animation: none;
     transition: none;
     transform: none;
+  }
+}
+
+body:has(.experience-modal[open]) {
+  overflow: hidden;
+}
+
+dialog.experience-modal[open] {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  overscroll-behavior: contain;
+}
+
+dialog.experience-modal::backdrop {
+  background: rgba(0, 20, 35, 0.68);
+  backdrop-filter: blur(16px);
+}
+
+dialog.experience-modal:has(> .account-delete-dialog) {
+  --account-delete-overlay-color: 5, 15, 30;
+  --account-delete-overlay-opacity: 0.9;
+}
+
+dialog.experience-modal:has(> .account-delete-dialog)::backdrop {
+  background: rgba(var(--account-delete-overlay-color), var(--account-delete-overlay-opacity));
+}
+
+.admin-app .account-deletion-toast {
+  position: fixed;
+  inset-inline-end: 16px;
+  inset-block-end: 16px;
+  z-index: 45;
+  max-width: calc(100% - 32px);
+  box-shadow: 4px 4px 14px var(--sd);
+}
+
+.app .experience-modal .dialog-close,
+#login .experience-modal .dialog-close {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--id);
+  background: var(--card2);
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.app .experience-modal .dialog-close:is(:hover, :focus-visible):not(:disabled),
+#login .experience-modal .dialog-close:is(:hover, :focus-visible):not(:disabled) {
+  background: var(--ui-action-red);
+  border-color: var(--ui-action-red);
+  color: #fff;
+}
+
+.app :is(.cancel-button, .face-help-toggle):hover:not(:disabled),
+.app .dashboard-feedback button:hover:not(:disabled),
+#login :is(.cancel-button, .forgot-link, .face-help-toggle):hover:not(:disabled) {
+  color: var(--ui-error);
+}
+
+.app .experience-modal .dialog-close:focus-visible,
+#login .experience-modal .dialog-close:focus-visible,
+.app :is(.cancel-button, .face-help-toggle):focus-visible,
+.app .dashboard-feedback button:focus-visible,
+#login :is(.cancel-button, .forgot-link, .face-help-toggle):focus-visible {
+  outline: 2px solid var(--ui-action-red);
+  outline-offset: 3px;
+}
+
+.app aside .nav {
+  border-radius: 16px;
+}
+
+.app .settings-cards {
+  align-items: start;
+  gap: 16px;
+}
+
+.app .settings-cards > .card {
+  padding: clamp(14px, 2vw, 20px);
+}
+
+.app .settings-cards .mf {
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.app .data-table .table-wrap {
+  max-height: min(32rem, 65vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.app .data-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--card2);
+}
+
+@media (max-width: 760px) {
+  .app .data-table table {
+    min-width: 36rem;
   }
 }

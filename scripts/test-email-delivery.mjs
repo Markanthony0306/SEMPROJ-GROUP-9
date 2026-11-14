@@ -47,7 +47,7 @@ test('SMTP rejection cannot be reported as email acceptance', () => {
   assert.ok(assertEmailAccepted({ accepted: ['member@fixture.test'], messageId: 'fixture' }))
 })
 
-test('all four email variants compile real MIME messages, including the local logo, without sending', async () => {
+test('email variants compile real MIME messages without sending', async () => {
   const transport = nodemailer.createTransport({ streamTransport: true, buffer: true })
   const messages = [
     welcomeEmail({
@@ -81,8 +81,10 @@ test('all four email variants compile real MIME messages, including the local lo
       })
       assert.ok(Buffer.isBuffer(result.message))
       const mime = result.message.toString()
-      assert.ok(mime.includes('Content-ID: <fitpulse-brand>'))
-      assert.ok(mime.includes('image/png'))
+      const reminder = message.subject === 'Membership Expiry Reminder'
+      assert.equal(mime.includes('Content-ID: <fitpulse-brand>'), !reminder)
+      if (reminder) assert.match(message.text, /^Dear Test Member, your FitPulse membership expire[sd] on /)
+      else assert.ok(mime.includes('image/png'))
       assert.ok(mime.includes('text/plain') && mime.includes('text/html'))
     }
   } finally {

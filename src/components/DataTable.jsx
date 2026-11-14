@@ -20,9 +20,7 @@ export default function DataTable({
   const sortFieldId = useId()
   const sortOrderId = useId()
   const [query, setQuery] = useState('')
-  const [page, setPage] = useState(0)
   const [sort, setSort] = useState({ index: null, ascending: true })
-  const pageSize = 10
   const rows = useMemo(() => {
     const result = empty
       ? []
@@ -48,9 +46,6 @@ export default function DataTable({
       })
     return result
   }, [children, empty, headings, query, sort])
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
-  const currentPage = Math.min(page, pageCount - 1)
-  const visibleRows = rows.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
   return (
     <div className="data-table">
       <div className="table-toolbar">
@@ -62,10 +57,7 @@ export default function DataTable({
               type="search"
               value={query}
               placeholder="Type to filter..."
-              onChange={(event) => {
-                setQuery(event.target.value)
-                setPage(0)
-              }}
+              onChange={(event) => setQuery(event.target.value)}
             />
           </label>
         )}
@@ -79,7 +71,6 @@ export default function DataTable({
                 index: event.target.value === 'original' ? null : Number(event.target.value),
                 ascending: sort.ascending
               })
-              setPage(0)
             }}
           >
             <option value="original">Original order</option>
@@ -102,7 +93,6 @@ export default function DataTable({
                 ...current,
                 ascending: event.target.value === 'ascending'
               }))
-              setPage(0)
             }}
           >
             <option value="ascending">Ascending</option>
@@ -113,7 +103,7 @@ export default function DataTable({
           {rows.length} record{rows.length === 1 ? '' : 's'}
         </span>
       </div>
-      <div className="table-wrap">
+      <div className="table-wrap" role="region" aria-label={caption} tabIndex={0}>
         <table role="table">
           <caption className="sr-only">{caption}</caption>
           <thead>
@@ -141,7 +131,6 @@ export default function DataTable({
                       type="button"
                       onClick={() => {
                         setSort({ index, ascending: sort.index === index ? !sort.ascending : true })
-                        setPage(0)
                       }}
                     >
                       {heading}
@@ -155,8 +144,8 @@ export default function DataTable({
             </tr>
           </thead>
           <tbody>
-            {visibleRows.length ? (
-              visibleRows.map((row) =>
+            {rows.length ? (
+              rows.map((row) =>
                 cloneElement(
                   row,
                   { role: 'row' },
@@ -193,30 +182,6 @@ export default function DataTable({
             )}
           </tbody>
         </table>
-      </div>
-      <div className="table-pagination">
-        <span aria-live="polite">
-          {rows.length
-            ? `${currentPage * pageSize + 1}–${Math.min((currentPage + 1) * pageSize, rows.length)} of ${rows.length} records`
-            : '0 records'}
-          {' · '}Page {currentPage + 1} of {pageCount}
-        </span>
-        <div>
-          <button
-            type="button"
-            disabled={currentPage === 0}
-            onClick={() => setPage(currentPage - 1)}
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            disabled={currentPage + 1 >= pageCount}
-            onClick={() => setPage(currentPage + 1)}
-          >
-            Next
-          </button>
-        </div>
       </div>
     </div>
   )

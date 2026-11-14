@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import faceApi from 'face-api.js'
+import sharp from 'sharp'
 import {
   FACE_EVIDENCE_COUNT, FACE_FRAME_BYTES, FACE_FRAME_HEIGHT, FACE_FRAME_WIDTH,
   createFaceGestureSequence, estimateFaceYaw, faceActions
@@ -8,6 +9,7 @@ import {
 import { encryptFaceDescriptor, FACE_MATCH_THRESHOLD, facesMatch } from '../server/lib/face-auth.js'
 import { faceVerificationRoutes } from '../server/routes/faceVerification.js'
 import { memberIdVerificationRoutes } from '../server/routes/memberIdVerification.js'
+import { saveMemberIdFiles } from '../server/services/memberIdRecords.js'
 import { passwordLoginHandler } from '../server/routes/passwordLogin.js'
 import {
   createFaceAttemptLock, createFaceChallenges, readLiveFace, saveFaceEnrollment
@@ -94,15 +96,20 @@ test('admin skips Terms, member keeps Terms, and the API gates sessions on live 
   const size = new faceApi.Dimensions(FACE_FRAME_WIDTH, FACE_FRAME_HEIGHT)
   const box = new faceApi.Box({ x: 0.2, y: 0.12, width: 0.56, height: 0.76 })
   const detected = new faceApi.FaceDetection(0.97, box, size)
+  const closer = new faceApi.FaceDetection(0.97, new faceApi.Box({ x: 0.13, y: 0.04, width: 0.72, height: 0.92 }), size)
   let mode = 'clear'
   let activeGestures = []
   let frameIndex = 0
   let identity = 0.2
-  t.mock.method(tinyFaceDetector, 'locateFaces', async () => {
+  let useCloseShot = false
+  t.mock.method(tinyFaceDetector, 'locateFaces', async (_tensor, options) => {
     if (mode === 'error') throw new Error('Synthetic model failure')
     if (mode === 'multiple') return [detected, detected]
     if (mode === 'unclear') return [new faceApi.FaceDetection(0.6, box, size)]
     frameIndex += 1
+    if (options.inputSize === 608)
+      return [new faceApi.FaceDetection(0.97, box, new faceApi.Dimensions(320, 240))]
+    if (useCloseShot && frameIndex === FACE_EVIDENCE_COUNT + 1) return [closer]
     return [detected]
   })
   t.mock.method(faceLandmark68TinyNet, 'detectLandmarks', async () =>
@@ -146,6 +153,7 @@ test('admin skips Terms, member keeps Terms, and the API gates sessions on live 
   const newCase = {
     id: 'a324e290-015b-4fb3-9d8a-df43e7fb0982',
     member_id: null, revision: 1, applicant_email: 'new@fixture.test',
+    opened_by: admin.id, document_passed: true,
     verification_status: 'awaiting_face', has_documents: true, face_enrolled: false, reasons: []
   }
   const tables = {
@@ -160,7 +168,7 @@ test('admin skips Terms, member keeps Terms, and the API gates sessions on live 
     ],
     face_enrollments: [adminEnrollment, memberEnrollment],
     member_id_verifications: [newCase],
-    member_id_rejected_emails: []
+    member_id_verification_files: []
   }
   const supabase = {
     from(table) {
@@ -176,6 +184,10 @@ test('admin skips Terms, member keeps Terms, and the API gates sessions on live 
         },
         is(key, value) {
           return this.eq(key, value)
+        },
+        in(key, values) {
+          rows = rows.filter((row) => values.includes(row[key]))
+          return this
         },
         update(value) {
           changes = value
@@ -204,6 +216,15 @@ test('admin skips Terms, member keeps Terms, and the API gates sessions on live 
       }
     },
     async rpc(name, args) {
+      if (name === 'save_fitpulse_member_id_files') {
+        tables.member_id_verification_files = args.p_files.map((file) => ({
+          verification_id: args.p_id,
+          side: file.side,
+          mime_type: file.mime_type,
+          encrypted_file: '\\x' + Buffer.from(file.ciphertext, 'base64').toString('hex')
+        }))
+        return { data: true }
+      }
       assert.equal(name, 'save_fitpulse_face_enrollment')
       assert.equal(args.p_user_id, admin.id)
       assert.deepEqual(args.p_checked_ids, ['enrollment-a', 'enrollment-m'])
@@ -262,7 +283,7 @@ test('admin skips Terms, member keeps Terms, and the API gates sessions on live 
     }
   })
   const memberRouter = memberIdVerificationRoutes({
-    supabase, challenges, faceKey: key, authenticate: pass, rateLimit: () => pass,
+    supabase, challenges, key, faceKey: key, authenticate: pass, rateLimit: () => pass,
     requireRole: (...roles) => (req, res, next) =>
       roles.includes(req.user.role) ? next() : res.status(403).json({})
   })
@@ -300,12 +321,13 @@ test('admin skips Terms, member keeps Terms, and the API gates sessions on live 
   }
   const login = (account) =>
     request('/auth/login', { email: account.email, password: 'fixture-password' })
-  const frames = Array.from({ length: FACE_EVIDENCE_COUNT }, (_, seed) => {
+  const allFrames = Array.from({ length: FACE_EVIDENCE_COUNT + 1 }, (_, seed) => {
     const bytes = Buffer.alloc(FACE_FRAME_BYTES)
     for (let index = 0; index < bytes.length; index += 1)
       bytes[index] = 100 + (index % 17) * 4 + seed
     return bytes.toString('base64')
   })
+  const frames = allFrames.slice(0, FACE_EVIDENCE_COUNT)
   const verify = (challenge, sample = frames) => {
     activeGestures = gestureFrames(challenge.actions)
     frameIndex = 0
@@ -425,19 +447,30 @@ test('admin skips Terms, member keeps Terms, and the API gates sessions on live 
 
   const enrollPath = '/admin/id-verifications/:id/face'
   const caseOptions = { params: { id: newCase.id }, user: admin }
-  const enroll = async (reorder = false) => {
+  const png = await sharp({ create: { width: 320, height: 240, channels: 3, background: '#aaa' } }).png().toBuffer()
+  await saveMemberIdFiles(supabase, key, newCase.id, admin.id, 'student_id', [
+    { side: 'front', mimeType: 'image/png', bytes: png }
+  ], newCase.revision)
+  const enroll = async ({ reorder = false, closer = true } = {}) => {
     const capture = await request(enrollPath + '/challenge', {}, caseOptions)
     activeGestures = gestureFrames(reorder ? [...capture.actions].reverse() : capture.actions)
     frameIndex = 0
-    return request(enrollPath, { challengeToken: capture.challengeToken, frames }, caseOptions)
+    useCloseShot = closer
+    return request(enrollPath, { challengeToken: capture.challengeToken, frames: allFrames }, caseOptions)
   }
-  assert.equal((await enroll(true)).code, 'FACE_LIVENESS_FAILED')
+  assert.equal((await enroll({ reorder: true })).code, 'FACE_LIVENESS_FAILED')
+  assert.equal((await enroll({ closer: false })).code, 'FACE_TOO_FAR')
   assert.equal((await enroll()).code, 'FACE_ALREADY_ENROLLED')
   assert.equal(newCase.face_enrolled, false)
   identity = -0.45
+  assert.equal((await enroll()).code, 'FACE_MISMATCH')
+  // Save a new copy so the ID portrait cache recalculates the test descriptor.
+  await saveMemberIdFiles(supabase, key, newCase.id, admin.id, 'student_id', [
+    { side: 'front', mimeType: 'image/png', bytes: png }
+  ], newCase.revision)
   const staged = await enroll()
   assert.equal(staged.status, 200)
-  assert.equal(staged.verification.faceEnrolled, true)
+  assert.equal(staged.faceEnrolled, true)
   assert.ok(newCase.staged_face_encrypted)
   assert.ok(!JSON.stringify(staged).includes(newCase.staged_face_encrypted))
 })

@@ -1,186 +1,86 @@
-import { useEffect, useId, useRef, useState } from 'react'
-import { memberIdRejectedAttemptLimit, memberIdTypes } from '../../../shared/memberIdTypes'
+import { useEffect, useRef, useState } from 'react'
+import { namesMatch } from '../../../shared/memberIdParsing.js'
+import { memberIdTypes } from '../../../shared/memberIdTypes'
 import { apiRequest } from '../../utils/api'
-import { validateMemberIdFile } from '../../utils/memberIdUpload'
+import { readMemberId } from '../../utils/readMemberId'
 import Dialog from '../Dialog'
 import FaceCapture from '../FaceCapture'
 import Spinner from '../Spinner'
+import MemberIdCamera from './MemberIdCamera'
 import './MemberIdVerification.css'
 
-export const idVerificationPath = '/admin/id-verifications'
+const idVerificationPath = '/admin/id-verifications'
+const stepTitles = [
+  'Member details',
+  'Scan front and back',
+  'Review ID details',
+  'Face check · Normal view',
+  'Face check · Close-up'
+]
+const stepLabels = ['Details', 'ID scan', 'Review', 'Face', 'Close-up']
+const reviewFields = [
+  ['name', 'Full name'],
+  ['idNumber', 'ID number'],
+  ['birthDate', 'Birth date'],
+  ['idType', 'ID type'],
+  ['expiryDate', 'Expiry date'],
+  ['address', 'Address']
+]
 
-export function idVerificationError(error) {
-  if (error.status === 404 && error.message === 'Request failed (404).') {
-    return 'This FitPulse API is missing the ID verification routes. Restart it with the current code.'
-  }
-  return error.message
-}
-
-export const idVerificationLabels = {
-  awaiting_document: 'Waiting for ID',
-  reading_document: 'Reading ID',
-  awaiting_face: 'ID saved',
-  checking_face: 'Checking face',
-  verified: 'Verified',
-  approved: 'Approved by administrator',
-  rejected: 'Rejected',
-  needs_review: 'Needs manual review'
-}
-
-export function IdVerificationResult({ verification }) {
+function WizardFooter({ note, children }) {
   return (
-    <section className="id-check-result" aria-live="polite">
-      <strong>{idVerificationLabels[verification.status]}</strong>
-      {verification.faceMatchScore != null && (
-        <p>Face similarity score {verification.faceMatchScore}/100</p>
-      )}
-      {verification.reasons?.length > 0 && (
-        <ul>
-          {verification.reasons.map((reason) => (
-            <li key={reason}>{reason}</li>
-          ))}
-        </ul>
-      )}
-      {verification.reviewNotes && <p>Review notes: {verification.reviewNotes}</p>}
-      {verification.rejectedAttempts > 0 && (
-        <p>
-          {verification.remainingAttempts
-            ? `${verification.remainingAttempts} ${verification.remainingAttempts === 1 ? 'attempt' : 'attempts'} remaining.`
-            : 'Too many rejected attempts. Please contact the gym admin.'}
-        </p>
-      )}
-    </section>
+    <div className="ma id-check-footer">
+      {note && <p className="form-help">{note}</p>}
+      {children}
+    </div>
   )
 }
 
-const uploadSlots = {
-  front: { label: 'Front of ID', accept: '.jpg,.jpeg,.png' },
-  back: { label: 'Back of ID', accept: '.jpg,.jpeg,.png' },
-  document: { label: 'Document with both sides', accept: '.pdf,.doc,.docx' }
-}
-
-function IdUploadSlot({ side, disabled, onFile }) {
-  const { label, accept } = uploadSlots[side]
-  const [file, setFile] = useState(null)
+function IdPreview({ file, label }) {
   const [preview, setPreview] = useState('')
-  const [error, setError] = useState('')
-  const [checking, setChecking] = useState(false)
-  const selection = useRef(0)
-  const errorId = useId()
-
-  useEffect(
-    () => () => {
-      selection.current += 1
-    },
-    []
-  )
 
   useEffect(() => {
-    if (!file || side === 'document') return
+    if (!file) return
     const url = URL.createObjectURL(file)
     setPreview(url)
     return () => URL.revokeObjectURL(url)
-  }, [file, side])
+  }, [file])
 
-  async function selectFile(selected) {
-    if (disabled || !selected) return
-    const current = ++selection.current
-    setFile(null)
-    setPreview('')
-    setError('')
-    setChecking(true)
-    onFile(side, null)
-    try {
-      const validated = await validateMemberIdFile(selected, side)
-      if (selection.current !== current) return
-      setFile(validated)
-      onFile(side, validated)
-    } catch (cause) {
-      if (selection.current === current) setError(cause.message)
-    } finally {
-      if (selection.current === current) setChecking(false)
-    }
-  }
-
-  return (
-    <div
-      className="id-check-drop"
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
-        event.preventDefault()
-        selectFile(event.dataTransfer.files[0])
-      }}
-    >
-      <label className="field">
-        {label}
-        <input
-          type="file"
-          accept={accept}
-          disabled={disabled}
-          aria-invalid={Boolean(error)}
-          aria-describedby={error ? errorId : undefined}
-          onChange={(event) => {
-            selectFile(event.target.files[0])
-            event.target.value = ''
-          }}
-        />
-      </label>
-      {checking && (
-        <p className="id-check-progress" role="status">
-          <Spinner /> Checking file…
-        </p>
-      )}
-      {error && (
-        <p id={errorId} className="form-error" role="alert">
-          {error}
-        </p>
-      )}
-      {file && <p className="form-help">{file.name}</p>}
-      {preview && <img src={preview} alt={`${label} preview`} />}
-    </div>
-  )
+  return preview && <img src={preview} alt={label} />
 }
 
 export default function MemberIdWizard({
   token,
   plans,
   planOptionLabel,
-  initialCase,
-  canEnrollFace,
   pending,
   error,
   onClose,
   onCreate
 }) {
   const [step, setStep] = useState(1)
+  const [scanSide, setScanSide] = useState('front')
   const [details, setDetails] = useState({
-    name: initialCase?.name || '',
-    email: initialCase?.email || '',
+    name: '',
+    email: '',
     phone: '',
     plan: '',
     method: 'Cash',
     recordPayment: false
   })
-  const [verification, setVerification] = useState(initialCase || null)
-  const [idType, setIdType] = useState(initialCase?.idType || '')
-  const [consent, setConsent] = useState(Boolean(initialCase))
-  const [uploadMode, setUploadMode] = useState('images')
-  const [files, setFiles] = useState({})
-  const [uploadVersion, setUploadVersion] = useState(0)
+  const [idType, setIdType] = useState('')
+  const [consent, setConsent] = useState(false)
+  const [captures, setCaptures] = useState({})
+  const [review, setReview] = useState({})
+  const [reviewEdits, setReviewEdits] = useState({})
+  const [readerIssue, setReaderIssue] = useState('')
   const [working, setWorking] = useState('')
-  const [savingFace, setSavingFace] = useState(false)
-  const [retakingFace, setRetakingFace] = useState(false)
+  const [faceSaved, setFaceSaved] = useState(false)
   const [issue, setIssue] = useState('')
+  const verificationId = useRef(null)
   const heading = useRef(null)
   const actionLock = useRef(false)
-  const busy = pending || savingFace || Boolean(working)
-  const endpoint = verification ? `${idVerificationPath}/${verification.id}` : null
-  const remainingAttempts = verification?.remainingAttempts ?? memberIdRejectedAttemptLimit
-  const canUpload = remainingAttempts > 0 && verification?.status !== 'needs_review'
-  const sides = uploadMode === 'images' ? ['front', 'back'] : ['document']
-  const readyToUpload = canUpload && consent && idType && sides.every((side) => files[side])
-  const hasSavedId = verification?.canEnroll
-  const canResume = hasSavedId && Object.keys(files).length === 0
+  const busy = pending || Boolean(working)
 
   useEffect(() => {
     heading.current?.focus()
@@ -199,85 +99,131 @@ export default function MemberIdWizard({
     try {
       return await callback()
     } catch (cause) {
-      setIssue(idVerificationError(cause))
+      setIssue(cause.message)
     } finally {
       setWorking('')
       actionLock.current = false
     }
   }
 
-  function clearUploads() {
-    setFiles({})
-    setUploadVersion((value) => value + 1)
+  function discardDraft() {
+    const id = verificationId.current
+    verificationId.current = null
+    if (id)
+      void apiRequest(`${idVerificationPath}/${id}/draft`, { token, method: 'DELETE' }).catch(
+        () => {}
+      )
   }
 
-  function submitDocument(event) {
+  function closeWizard() {
+    discardDraft()
+    onClose()
+  }
+
+  function chooseId(event) {
     event.preventDefault()
-    if (canResume) {
-      setIssue('')
-      setStep(2)
-      return
-    }
-    if (!readyToUpload) return
-    void run('Checking the ID files…', async () => {
-      let current = verification
-      if (!current) {
+    if (!consent || !idType) return
+    discardDraft()
+    setCaptures({})
+    setReview({})
+    setReviewEdits({})
+    setReaderIssue('')
+    setIssue('')
+    setScanSide('front')
+    setStep(2)
+  }
+
+  async function readCaptures(next) {
+    await run('Reading both sides in your browser…', async () => {
+      setReaderIssue('')
+      try {
+        setReview(await readMemberId(idType, next.front.file, next.back.file))
+      } catch {
+        setReview({})
+        setReaderIssue(
+          'The browser could not read this ID. Retry the reader or enter the details for review.'
+        )
+      }
+      setStep(3)
+    })
+  }
+
+  function captureSide(file, fingerprint) {
+    const next = { ...captures, [scanSide]: { file, fingerprint } }
+    setCaptures(next)
+    if (next.front && next.back) void readCaptures(next)
+    else setScanSide('back')
+  }
+
+  function rescanSide(side) {
+    setCaptures((current) => ({ ...current, [side]: null }))
+    setReviewEdits({})
+    setIssue('')
+    setScanSide(side)
+    setStep(2)
+  }
+
+  function verifyDocument(event) {
+    event.preventDefault()
+    if (!captures.front || !captures.back) return
+    void run('Verifying both sides of the ID…', async () => {
+      if (!verificationId.current) {
         const result = await apiRequest(idVerificationPath, {
           token,
           method: 'POST',
           body: JSON.stringify({ ...details, consent: true })
         })
-        current = result.verification
-        setVerification(current)
-        if (!current.remainingAttempts || current.status === 'needs_review') return
+        verificationId.current = result.verification.id
       }
       const body = new FormData()
-      sides.forEach((side) => body.append(side, files[side]))
-      const result = await apiRequest(
-        `${idVerificationPath}/${current.id}/document?type=${encodeURIComponent(idType)}`,
+      body.append('front', captures.front.file)
+      body.append('back', captures.back.file)
+      await apiRequest(
+        `${idVerificationPath}/${verificationId.current}/document?type=${encodeURIComponent(idType)}`,
         { token, method: 'POST', body }
       )
-      clearUploads()
-      setVerification(result.verification)
-      if (result.verification.canEnroll) setStep(2)
+      setStep(4)
     })
   }
 
+  const faceEndpoint = () => `${idVerificationPath}/${verificationId.current}/face`
+  const finishCreation = () => onCreate({ ...details, verificationId: verificationId.current })
+
   async function submitFace(capture) {
-    setSavingFace(true)
+    setWorking('Verifying the member’s face…')
     try {
-      const result = await apiRequest(endpoint + '/face', {
-        token,
-        method: 'POST',
-        body: JSON.stringify(capture)
-      })
-      setVerification(result.verification)
-      setRetakingFace(false)
-      return result.verification.faceEnrolled
+      await apiRequest(faceEndpoint(), { token, method: 'POST', body: JSON.stringify(capture) })
+      setFaceSaved(true)
+      return await finishCreation()
     } finally {
-      setSavingFace(false)
+      setWorking('')
     }
   }
 
-  const refreshResult = () =>
-    run('Refreshing the ID review…', async () => {
-      const result = await apiRequest(endpoint, { token })
-      setVerification(result.verification)
-    })
-
-  const requestReview = () =>
-    run('Sending to the review queue…', async () => {
-      const result = await apiRequest(endpoint + '/request-review', { token, method: 'POST' })
-      setVerification(result.verification)
-      setStep(1)
-    })
-
   return (
-    <Dialog title="Create Member Account" onClose={onClose} busy={busy} className="id-check-dialog">
+    <Dialog
+      title="Create member account"
+      onClose={closeWizard}
+      busy={busy}
+      className="id-check-dialog"
+    >
       <div className="mf id-check-wizard">
-        <p className="form-help id-check-step">Step {step} of 2</p>
+        <p className="form-help id-check-step">
+          Step {step} of {stepTitles.length} · {stepTitles[step - 1]}
+        </p>
+        <ol className="id-check-steps" aria-label="Member creation progress">
+          {stepLabels.map((label, index) => (
+            <li
+              key={label}
+              className={index + 1 < step ? 'complete' : undefined}
+              aria-current={index + 1 === step ? 'step' : undefined}
+            >
+              {label}
+            </li>
+          ))}
+        </ol>
         <h3 ref={heading} tabIndex={-1}>
-          {step === 1 ? 'Member details and ID verification' : 'Face enrollment'}
+          {step === 2 ? 'Scan the member’s ID' : stepTitles[step - 1]}
         </h3>
         {(issue || error) && (
           <p className="form-error" role="alert">
@@ -290,7 +236,7 @@ export default function MemberIdWizard({
           </div>
         )}
         {step === 1 && (
-          <form className="mf" onSubmit={submitDocument}>
+          <form className="mf" onSubmit={chooseId}>
             <fieldset className="modal-fields id-check-member-details" disabled={busy}>
               <label className="field">
                 Full name
@@ -299,7 +245,6 @@ export default function MemberIdWizard({
                   name="name"
                   value={details.name}
                   onChange={changeField}
-                  readOnly={Boolean(verification)}
                   autoComplete="name"
                   required
                   maxLength={100}
@@ -325,7 +270,6 @@ export default function MemberIdWizard({
                   autoComplete="email"
                   value={details.email}
                   onChange={changeField}
-                  readOnly={Boolean(verification)}
                   required
                 />
               </label>
@@ -350,215 +294,278 @@ export default function MemberIdWizard({
               </label>
             </fieldset>
             <p className="form-help">Confirm eligibility before choosing the Student plan.</p>
-            <section className="mf id-check-section" aria-label="Payment">
-              <fieldset className="modal-fields id-check-member-details" disabled={busy}>
-                <label className="field">
-                  Payment method
-                  <select
-                    className="clay-in"
-                    name="method"
-                    value={details.method}
-                    onChange={changeField}
-                  >
-                    <option>Cash</option>
-                    <option>GCash</option>
-                  </select>
-                </label>
-                <label className="set id-check-consent id-check-payment">
-                  <input
-                    type="checkbox"
-                    name="recordPayment"
-                    checked={details.recordPayment}
-                    onChange={changeField}
-                  />
-                  <span>Payment already received</span>
-                </label>
-              </fieldset>
-              <p className="form-help">
-                Check payment only after receiving it. A temporary password will be shown once.
-              </p>
-            </section>
-            {verification && <IdVerificationResult verification={verification} />}
-            {canUpload && (
-              <section className="id-check-section id-check-upload mf" aria-label="Photo ID">
-                <h4>Photo ID</h4>
-                <p className="form-help">
-                  Upload both sides. FitPulse stores the ID and uses the portrait to confirm the
-                  member’s identity when they sign in.
-                </p>
-                <label className="set id-check-consent">
-                  <input
-                    type="checkbox"
-                    checked={consent}
-                    disabled={busy || Boolean(verification)}
-                    onChange={(event) => {
-                      setConsent(event.target.checked)
-                      if (!event.target.checked) clearUploads()
-                    }}
-                  />
-                  <span>The member has agreed to the ID and face check.</span>
-                </label>
-                <label className="field">
-                  ID type
-                  <select
-                    className="clay-in"
-                    value={idType}
-                    disabled={busy}
-                    onChange={(event) => setIdType(event.target.value)}
-                    required
-                  >
-                    <option value="" disabled>
-                      Select an ID type
-                    </option>
-                    {Object.entries(memberIdTypes).map(([value, label]) => (
-                      <option value={value} key={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="field">
-                  Upload format
-                  <select
-                    className="clay-in"
-                    value={uploadMode}
-                    disabled={busy}
-                    onChange={(event) => {
-                      setUploadMode(event.target.value)
-                      clearUploads()
-                    }}
-                  >
-                    <option value="images">Two images (JPG or PNG)</option>
-                    <option value="document">One document (PDF, DOC or DOCX)</option>
-                  </select>
-                </label>
-                <div className="id-check-slots" key={uploadVersion}>
-                  {sides.map((side) => (
-                    <IdUploadSlot
-                      key={side}
-                      side={side}
-                      disabled={!consent || busy}
-                      onFile={(slot, file) => setFiles((current) => ({ ...current, [slot]: file }))}
-                    />
-                  ))}
-                </div>
-                <p className="form-help">
-                  {uploadMode === 'images'
-                    ? 'Upload one image per side. Include the full ID and avoid glare.'
-                    : 'Include both sides of the ID in this single document.'}{' '}
-                  Up to 5 MB per file.
-                </p>
-                {hasSavedId && Object.keys(files).length > 0 && (
-                  <button
-                    className="btn ghost"
-                    type="button"
-                    disabled={busy}
-                    onClick={clearUploads}
-                  >
-                    Keep saved ID
-                  </button>
-                )}
-                {hasSavedId && (
-                  <p className="form-help">
-                    You can continue with the saved ID or upload replacements.
-                  </p>
-                )}
-              </section>
-            )}
-            <div className="ma">
-              <button
-                className="btn ghost cancel-button"
-                type="button"
+            <section className="mf" aria-label="Payment">
+              <h4>Payment</h4>
+              <fieldset
+                className="id-check-payment-methods"
+                aria-label="Payment method"
                 disabled={busy}
-                onClick={onClose}
               >
+                {['Cash', 'GCash'].map((method) => (
+                  <label key={method}>
+                    <input
+                      type="radio"
+                      name="method"
+                      value={method}
+                      checked={details.method === method}
+                      onChange={changeField}
+                    />
+                    <span>{method}</span>
+                  </label>
+                ))}
+              </fieldset>
+              <label className="set id-check-consent id-check-payment">
+                <input
+                  type="checkbox"
+                  name="recordPayment"
+                  checked={details.recordPayment}
+                  onChange={changeField}
+                />
+                <span>
+                  <strong>Payment received</strong>
+                  <small>
+                    Tick only after collecting it. A temporary password is shown once after
+                    creation.
+                  </small>
+                </span>
+              </label>
+            </section>
+            <h4>Identity check</h4>
+            <label className="field">
+              ID type
+              <select
+                className="clay-in"
+                value={idType}
+                onChange={(event) => {
+                  setIdType(event.target.value)
+                  setCaptures({})
+                }}
+                required
+              >
+                <option value="" disabled>
+                  Choose ID type
+                </option>
+                {Object.entries(memberIdTypes).map(([value, label]) => (
+                  <option value={value} key={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="set id-check-consent">
+              <input
+                type="checkbox"
+                checked={consent}
+                onChange={(event) => {
+                  setConsent(event.target.checked)
+                  if (!event.target.checked) {
+                    discardDraft()
+                    setCaptures({})
+                  }
+                }}
+                required
+              />
+              <span>
+                The member agrees to the ID and face check and to storage of their ID and face
+                template for sign-in.
+              </span>
+            </label>
+            <WizardFooter note="Fill in the required fields and accept consent to continue.">
+              <button className="btn ghost cancel-button" type="button" onClick={closeWizard}>
                 Cancel
               </button>
-              {verification?.status === 'needs_review' && (
-                <button className="btn ghost" type="button" disabled={busy} onClick={refreshResult}>
-                  Refresh status
-                </button>
-              )}
               <button
                 className="btn"
                 type="submit"
-                disabled={busy || (!readyToUpload && !canResume)}
+                disabled={
+                  !details.name.trim() || !details.email || !details.plan || !consent || !idType
+                }
               >
-                {canResume ? 'Continue to face enrollment' : 'Save ID and continue'}
+                Continue
               </button>
-            </div>
+            </WizardFooter>
           </form>
         )}
-        {step === 2 && verification && (
-          <div className="mf">
-            <IdVerificationResult verification={verification} />
-            {verification.faceEnrolled && !retakingFace ? (
-              <div>
-                <p className="form-help" role="status">Face enrollment saved.</p>
-                {canEnrollFace && (
-                  <button className="btn ghost" type="button" disabled={busy} onClick={() => setRetakingFace(true)}>
-                    Retake face capture
-                  </button>
-                )}
-              </div>
-            ) : canEnrollFace ? (
-              <section className="id-check-section mf" aria-label="Capture the member’s face">
-                <p className="form-help">
-                  Capture one clear face for enrollment. FitPulse will compare the live face,
-                  enrollment, and ID portrait at sign-in.
-                </p>
-                <FaceCapture
-                  purpose="enrollment"
-                  actionLabel="Capture and save face"
-                  disabled={busy}
-                  getChallenge={() => apiRequest(endpoint + '/face/challenge', { token, method: 'POST' })}
-                  onCaptured={submitFace}
-                />
-              </section>
-            ) : (
-              <div>
-                <p className="form-help" role="status">An administrator must complete face enrollment for this member.</p>
-                <button className="btn ghost" type="button" disabled={busy} onClick={refreshResult}>
-                  Refresh enrollment
-                </button>
-              </div>
-            )}
-            <div className="ma">
-              <button
-                className="btn ghost"
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  setIssue('')
-                  setStep(1)
-                }}
-              >
-                Back to ID verification
-              </button>
+        {step === 2 && (
+          <section className="mf" aria-label="Live ID scanning">
+            <MemberIdCamera
+              side={scanSide}
+              previousFingerprint={captures[scanSide === 'front' ? 'back' : 'front']?.fingerprint}
+              disabled={busy}
+              onCapture={captureSide}
+            />
+            <div className="id-check-slots" aria-label="ID photos" aria-live="polite">
+              {['front', 'back'].map((side) => (
+                <div className="id-check-photo-status" key={side}>
+                  <span className={captures[side] ? 'is-complete' : ''} aria-hidden="true">
+                    {captures[side] ? '✓' : ''}
+                  </span>
+                  <div>
+                    <strong>{side === 'front' ? 'Front' : 'Back'} of ID</strong>
+                    <small>
+                      {captures[side]
+                        ? 'Captured'
+                        : side === scanSide
+                          ? 'Ready to scan'
+                          : 'Waiting'}
+                    </small>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <WizardFooter
+              note={
+                idType === 'passport'
+                  ? 'Use the passport photo page, then its reverse side.'
+                  : 'The camera captures each side when the ID is steady and clear.'
+              }
+            >
               <button
                 className="btn ghost cancel-button"
                 type="button"
                 disabled={busy}
-                onClick={onClose}
+                onClick={() => {
+                  setStep(1)
+                }}
               >
-                Cancel
+                Back
               </button>
-              {!verification.faceEnrolled && verification.status === 'awaiting_face' && (
-                <button className="btn ghost" type="button" disabled={busy} onClick={requestReview}>
-                  Request review
-                </button>
-              )}
-              <button
-                className="btn"
-                type="button"
-                disabled={busy || retakingFace || !verification.faceEnrolled}
-                onClick={() => onCreate({ ...details, verificationId: verification.id })}
-              >
-                {pending && <Spinner />}
-                {pending ? 'Creating account…' : 'Create member account'}
-              </button>
+            </WizardFooter>
+          </section>
+        )}
+        {step === 3 && (
+          <form className="mf" onSubmit={verifyDocument}>
+            <div className="id-check-slots">
+              {['front', 'back'].map((side) => (
+                <figure className="id-check-review-photo" key={side}>
+                  <figcaption>
+                    {side === 'front' ? 'Front' : 'Back'}
+                    <button
+                      className="id-check-text-button"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => rescanSide(side)}
+                      aria-label={`Rescan ${side} of ID`}
+                    >
+                      Rescan
+                    </button>
+                  </figcaption>
+                  <IdPreview
+                    file={captures[side]?.file}
+                    label={side === 'front' ? 'Front of ID' : 'Back of ID'}
+                  />
+                </figure>
+              ))}
             </div>
-          </div>
+            {readerIssue && (
+              <div className="id-check-progress">
+                <p className="form-help" role="status">
+                  {readerIssue}
+                </p>
+                <button
+                  className="id-check-text-button"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => readCaptures(captures)}
+                >
+                  Retry reader
+                </button>
+              </div>
+            )}
+            <fieldset className="modal-fields id-check-details" disabled={busy}>
+              {reviewFields.map(([key, label]) => (
+                <label className="field" key={key}>
+                  {label}
+                  {key === 'idType' ? (
+                    <input className="clay-in" value={memberIdTypes[idType]} readOnly />
+                  ) : (
+                    <input
+                      className="clay-in"
+                      value={reviewEdits[key] ?? review[key] ?? ''}
+                      onChange={(event) => {
+                        const value = event.target.value
+                        setReviewEdits((current) => ({ ...current, [key]: value }))
+                      }}
+                      autoComplete="off"
+                    />
+                  )}
+                </label>
+              ))}
+            </fieldset>
+            {namesMatch(review.name, details.name) && (
+              <p className="id-check-name-status">
+                <span aria-hidden="true">✓</span> Name read from the ID matches the member details
+              </p>
+            )}
+            <WizardFooter note="Check the fields against both photos. Your edits are for this review. FitPulse verifies the images separately.">
+              <button
+                className="btn ghost cancel-button"
+                type="button"
+                disabled={busy}
+                onClick={() => rescanSide('back')}
+              >
+                Back
+              </button>
+              <button className="btn" type="submit" disabled={busy}>
+                Continue to face check
+              </button>
+            </WizardFooter>
+          </form>
+        )}
+        {step >= 4 && (
+          <section className="mf" aria-label="Capture the member’s face">
+            {faceSaved ? (
+              <>
+                <p role="status">{pending ? 'Creating member account…' : 'Face scan complete.'}</p>
+                {!busy && (
+                  <div className="ma">
+                    <button
+                      className="btn ghost cancel-button"
+                      type="button"
+                      onClick={() => {
+                        setFaceSaved(false)
+                        setStep(3)
+                      }}
+                    >
+                      Back to ID details
+                    </button>
+                    <button className="btn" type="button" onClick={finishCreation}>
+                      Retry account creation
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <p className="form-help">
+                  Center one face in the frame. Follow the live prompts at a normal distance, then
+                  move closer when asked.
+                </p>
+                <FaceCapture
+                  purpose="enrollment"
+                  actionLabel="Start normal scan"
+                  closeShot
+                  onReset={() => setStep(4)}
+                  onCloseUp={() => setStep(5)}
+                  disabled={busy}
+                  getChallenge={() =>
+                    apiRequest(faceEndpoint() + '/challenge', { token, method: 'POST' })
+                  }
+                  onCaptured={submitFace}
+                />
+                <WizardFooter>
+                  <button
+                    className="btn ghost cancel-button"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => setStep(3)}
+                  >
+                    Back
+                  </button>
+                </WizardFooter>
+              </>
+            )}
+          </section>
         )}
       </div>
     </Dialog>

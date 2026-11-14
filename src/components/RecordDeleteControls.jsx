@@ -127,7 +127,7 @@ export default function RecordDeleteDialog({ target, onClose, onChanged, onNotic
           {all ? (
             <>
               Clear all <strong>{target.scopeLabel || `${details.title} records`}</strong>?
-              Currently loaded: {target.count}. This includes every page and records hidden by
+              Currently loaded: {target.count}. This includes records hidden by
               search.
             </>
           ) : (

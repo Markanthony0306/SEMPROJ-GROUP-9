@@ -1,0 +1,27 @@
+.id-check-camera-outline {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.id-check-camera-outline polygon {
+  fill: none;
+  stroke: #ffcb63;
+  stroke-width: 2px;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.id-check-camera-capture .id-check-camera > p {
+  z-index: 2;
+}
+
+.id-check-camera-error {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 8px;
+}

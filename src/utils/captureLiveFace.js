@@ -1,6 +1,6 @@
 import {
   FACE_BLINK_COUNT, FACE_FRAME_BYTES, FACE_FRAME_HEIGHT, FACE_FRAME_WIDTH, FACE_MIN_CAMERA_FACE_SIZE,
-  FACE_STEP_MS, createFaceGestureSequence, validFaceActions
+  FACE_CLOSE_MIN_SIZE, FACE_CLOSE_SCALE, FACE_STEP_MS, createFaceGestureSequence, validFaceActions
 } from '../../shared/faceLiveness.js'
 
 export const FACE_SCAN_INTERVAL_MS = 120
@@ -149,6 +149,7 @@ export function createCameraFaceScanner(faceapi) {
       box: previewBox(box, source, video),
       landmarks,
       points,
+      size: Math.min(box.width, box.height),
       encode: () => encodeFrame(pixels)
     }
   }
@@ -158,15 +159,17 @@ export const faceStepLabels = {
   align: 'Face forward', blink: `Blink ${FACE_BLINK_COUNT} times`, left: 'Turn left', right: 'Turn right'
 }
 
-export async function captureLiveFace({ video, scan, actions, isCurrent, onPrompt, onPosition, onProgress }) {
+export async function captureLiveFace({ video, scan, actions, closeShot, isCurrent, onPrompt, onPosition, onProgress }) {
   if (!validFaceActions(actions)) throw new Error('The live check is unavailable. Start a new check.')
   const sequence = createFaceGestureSequence(actions)
   let step = sequence.step
   let expiresAt = performance.now() + FACE_STEP_MS[step]
   let lastVideoTime
+  let normalSize
+  const steps = closeShot ? [...actions, 'close'] : actions
   const reportProgress = () => {
     const { step, blinks, returning, complete } = sequence
-    onProgress({ actions, step, blinks, complete })
+    onProgress({ actions: steps, step, blinks, complete: complete && !closeShot })
     if (complete) return
     if (step === 'align') onPrompt('Face forward with both eyes open.')
     else if (step === 'blink') onPrompt(`Blink ${blinks}/${FACE_BLINK_COUNT}. Close both eyes briefly, then reopen them.`)
@@ -183,13 +186,19 @@ export async function captureLiveFace({ video, scan, actions, isCurrent, onPromp
       if (performance.now() >= expiresAt) break
       onPosition(position)
       if (position.multiple) throw new Error(position.message)
-      if (position.guide !== 'ready') {
+      if (step === 'close' && position.guide === 'ready' &&
+          position.size >= Math.max(FACE_CLOSE_MIN_SIZE, normalSize * FACE_CLOSE_SCALE)) {
+        onProgress({ actions: steps, step: null, blinks: sequence.blinks, complete: true })
+        return [...sequence.evidence.map(({ frame }) => frame), position.encode()]
+      }
+      if (step !== 'close' && position.guide !== 'ready') {
         const wasReturning = sequence.returning
         sequence.resetPending()
         if (wasReturning) reportProgress()
-      } else {
+      } else if (step !== 'close') {
         const { blinks, returning } = sequence
         sequence.observe(position.landmarks, position.encode)
+        if (step === 'align' && sequence.step !== step) normalSize = position.size
         if (sequence.step !== step || sequence.blinks !== blinks || sequence.returning !== returning) {
           if (sequence.step !== step) {
             step = sequence.step
@@ -197,12 +206,18 @@ export async function captureLiveFace({ video, scan, actions, isCurrent, onPromp
           }
           reportProgress()
         }
-        if (sequence.complete) return sequence.evidence.map(({ frame }) => frame)
+        if (sequence.complete) {
+          if (!closeShot) return sequence.evidence.map(({ frame }) => frame)
+          step = 'close'
+          expiresAt = performance.now() + FACE_STEP_MS.align
+          onProgress({ actions: steps, step, blinks: sequence.blinks, complete: false })
+          onPrompt('Normal scan complete. Move closer and keep your full face in frame.')
+        }
       }
     }
     const delay = Math.max(0, FACE_LIVE_INTERVAL_MS - (performance.now() - started))
     await new Promise((resolve) => window.setTimeout(resolve, delay))
   }
   if (!isCurrent()) return null
-  throw new Error(`${faceStepLabels[step]} timed out. Start a new live check and follow each prompt.`)
+  throw new Error(`${step === 'close' ? 'Closer shot' : faceStepLabels[step]} timed out. Start a new live check and follow each prompt.`)
 }

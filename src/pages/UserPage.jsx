@@ -160,7 +160,7 @@ export default function UserPage({ user, onSignOut }) {
   const notifications = currentUser ? [{ id: 'membership', message: membershipNote }] : []
   const unreadNotificationCount = notificationsRead ? 0 : notifications.length
   const settings = (
-    <section className="grid g2">
+    <section className="grid g2 settings-cards">
       <article className="card clay">
         <h2>Profile</h2>
         <ProfilePhoto user={currentUser} onSaved={setCurrentUser} />

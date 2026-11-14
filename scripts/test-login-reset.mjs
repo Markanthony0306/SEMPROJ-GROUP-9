@@ -155,10 +155,13 @@ globalThis.fetch = async (input, options = {}) => {
     if (!saved.user.email_confirmed_at) return providerError('email_not_confirmed')
     return response(session(saved.user))
   }
+  if (url.pathname === '/auth/v1/admin/users' && method === 'GET')
+    return response({ users: [...credentials.values()].map(({ user }) => user) })
   if (url.pathname === '/auth/v1/admin/users' && method === 'POST') {
+    if (credentials.has(body.email)) return providerError('email_exists', 422)
     const user = {
       id: crypto.randomUUID(), email: body.email, aud: 'authenticated', role: 'authenticated',
-      email_confirmed_at: iso(0), user_metadata: body.user_metadata || {}
+      email_confirmed_at: iso(0), user_metadata: body.user_metadata || {}, app_metadata: body.app_metadata || {}
     }
     credentials.set(body.email, { user, password: body.password })
     return response(user)
@@ -189,6 +192,7 @@ globalThis.fetch = async (input, options = {}) => {
     )
     if (!saved) return providerError('user_not_found', 404)
     if (method === 'PUT' && body.password) saved.password = body.password
+    if (method === 'PUT' && body.email_confirm) saved.user.email_confirmed_at = iso(0)
     if (method === 'DELETE') credentials.delete(saved.user.email)
     return response(saved.user)
   }
@@ -197,9 +201,22 @@ globalThis.fetch = async (input, options = {}) => {
     assert.equal(body.p_membership_end, '1970-01-01T00:00:00.000Z')
     return response(false)
   }
-  if (url.pathname === '/rest/v1/rpc/reset_fitpulse_id_rejections') {
-    project.member_id_rejected_emails = project.member_id_rejected_emails.filter((row) => row.email !== body.p_email)
-    return response(null)
+  if (url.pathname === '/rest/v1/rpc/create_fitpulse_enrolled_member') {
+    const profile = { ...body.p_profile, status: 'active' }
+    const verification = project.member_id_verifications.find((row) => row.id === profile.id_verification_id)
+    if (!verification?.face_enrolled || !verification.document_passed || verification.member_id)
+      return response({ code: '23514', message: 'Member verification is required' }, 400)
+    project.users.push(profile)
+    verification.member_id = profile.id
+    const subscription = { ...body.p_subscription, user_id: profile.id, status: 'active', created_at: profile.created_at }
+    project.subscriptions.push(subscription)
+    if (body.p_payment) {
+      project.payments.push({
+        ...body.p_payment, subscription_id: subscription.subscription_id,
+        processed_by_user_id: profile.id_verification_actor, created_at: profile.created_at
+      })
+    }
+    return response(profile)
   }
   if (url.pathname === '/rest/v1/rpc/record_fitpulse_checkin') {
     assert.equal(headers.get('apikey'), 'fixture-admin-key')
@@ -418,7 +435,7 @@ try {
     }
   })
 
-  await run('Only staff and administrators can start verification and creation requires approval', async () => {
+  await run('Only administrators can start and complete member enrollment', async () => {
     const before = structuredClone(project)
     const credentialsBefore = [...credentials.keys()]
     const body = {
@@ -434,8 +451,8 @@ try {
     }
     const staffToken = applicationTokens.get(staff.id)
     assert.equal((await request('/auth/register', body, staffToken)).status, 403)
-    assert.equal((await request('/admin/members', body, staffToken)).body.code, 'ID_VERIFICATION_REQUIRED')
-    assert.equal((await request('/admin/id-verifications', body, staffToken)).status, 400)
+    assert.equal((await request('/admin/members', body, staffToken)).status, 403)
+    assert.equal((await request('/admin/id-verifications', body, staffToken)).status, 403)
     assert.deepEqual(project, before)
     assert.deepEqual([...credentials.keys()], credentialsBefore)
   })
@@ -455,7 +472,7 @@ try {
     const verification = {
       id: crypto.randomUUID(), opened_by: administrator.id,
       applicant_email: body.email, applicant_name: body.name,
-      verification_status: 'awaiting_face', has_documents: true, face_enrolled: true,
+      verification_status: 'awaiting_face', has_documents: true, document_passed: true, face_enrolled: true,
       staged_face_encrypted: encryptFaceDescriptor(
         Array(128).fill(0.03), Buffer.from(process.env.FACE_ENCRYPTION_KEY, 'hex'), { liveEnrollment: true }
       )
@@ -781,38 +798,33 @@ try {
       plan: 'Monthly', recordPayment: true, method: 'Cash'
     }
     const staffToken = applicationTokens.get(staff.id)
-    const opening = await request('/admin/id-verifications', { ...details, consent: true }, staffToken)
-    assert.equal(opening.status, 200)
+    const opening = await request('/admin/id-verifications', { ...details, consent: true }, token)
+    assert.equal(opening.status, 201)
     const verificationId = opening.body.verification.id
     const verificationPath = `/admin/id-verifications/${verificationId}`
     assert.equal((await request(verificationPath + '/face', {}, staffToken)).status, 403)
     assert.equal((await request(verificationPath + '/face/challenge', {}, staffToken)).status, 403)
-    assert.equal((await request('/admin/members', { ...details, verificationId }, staffToken)).status, 409)
-    const invalidMultipart = Buffer.from(
-      '--fixture\r\nContent-Disposition: form-data; name="front"; filename="front.png"\r\n' +
-      'Content-Type: image/png\r\n\r\nThis is not an image.\r\n--fixture--\r\n'
-    )
+    assert.equal((await request('/admin/members', { ...details, verificationId }, token)).status, 409)
+    const invalidMultipart = Buffer.from([
+      ...['front', 'back'].flatMap((side) => [
+        '--fixture',
+        `Content-Disposition: form-data; name="${side}"; filename="${side}.png"`,
+        'Content-Type: image/png',
+        '',
+        'This is not an image.'
+      ]),
+      '--fixture--',
+      ''
+    ].join('\r\n'))
     const upload = await request(
       verificationPath + '/document?type=student_id',
-      invalidMultipart, staffToken, { 'Content-Type': 'multipart/form-data; boundary=fixture' }
+      invalidMultipart, token, { 'Content-Type': 'multipart/form-data; boundary=fixture' }
     )
     assert.equal(upload.status, 422)
     assert.equal(upload.body.code, 'ID_UNREADABLE')
     const staged = project.member_id_verifications.find((row) => row.id === verificationId)
-    Object.assign(staged, { has_documents: true, id_type: 'student_id', verification_status: 'awaiting_face' })
-    assert.equal((await request('/admin/members', { ...details, verificationId }, staffToken)).status, 409)
-    const decision = {
-      decision: 'approve', inspected: true, idNumber: 'FIX-12345', issuer: 'Fixture School',
-      noExpiry: true, notes: 'Original student ID and its holder reviewed in person.'
-    }
-    assert.equal((await request(verificationPath + '/review', decision, staffToken)).status, 403)
-    assert.equal((await request(verificationPath + '/review', {
-      ...decision, noExpiry: false, expiryDate: '2000-01-01'
-    }, token)).status, 400)
-    const approval = await request(verificationPath + '/review', decision, token)
-    assert.equal(approval.status, 200)
-    assert.equal(approval.body.verification.status, 'approved')
-    assert.ok(!JSON.stringify(approval.body).includes(decision.idNumber))
+    Object.assign(staged, { has_documents: true, document_passed: true, id_type: 'student_id', verification_status: 'awaiting_face' })
+    assert.equal((await request('/admin/members', { ...details, verificationId }, token)).status, 409)
     const challenge = await request(verificationPath + '/face/challenge', {}, token)
     assert.equal(challenge.status, 200)
     assert.deepEqual([...challenge.body.actions].sort(), ['blink', 'left', 'right'])
@@ -827,13 +839,13 @@ try {
       encryptFaceDescriptor(descriptor, Buffer.from(process.env.FACE_ENCRYPTION_KEY, 'hex'), { liveEnrollment })
     staged.face_enrolled = true
     staged.staged_face_encrypted = encrypted()
-    const approved = { ...details, verificationId }
-    assert.equal((await request('/admin/members', approved, staffToken)).body.code, 'FACE_RECAPTURE_REQUIRED')
+    const verifiedDetails = { ...details, verificationId }
+    assert.equal((await request('/admin/members', verifiedDetails, token)).body.code, 'FACE_RECAPTURE_REQUIRED')
     staged.staged_face_encrypted = encrypted(true)
     assert.equal((await request('/admin/members', {
-      ...approved, email: 'different-member@fixture.test'
-    }, staffToken)).status, 409)
-    const rejected = await request('/admin/members', { ...approved, plan: 'Unlimited Monthly' }, staffToken)
+      ...verifiedDetails, email: 'different-member@fixture.test'
+    }, token)).status, 409)
+    const rejected = await request('/admin/members', { ...verifiedDetails, plan: 'Unlimited Monthly' }, token)
     assert.equal(rejected.status, 400)
     project.face_enrollments.push({
       enrollment_id: crypto.randomUUID(),
@@ -841,13 +853,18 @@ try {
       status: 'active',
       descriptor_encrypted: encrypted()
     })
-    const duplicate = await request('/admin/members', approved, staffToken)
+    const duplicate = await request('/admin/members', verifiedDetails, token)
     assert.equal(duplicate.status, 409)
     assert.equal(duplicate.body.code, 'FACE_ALREADY_ENROLLED')
     assert.equal(credentials.has(details.email), false)
     project.face_enrollments.pop()
-    const created = await request('/admin/members', approved, staffToken)
+    // Simulate a process interruption after creating Auth but before linking a profile.
+    const orphan = { id: crypto.randomUUID(), email: details.email, app_metadata: { fitpulse_member_signup: true } }
+    credentials.set(details.email, { user: orphan, password: 'interrupted-fixture' })
+    const created = await request('/admin/members', verifiedDetails, token)
     assert.equal(created.status, 201)
+    assert.equal(created.body.message, 'Successful creation of a new member')
+    assert.equal(credentials.get(details.email).user.id, orphan.id)
     const { temporaryPassword, member: createdMember } = created.body
     assert.equal(createdMember.idVerified, true)
     assert.equal(temporaryPassword.length, 16)
@@ -856,7 +873,7 @@ try {
     assert.ok(project.users.find((item) => item.id === createdMember.id).must_change_password)
     const subscription = project.subscriptions.find((item) => item.user_id === createdMember.id)
     assert.ok(project.payments.some((item) => item.subscription_id === subscription.subscription_id))
-    assert.equal((await request('/admin/members', approved, staffToken)).status, 409)
+    assert.equal((await request('/admin/members', verifiedDetails, token)).status, 409)
     const listing = await request('/members', undefined, token, {}, 'GET')
     assert.ok(!JSON.stringify(listing.body).includes(temporaryPassword))
 
@@ -871,30 +888,28 @@ try {
     assert.equal((await login(details.email, temporaryPassword)).status, 401)
     assert.equal((await request('/me/qr', undefined, changed.body.session.token, {}, 'GET')).status, 200)
   })
-  await run('A rejected email stays locked after case deletion, and only admins can reset it', async () => {
+  await run('An abandoned draft and legacy rejection history do not reserve an email', async () => {
     const adminToken = applicationTokens.get(administrator.id)
-    const staffToken = applicationTokens.get(staff.id)
-    const details = { name: 'Locked Fixture', email: 'locked@fixture.test', plan: 'Monthly', consent: true }
-    const opening = await request('/admin/id-verifications', details, staffToken)
-    assert.equal(opening.status, 200)
-    const { id } = opening.body.verification
-    const route = `/admin/id-verifications/${id}`
+    const details = { name: 'Draft Fixture', email: 'draft@fixture.test', plan: 'Monthly', consent: true }
     project.member_id_rejected_emails.push({ email: details.email, rejected_attempts: 5 })
-    const locked = await request(route, undefined, staffToken, {}, 'GET')
-    assert.equal(locked.body.verification.remainingAttempts, 0)
-    const create = await request('/admin/members', { ...details, verificationId: id }, staffToken)
-    assert.equal(create.status, 409)
-    assert.equal(create.body.code, 'ID_ATTEMPT_LIMIT')
-    assert.equal((await request(route, undefined, staffToken, {}, 'DELETE')).status, 403)
-    assert.equal((await request(route, undefined, adminToken, {}, 'DELETE')).status, 200)
-    assert.equal((await request(route, undefined, adminToken, {}, 'GET')).status, 404)
-    assert.equal((await request('/admin/id-verifications', details, staffToken)).body.code, 'ID_ATTEMPT_LIMIT')
-    const reset = '/admin/id-verifications/reset-attempts'
-    assert.equal((await request(reset, { email: details.email }, staffToken)).status, 403)
-    assert.equal((await request(reset, { email: details.email }, adminToken)).status, 200)
-    const reopened = await request('/admin/id-verifications', details, staffToken)
-    assert.equal(reopened.status, 200)
-    assert.equal(reopened.body.verification.remainingAttempts, 5)
+    const first = await request('/admin/id-verifications', details, adminToken)
+    assert.equal(first.status, 201)
+    const second = await request('/admin/id-verifications', { ...details, name: 'Updated Draft' }, adminToken)
+    assert.equal(second.status, 201)
+    assert.notEqual(first.body.verification.id, second.body.verification.id)
+    assert.equal(credentials.has(details.email), false)
+    const route = `/admin/id-verifications/${first.body.verification.id}`
+    for (const [method, suffix] of [['GET', ''], ['POST', '/review'], ['POST', '/request-review']]) {
+      const result = await fetch(apiOrigin + '/api' + route + suffix, {
+        method, headers: { Authorization: 'Bearer ' + adminToken }
+      })
+      assert.equal(result.status, 404)
+    }
+    const discarded = await fetch(apiOrigin + '/api' + route + '/draft', {
+      method: 'DELETE', headers: { Authorization: 'Bearer ' + adminToken }
+    })
+    assert.equal(discarded.status, 204)
+    assert.equal(project.member_id_verifications.some((row) => row.id === first.body.verification.id), false)
   })
 } finally {
   if (server) {

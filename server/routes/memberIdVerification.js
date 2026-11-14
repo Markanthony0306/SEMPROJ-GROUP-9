@@ -1,71 +1,36 @@
 import express from 'express'
-import { encryptFaceDescriptor } from '../lib/face-auth.js'
+import { encryptFaceDescriptor, facesMatch } from '../lib/face-auth.js'
 import {
-  assertUniqueFace, createFaceAttemptLock, FaceVerificationError, readLiveFace,
-  runEnrollmentAttempt, withFaceEnrollmentLock
+  assertUniqueFace,
+  createFaceAttemptLock,
+  FaceVerificationError,
+  readLiveFace,
+  runEnrollmentAttempt,
+  withFaceEnrollmentLock
 } from '../services/faceVerification.js'
 import {
   MemberIdConverterError,
   MemberIdFileError,
   validateMemberIdFiles
 } from '../services/memberIdFiles.js'
+import { isMemberIdType, manilaDate, namesMatch } from '../services/memberIdParsing.js'
 import {
-  isMemberIdType,
-  isoDate,
-  manilaDate,
-  normalizeIdNumber
-} from '../services/memberIdParsing.js'
-import {
-  attemptLimitError,
-  checkIdAttemptLimit,
   idNumberInUse,
   MemberIdError,
   memberIdProofColumns,
   memberIdTable,
   protectIdNumber,
-  rejectedIdAttempts,
+  readStoredIdPortrait,
   saveMemberIdFiles,
   verificationUuid
 } from '../services/memberIdRecords.js'
-import { memberIdFileLimit, memberIdRejectedAttemptLimit } from '../../shared/memberIdTypes.js'
+import { MemberIdImageError, scanMemberId } from '../services/memberIdScan.js'
+import { memberIdFileLimit } from '../../shared/memberIdTypes.js'
 
 const path = '/admin/id-verifications'
 const columns =
-  'id,member_id,applicant_name,applicant_email,id_type,verification_status,face_match_score,' +
-  'attempts,document_attempts,opened_by,reviewed_by,review_notes,reasons,expiry_date,revision,updated_at,' +
+  'id,member_id,applicant_name,applicant_email,opened_by,expiry_date,revision,document_passed,' +
   memberIdProofColumns
-const enrollmentStatuses = ['awaiting_face', 'verified', 'approved']
-const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-function caseForClient(row, rejectedAttempts) {
-  const remainingAttempts = Math.max(0, memberIdRejectedAttemptLimit - rejectedAttempts)
-  const expired = row.expiry_date && row.expiry_date < manilaDate()
-  return {
-    id: row.id,
-    memberId: row.member_id,
-    name: row.applicant_name,
-    email: row.applicant_email,
-    idType: row.id_type,
-    status: expired ? 'rejected' : row.verification_status,
-    faceMatchScore: row.face_match_score,
-    attempts: row.attempts,
-    documentAttempts: row.document_attempts,
-    reviewedBy: row.reviewed_by,
-    reviewNotes: row.review_notes,
-    reasons: expired ? [...row.reasons, 'The approved document has since expired.'] : row.reasons,
-    updatedAt: row.updated_at,
-    hasDocuments: row.has_documents,
-    faceEnrolled: row.face_enrolled,
-    rejectedAttempts,
-    remainingAttempts,
-    canEnroll:
-      !row.member_id &&
-      row.has_documents &&
-      remainingAttempts > 0 &&
-      enrollmentStatuses.includes(row.verification_status) &&
-      !expired
-  }
-}
 
 export function memberIdVerificationRoutes({
   supabase,
@@ -79,24 +44,20 @@ export function memberIdVerificationRoutes({
 }) {
   const router = express.Router()
   const cases = () => supabase.from(memberIdTable)
-  const access = [authenticate, requireRole('admin', 'staff')]
-  const adminAccess = [authenticate, requireRole('admin')]
+  const access = [authenticate, requireRole('admin')]
   const reserveFaceAttempt = createFaceAttemptLock()
-  const view = async (row) =>
-    caseForClient(row, await rejectedIdAttempts(supabase, row.applicant_email))
 
   function route(handler) {
     return async (req, res) => {
       res.set('Cache-Control', 'no-store')
       try {
         await handler(req, res)
-      } catch (cause) {
-        const error = cause.code === 'P5405' ? attemptLimitError() : cause
+      } catch (error) {
         if (error instanceof MemberIdError || error instanceof FaceVerificationError) {
           if (error.retryAfter) res.set('Retry-After', String(error.retryAfter))
           return res.status(error.status).json({ message: error.message, code: error.code })
         }
-        if (error instanceof MemberIdFileError)
+        if (error instanceof MemberIdFileError || error instanceof MemberIdImageError)
           return res.status(422).json({ message: error.message, code: 'ID_UNREADABLE' })
         if (error instanceof MemberIdConverterError)
           return res.status(503).json({ message: error.message, code: 'ID_READER_UNAVAILABLE' })
@@ -104,7 +65,7 @@ export function memberIdVerificationRoutes({
           return res.status(503).json({
             code: 'ID_VERIFICATION_SCHEMA_MISSING',
             message:
-              'ID verification needs Supabase migrations 010 and 011. Ask the gym admin to apply them.'
+              'ID verification needs Supabase migrations 010, 011, and 014. Ask the gym admin to apply them.'
           })
         }
         console.error('Member ID verification failed:', error.code || error.name || 'unknown error')
@@ -120,7 +81,7 @@ export function memberIdVerificationRoutes({
       throw new MemberIdError(404, 'Verification was not found.')
     const { data, error } = await cases().select(columns).eq('id', req.params.id).maybeSingle()
     if (error) throw error
-    if (!data || (req.user.role !== 'admin' && (data.member_id || data.opened_by !== req.user.id)))
+    if (!data || data.opened_by !== req.user.id)
       throw new MemberIdError(404, 'Verification was not found.')
     return data
   }
@@ -151,44 +112,6 @@ export function memberIdVerificationRoutes({
       )
   }
 
-  async function resetAttempts(email, actorId) {
-    const { error } = await supabase.rpc('reset_fitpulse_id_rejections', {
-      p_email: email,
-      p_actor: actorId
-    })
-    if (error) throw error
-  }
-
-  router.get(
-    path,
-    ...access,
-    route(async (req, res) => {
-      const page = Math.min(1000, Math.max(0, Number.parseInt(req.query.page, 10) || 0))
-      let query = cases().select(columns)
-      if (req.user.role !== 'admin')
-        query = query.is('member_id', null).eq('opened_by', req.user.id)
-      const { data, error } = await query
-        .order('updated_at', { ascending: false })
-        .order('id')
-        .range(page * 25, page * 25 + 25)
-      if (error) throw error
-      const visible = data.slice(0, 25)
-      const counts = new Map()
-      if (visible.length) {
-        const { data: attempts, error: countError } = await supabase
-          .from('member_id_rejected_emails')
-          .select('email,rejected_attempts')
-          .in('email', [...new Set(visible.map((row) => row.applicant_email))])
-        if (countError) throw countError
-        for (const row of attempts) counts.set(row.email, row.rejected_attempts)
-      }
-      return res.json({
-        cases: visible.map((row) => caseForClient(row, counts.get(row.applicant_email) || 0)),
-        hasMore: data.length > 25
-      })
-    })
-  )
-
   router.post(
     path,
     ...access,
@@ -198,7 +121,6 @@ export function memberIdVerificationRoutes({
         throw new MemberIdError(400, 'Record the member’s consent before capturing an ID or face.')
       const input = validAccountInput(req.body)
       if (input.error) throw new MemberIdError(400, input.error)
-      await checkIdAttemptLimit(supabase, input.email)
       const { data: existingMember, error: memberError } = await supabase
         .from('users')
         .select('id')
@@ -207,48 +129,30 @@ export function memberIdVerificationRoutes({
       if (memberError) throw memberError
       if (existingMember) throw new MemberIdError(409, 'An account with this email already exists.')
 
-      const lookup = () =>
-        cases()
-          .select(columns)
-          .eq('applicant_email', input.email)
-          .is('member_id', null)
-          .maybeSingle()
-      let { data, error } = await lookup()
+      const { data, error } = await cases()
+        .insert({
+          applicant_name: input.name,
+          applicant_email: input.email,
+          opened_by: req.user.id,
+          updated_by: req.user.id
+        })
+        .select('id')
+        .single()
       if (error) throw error
-      if (!data) {
-        const created = await cases()
-          .insert({
-            applicant_name: input.name,
-            applicant_email: input.email,
-            opened_by: req.user.id,
-            updated_by: req.user.id
-          })
-          .select(columns)
-          .single()
-        const result = created.error?.code === '23505' ? await lookup() : created
-        data = result.data
-        error = result.error
-        if (error) throw error
-      }
-      if (
-        !data ||
-        (req.user.role !== 'admin' && data.opened_by !== req.user.id) ||
-        data.applicant_name !== input.name
-      ) {
-        throw new MemberIdError(
-          409,
-          'A verification already exists for this email. Ask the gym admin to review it.'
-        )
-      }
-      return res.json({ verification: await view(data) })
+      return res.status(201).json({ verification: data })
     })
   )
 
-  router.get(
-    path + '/:id',
+  // Discard a draft when the operator cancels. The member guard also covers
+  // a creation request that finished before its response reached the browser.
+  router.delete(
+    path + '/:id/draft',
     ...access,
     route(async (req, res) => {
-      return res.json({ verification: await view(await loadCase(req)) })
+      const row = await loadCase(req)
+      const { error } = await cases().delete().eq('id', row.id).is('member_id', null)
+      if (error) throw error
+      return res.sendStatus(204)
     })
   )
 
@@ -266,14 +170,10 @@ export function memberIdVerificationRoutes({
       requireKey()
       const row = await loadCase(req)
       requireOpen(row)
-      await checkIdAttemptLimit(supabase, row.applicant_email)
       const type = req.query.type
       if (!isMemberIdType(type)) throw new MemberIdError(400, 'Choose a supported ID type.')
       if (!req.is('multipart/form-data'))
-        throw new MemberIdError(
-          415,
-          'Upload the ID using the front and back slots or the document slot.'
-        )
+        throw new MemberIdError(415, 'Scan both the front and back of the ID.')
       if (readingDocuments >= 2)
         throw new MemberIdError(429, 'The ID reader is busy. Try again in a moment.')
       readingDocuments += 1
@@ -288,22 +188,16 @@ export function memberIdVerificationRoutes({
           }).formData()
         } catch (error) {
           if (error.type === 'entity.too.large')
-            throw new MemberIdError(413, 'Upload ID files up to 5 MB each.')
-          throw new MemberIdError(400, 'The ID upload could not be read. Select the files again.')
+            throw new MemberIdError(413, 'Each ID scan must be 5 MB or less. Rescan the ID.')
+          throw new MemberIdError(400, 'The ID scans could not be read. Rescan both sides.')
         }
         const entries = [...form.entries()]
-        if (entries.length < 1 || entries.length > 2)
-          throw new MemberIdError(
-            400,
-            'Upload exactly one front and one back image, or one document.'
-          )
+        if (entries.length !== 2 || !form.has('front') || !form.has('back'))
+          throw new MemberIdError(400, 'Scan one image of each side of the ID.')
         const files = await Promise.all(
           entries.map(async ([side, file]) => {
-            if (typeof file === 'string' || !['front', 'back', 'document'].includes(side))
-              throw new MemberIdError(
-                400,
-                'Upload exactly one front and one back image, or one document.'
-              )
+            if (typeof file === 'string' || !['front', 'back'].includes(side))
+              throw new MemberIdError(400, 'Scan one image of each side of the ID.')
             if (!file.size || file.size > memberIdFileLimit)
               throw new MemberIdError(
                 413,
@@ -313,8 +207,60 @@ export function memberIdVerificationRoutes({
           })
         )
         await validateMemberIdFiles(files)
+        const front = files.find((file) => file.side === 'front')
+        const back = files.find((file) => file.side === 'back')
+        if (front.bytes.equals(back.bytes))
+          throw new MemberIdError(422, 'Use a different photo for each side of the ID.')
+        const frontScan = await scanMemberId(front.bytes, front.mimeType, type)
+        const backScan = await scanMemberId(back.bytes, back.mimeType, type, { front: false })
+        if (!frontScan.typeRecognized && !backScan.typeRecognized)
+          throw new MemberIdError(
+            422,
+            'The photos do not look like the selected ID type. Check the type and retake the photos.'
+          )
+
+        const details = Object.fromEntries(
+          Object.entries(frontScan.fields).map(([field, value]) => [
+            field,
+            value.value || backScan.fields[field]?.value || null
+          ])
+        )
+        if (!details.name)
+          throw new MemberIdError(
+            422,
+            'The member name could not be read. Retake the photo with the full name in focus.'
+          )
+        if (!namesMatch(details.name, row.applicant_name))
+          throw new MemberIdError(
+            422,
+            'The name read from the ID does not match the member name. Check the spelling and retake the photo.'
+          )
+        const frontNumber = frontScan.fields.idNumber.value
+        const backNumber = backScan.fields.idNumber.value
+        if (frontNumber && backNumber && frontNumber !== backNumber)
+          throw new MemberIdError(
+            422,
+            'The two sides show different ID numbers. Retake both sides of the same ID.'
+          )
+        if (details.expiryDate && details.expiryDate < manilaDate())
+          throw new MemberIdError(422, 'This ID has expired. Use a current ID.')
+        const protectedNumber =
+          details.idNumber && type !== 'student_id'
+            ? protectIdNumber(key, type, details.idNumber)
+            : {}
+        if (
+          protectedNumber.id_fingerprint &&
+          (await idNumberInUse(supabase, protectedNumber.id_fingerprint))
+        )
+          throw new MemberIdError(409, 'This ID is already linked to a member.')
+
         await saveMemberIdFiles(supabase, key, row.id, req.user.id, type, files, row.revision)
-        return res.json({ verification: await view(await loadCase(req)) })
+        await update({ ...row, revision: row.revision + 1 }, req.user.id, 'document_scanned', {
+          ...protectedNumber,
+          document_passed: true,
+          expiry_date: details.expiryDate
+        })
+        return res.json({ details })
       } finally {
         readingDocuments -= 1
       }
@@ -324,176 +270,77 @@ export function memberIdVerificationRoutes({
   async function faceEnrollmentCase(req) {
     const row = await loadCase(req)
     requireOpen(row)
-    const verification = await view(row)
-    if (!verification.remainingAttempts) throw attemptLimitError()
-    if (!verification.canEnroll)
-      throw new MemberIdError(409, 'Upload both sides of the ID or wait for the review before enrolling a face.')
+    if (
+      !row.has_documents ||
+      !row.document_passed ||
+      (row.expiry_date && row.expiry_date < manilaDate())
+    )
+      throw new MemberIdError(409, 'Scan both sides of a current ID before enrolling a face.')
     if (!faceKey)
       throw new MemberIdError(503, 'Face enrollment is unavailable. Contact the gym admin.')
     return row
   }
 
-  router.post(path + '/:id/face/challenge', ...adminAccess, rateLimit({ max: 10 }), route(async (req, res) => {
-    const row = await faceEnrollmentCase(req)
-    return res.json(challenges.issue({
-      userId: row.id, actorId: req.user.id, revision: row.revision,
-      authVersion: req.user.authVersion || 0, scope: 'member-creation'
-    }))
-  }))
+  router.post(
+    path + '/:id/face/challenge',
+    ...access,
+    rateLimit({ max: 10 }),
+    route(async (req, res) => {
+      const row = await faceEnrollmentCase(req)
+      return res.json(
+        challenges.issue({
+          userId: row.id,
+          actorId: req.user.id,
+          revision: row.revision,
+          authVersion: req.user.authVersion || 0,
+          scope: 'member-creation'
+        })
+      )
+    })
+  )
 
   router.post(
     path + '/:id/face',
-    ...adminAccess,
+    ...access,
     route(async (req, res) => {
       const row = await faceEnrollmentCase(req)
-      const challenge = challenges.consume(req.body?.challengeToken, req.user.id, row.id, 'member-creation')
-      if (!challenge || challenge.revision !== row.revision || challenge.authVersion !== (req.user.authVersion || 0))
-        throw new FaceVerificationError('FACE_CHALLENGE_EXPIRED', 'This capture expired. Start a new live check.', 400)
-      const saved = await runEnrollmentAttempt(reserveFaceAttempt, row.applicant_email, async () => {
-        const descriptor = await readLiveFace(req.body?.frames, challenge.actions)
+      const challenge = challenges.consume(
+        req.body?.challengeToken,
+        req.user.id,
+        row.id,
+        'member-creation'
+      )
+      if (
+        !challenge ||
+        challenge.revision !== row.revision ||
+        challenge.authVersion !== (req.user.authVersion || 0)
+      )
+        throw new FaceVerificationError(
+          'FACE_CHALLENGE_EXPIRED',
+          'This capture expired. Start a new live check.',
+          400
+        )
+      const saved = await runEnrollmentAttempt(reserveFaceAttempt, row.id, async () => {
+        const descriptor = await readLiveFace(req.body?.frames, challenge.actions, {
+          closeShot: true
+        })
+        const portrait = await readStoredIdPortrait(supabase, row.id, key)
+        if (!facesMatch(descriptor, portrait))
+          throw new FaceVerificationError(
+            'FACE_MISMATCH',
+            'The live face did not match the ID portrait. Check the ID and try again.'
+          )
         return withFaceEnrollmentLock(async () => {
           await assertUniqueFace(supabase, faceKey, descriptor)
           return update(row, req.user.id, 'face_enrolled', {
-            staged_face_encrypted: encryptFaceDescriptor(descriptor, faceKey, { liveEnrollment: true }),
+            staged_face_encrypted: encryptFaceDescriptor(descriptor, faceKey, {
+              liveEnrollment: true
+            }),
             face_enrolled: true
           })
         })
       })
-      return res.json({ verification: await view(saved) })
-    })
-  )
-
-  router.post(
-    path + '/:id/request-review',
-    ...access,
-    route(async (req, res) => {
-      const row = await loadCase(req)
-      requireOpen(row)
-      await checkIdAttemptLimit(supabase, row.applicant_email)
-      if (!row.has_documents || row.verification_status !== 'awaiting_face')
-        throw new MemberIdError(409, 'Upload the ID before requesting a review.')
-      const result = await update(row, req.user.id, 'manual_review_requested', {
-        verification_status: 'needs_review'
-      })
-      return res.json({ verification: await view(result) })
-    })
-  )
-
-  router.post(
-    path + '/:id/review',
-    ...adminAccess,
-    rateLimit({ max: 30 }),
-    route(async (req, res) => {
-      const row = await loadCase(req)
-      requireOpen(row)
-      await checkIdAttemptLimit(supabase, row.applicant_email)
-      if (
-        !row.has_documents ||
-        !['needs_review', 'awaiting_face'].includes(row.verification_status)
-      )
-        throw new MemberIdError(409, 'Upload the ID before deciding this case.')
-      const { decision, inspected, idNumber, expiryDate, noExpiry, issuer } = req.body || {}
-      const notes = typeof req.body?.notes === 'string' ? req.body.notes.trim() : ''
-      if (!['approve', 'reject'].includes(decision) || !notes || notes.length > 600)
-        throw new MemberIdError(
-          400,
-          'Select a decision and enter review notes up to 600 characters.'
-        )
-      const changes = {
-        reviewed_by: req.user.id,
-        review_notes: notes,
-        verification_status: 'rejected'
-      }
-      if (decision === 'approve') {
-        requireKey()
-        if (inspected !== true)
-          throw new MemberIdError(
-            400,
-            'Confirm you checked the original document and the member in person.'
-          )
-        const number = normalizeIdNumber(row.id_type, idNumber)
-        if (!number) throw new MemberIdError(400, 'Enter a valid number for this document type.')
-        const school =
-          typeof issuer === 'string'
-            ? issuer.trim().normalize('NFKC').toLowerCase().replace(/\s+/g, ' ')
-            : ''
-        if (row.id_type === 'student_id' && (!school || school.length > 120))
-          throw new MemberIdError(400, 'Enter the issuing school.')
-        const expiry = isoDate(expiryDate)
-        const withoutExpiry =
-          noExpiry === true && ['student_id', 'national_id'].includes(row.id_type)
-        if (
-          (!expiry && !withoutExpiry) ||
-          (expiry && expiry < manilaDate()) ||
-          (withoutExpiry && expiryDate)
-        )
-          throw new MemberIdError(
-            400,
-            'Enter a valid, unexpired date or confirm that this document has no expiry.'
-          )
-        const protectedNumber = protectIdNumber(
-          key,
-          row.id_type,
-          number,
-          row.id_type === 'student_id' ? school : 'PHL'
-        )
-        if (await idNumberInUse(supabase, protectedNumber.id_fingerprint))
-          throw new MemberIdError(409, 'This ID is already linked to a member.')
-        Object.assign(changes, protectedNumber, {
-          expiry_date: expiry,
-          verification_status: 'approved'
-        })
-      } else {
-        changes.staged_face_encrypted = null
-        changes.face_enrolled = false
-      }
-      const result = await update(row, req.user.id, 'manual_' + decision, changes)
-      return res.json({ verification: await view(result) })
-    })
-  )
-
-  router.delete(
-    path + '/:id',
-    ...adminAccess,
-    rateLimit({ max: 30 }),
-    route(async (req, res) => {
-      const row = await loadCase(req)
-      const { data, error } = await cases()
-        .delete()
-        .eq('id', row.id)
-        .eq('revision', row.revision)
-        .select('id')
-        .maybeSingle()
-      if (error) throw error
-      if (!data) throw new MemberIdError(409, 'This verification changed. Refresh before deleting.')
-      return res.json({ message: 'ID review and stored files deleted.' })
-    })
-  )
-
-  router.post(
-    path + '/reset-attempts',
-    ...adminAccess,
-    rateLimit({ max: 30 }),
-    route(async (req, res) => {
-      const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : ''
-      if (email.length > 254 || !emailPattern.test(email))
-        throw new MemberIdError(400, 'Enter a valid email address.')
-      await resetAttempts(email, req.user.id)
-      return res.json({ message: 'Rejected attempts reset.' })
-    })
-  )
-
-  router.post(
-    path + '/:id/reset-attempts',
-    ...adminAccess,
-    rateLimit({ max: 30 }),
-    route(async (req, res) => {
-      const row = await loadCase(req)
-      await resetAttempts(row.applicant_email, req.user.id)
-      return res.json({
-        message: 'Rejected attempts reset.',
-        verification: await view(await loadCase(req))
-      })
+      return res.json({ faceEnrolled: saved.face_enrolled })
     })
   )
 

@@ -35,8 +35,10 @@ Expired memberships remain in the admin/staff pages for review and renewal. Acco
 are not automatically deleted after 15 days; deletion requires administrator
 confirmation. Apply [migration 013](migrations/013_member_id_account_deletion.sql)
 after migration 011 to install the deletion checks and cleanup triggers, including
-the setup from migration 006. Migration 013 also refreshes the Supabase Data API
-schema cache. Restart the API to load the updated deletion check.
+the setup from migration 006. Apply [migration 015](migrations/015_audit_member_account_deletion.sql)
+for the admin-only deletion transaction and private audit log. Restart the API.
+Photo files are removed through Supabase Storage after the database commits.
+The API retries any pending photo cleanup while it is running.
 
 ## Face sign-in and membership plans
 
@@ -50,14 +52,23 @@ subscriptions and payments keep their original plan.
 
 ## Member ID checks
 
-1. Apply `010_member_id_verification.sql` and `011_member_id_proof.sql` before restarting the updated API. Migration 011 adds private encrypted ID file rows, email rejection counts, and staged face enrollment. Profile creation and enrollment commit in one database transaction.
+1. Apply the migrations through [014](migrations/014_member_enrollment.sql) before restarting the updated API. Migration 014 adds the new ID types and allows a fresh enrollment to use the same email as an abandoned draft.
 2. Keep the existing server-only `ID_VERIFICATION_KEY` and `FACE_ENCRYPTION_KEY` (each 32 bytes encoded as hex). If the ID key is empty, the API uses the face key for ID files. Keep those keys backed up securely.
-3. Open **Members → Create Account**. Enter the member details, record consent, and upload both ID sides on step 1. Capture the member's face on step 2. FitPulse checks the files and captures a face template at creation. When the member signs in, the API compares the live face to the enrollment and the stored ID portrait.
-4. Use **Members → ID Reviews** to make manual decisions. The fifth rejection blocks creation and resubmission for that email. An admin can reset the count by email. Deleting a review also deletes the stored ID files. For an existing member, deletion ends their current session and requires a replacement ID before they can sign in again.
+3. As an administrator, open **Members → Create Account**. Enter the member details, choose the ID type, and record consent. Hold the front of the ID in the camera guide and flip it when prompted. Check the extracted details against the original ID.
+4. Run the normal-distance live face check and move closer when prompted. FitPulse compares the live face to the ID portrait before creating the account. When the member signs in, the API compares the live face to both the enrollment and the stored ID portrait.
 
-Images require a separate JPG or PNG per side. A PDF can place the front and back on the first two pages or separate the images with a clear white gap on one page. The API runs Poppler's `pdftoppm` from its PATH for PDF files. Set `ID_PDF_RENDERER` to an absolute executable path if needed. For DOCX or Word 97–2003 DOC, insert the JPG or PNG scans in front-to-back order as embedded images. Keep each file at or below 5 MB. A readable upload and face match establish likeness. Authenticity requires inspecting the original ID.
+FitPulse uses a private [PaddleOCR General OCR service](https://www.paddleocr.ai/main/en/version3.x/inference_deployment/serving/serving.html) for server-side verification. Install PaddlePaddle for your platform, then install PaddleX with the OCR and serving extras in a separate Python environment. Start the General OCR pipeline on the same host for local development:
 
-Old reviews from migration 010 do not have stored images. Recover an existing member's ID from a trusted operator terminal with the private server key, after checking the original ID and getting the member's consent. Keep the input files outside Git.
+```powershell
+python -m pip install 'paddlex[ocr,serving]'
+paddlex --serve --pipeline OCR --host 127.0.0.1 --port 8080 --device cpu
+```
+
+Set `ID_PADDLE_OCR_URL` in the API environment to the full private `/ocr` endpoint. The default is `http://127.0.0.1:8080/ocr`. For deployments on separate hosts, use a private network and keep the endpoint inaccessible from the public internet. The API sends an ID image to this service, so keep request bodies out of logs. Browser OCR fills the review fields, and the API checks the images independently before saving the ID proof. Inspect the original document in person to check its authenticity.
+
+The browser downloads the two PP-OCRv5 model archives on first use and reads the captures locally. To serve the models with FitPulse, host `PP-OCRv5_mobile_det_onnx_infer.tar` and `PP-OCRv5_mobile_rec_onnx_infer.tar` in a public directory and set `VITE_ID_OCR_MODEL_DIRECTORY` to its URL before building the frontend.
+
+For an existing member whose enrollment predates encrypted ID storage, recover the ID from a trusted operator terminal with the private server key. Check the original ID and get the member's consent first. Keep the input files outside Git.
 
 ```powershell
 node scripts/recover-member-id.mjs admin@fitpulse.com member@example.com drivers_license 'C:\private\front.jpg' 'C:\private\back.jpg'

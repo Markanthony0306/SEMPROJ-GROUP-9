@@ -1,6 +1,6 @@
 # Strict face sign-in
 
-Apply the Supabase migrations through `012_admin_face_provisioning.sql` in order.
+Apply the Supabase migrations through `014_member_enrollment.sql` in order.
 Set a stable, server-only `FACE_ENCRYPTION_KEY` with 64 hex characters. Keep the
 existing key if you already have enrollments. Set `ID_VERIFICATION_KEY` to your
 existing ID key if you use a separate one. `FACE_LOGIN_ENABLED` controls the
@@ -56,11 +56,10 @@ for roles that require both. The distance cutoff is `0.50` in
 screen exchanges a single-use, 30-second verification token for the signed
 application session. Camera frames are discarded after processing.
 
-Member creation uses the same live check. An admin completes the capture and
-the API rejects a duplicate face before staging the encrypted frontal template.
-The API checks for duplicates again before the profile activates the template.
-For a pending case captured before the blink-and-turn update, select **Retake
-face capture**. Existing active templates still work with the new login flow.
+Member creation uses the same live check, followed by a closer shot. The API
+checks that both distances show the same face and that it matches the ID portrait.
+It rejects a duplicate face before staging the encrypted template and checks
+again before activating the template with the new member profile.
 
 Members need a readable ID and an enrolled face before they can sign in. After a
 failed server check, start again from credentials for a fresh

@@ -2,6 +2,8 @@ export const FACE_FRAME_WIDTH = 224
 export const FACE_FRAME_HEIGHT = 168
 export const FACE_FRAME_BYTES = FACE_FRAME_WIDTH * FACE_FRAME_HEIGHT * 3
 export const FACE_MIN_CAMERA_FACE_SIZE = 64
+export const FACE_CLOSE_MIN_SIZE = 80
+export const FACE_CLOSE_SCALE = 1.2
 
 export const faceActions = ['blink', 'left', 'right']
 export const FACE_BLINK_COUNT = 3
@@ -10,7 +12,7 @@ export const FACE_TURN_DEGREES = 25
 export const FACE_FORWARD_DEGREES = 12
 export const FACE_STEP_MS = { align: 10_000, blink: 15_000, left: 10_000, right: 10_000 }
 export const FACE_EVIDENCE_COUNT = 1 + FACE_BLINK_COUNT * (FACE_CLOSED_SAMPLES + 1) + 4
-export const FACE_BODY_LIMIT = FACE_EVIDENCE_COUNT * FACE_FRAME_BYTES * 4 / 3 + 8192
+export const FACE_BODY_LIMIT = (FACE_EVIDENCE_COUNT + 1) * FACE_FRAME_BYTES * 4 / 3 + 8192
 
 const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y)
 const eyeRatio = (eye) =>

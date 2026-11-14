@@ -2,14 +2,13 @@ import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
 import { test } from 'node:test'
 import sharp from 'sharp'
-import { memberIdVerificationRoutes } from '../server/routes/memberIdVerification.js'
 import { memberIdFileLimit } from '../shared/memberIdTypes.js'
 import {
   memberIdFileType,
   memberIdFrontImage,
   validateMemberIdFiles
 } from '../server/services/memberIdFiles.js'
-import { checkIdAttemptLimit, requireMemberIdApproval } from '../server/services/memberIdRecords.js'
+import { requireMemberIdProof } from '../server/services/memberIdRecords.js'
 
 const scan = async (ink) =>
   sharp(
@@ -182,143 +181,31 @@ test(
   }
 )
 
-test('the normalized email limit is checked before any approval lookup or create', async () => {
-  const supabase = {
-    from(table) {
-      assert.equal(table, 'member_id_rejected_emails')
-      return {
-        select: () => ({
-          eq(column, email) {
-            assert.equal(column, 'email')
-            assert.equal(email, 'member@example.com')
-            return { maybeSingle: async () => ({ data: { rejected_attempts: 5 } }) }
-          }
-        })
-      }
-    }
-  }
-  const email = ' Member@Example.com '
-  const blocked = { status: 409, code: 'ID_ATTEMPT_LIMIT' }
-  await assert.rejects(checkIdAttemptLimit(supabase, email), blocked)
-  await assert.rejects(requireMemberIdApproval(supabase, {}, { email }), blocked)
-})
-
-test('review decisions report remaining attempts and only an admin can delete or reset them', async () => {
-  const email = 'member@example.com'
-  let attempts = 4
-  let review = {
-    id: '11111111-1111-4111-8111-111111111111',
-    revision: 1,
-    member_id: null,
-    applicant_email: email,
-    opened_by: 'staff',
-    has_documents: true,
-    verification_status: 'needs_review'
+test('member creation requires the admin’s completed scan and staged face', async () => {
+  const id = '11111111-1111-4111-8111-111111111111'
+  const input = { email: 'member@example.com', name: 'Test Member' }
+  const actor = { role: 'admin', id: 'admin' }
+  const proof = {
+    id, opened_by: actor.id, applicant_email: input.email, applicant_name: input.name,
+    verification_status: 'awaiting_face', has_documents: true, document_passed: true,
+    face_enrolled: true
   }
   const supabase = {
     from(table) {
-      let changes
-      let deleting = false
-      let matches = true
+      assert.equal(table, 'member_id_verifications')
       return {
-        select() {
-          return this
-        },
-        eq(column, value) {
-          if (table === 'member_id_verifications') matches &&= review?.[column] === value
-          return this
-        },
-        is() {
-          return this
-        },
-        update(values) {
-          changes = values
-          return this
-        },
-        delete() {
-          deleting = true
-          return this
-        },
-        async maybeSingle() {
-          if (table === 'member_id_rejected_emails')
-            return { data: { rejected_attempts: attempts } }
-          if (!matches) return { data: null }
-          if (changes) {
-            assert.equal(changes.event, 'manual_reject')
-            attempts += 1 // stand-in for the atomic SQL trigger
-            review = { ...review, ...changes, revision: review.revision + 1 }
-          }
-          const data = review
-          if (deleting) review = null
-          return { data }
-        }
-      }
-    },
-    async rpc(name, values) {
-      assert.equal(name, 'reset_fitpulse_id_rejections')
-      assert.equal(values.p_actor, 'admin')
-      assert.equal(values.p_email, email)
-      attempts = 0
-      return {}
-    }
-  }
-  const pass = (_req, _res, next) => next()
-  const router = memberIdVerificationRoutes({
-    supabase,
-    authenticate: pass,
-    rateLimit: () => pass,
-    requireRole:
-      (...roles) =>
-      (req, res, next) =>
-        roles.includes(req.user.role) ? next() : res.status(403).json({})
-  })
-  const prefix = '/admin/id-verifications'
-  const id = review.id
-  async function request(method, suffix, role, body) {
-    const response = { status: 200 }
-    const req = { body, user: { role, id: role }, params: { id } }
-    const res = {
-      set() {
-        return this
-      },
-      status(code) {
-        response.status = code
-        return this
-      },
-      json(payload) {
-        Object.assign(response, payload)
+        select() { return this },
+        eq() { return this },
+        async maybeSingle() { return { data: proof } }
       }
     }
-    const layer = router.stack.find(
-      ({ route }) => route?.path === prefix + suffix && route.methods[method]
-    )
-    for (const { handle } of layer.route.stack) {
-      let next = false
-      await handle(req, res, () => {
-        next = true
-      })
-      if (!next) break
-    }
-    return response
   }
-  const rejected = await request('post', '/:id/review', 'admin', {
-    decision: 'reject',
-    notes: 'ID damaged'
+  assert.equal(await requireMemberIdProof(supabase, actor, input, id), id)
+  await assert.rejects(requireMemberIdProof(supabase, { ...actor, id: 'other' }, input, id), {
+    code: 'ID_VERIFICATION_REQUIRED'
   })
-  assert.equal(rejected.verification.rejectedAttempts, 5)
-  assert.equal(rejected.verification.remainingAttempts, 0)
-  assert.equal(
-    (await request('post', '/:id/review', 'admin', { decision: 'reject' })).code,
-    'ID_ATTEMPT_LIMIT'
-  )
-  assert.equal((await request('delete', '/:id', 'staff')).status, 403)
-  assert.equal((await request('post', '/reset-attempts', 'staff', { email })).status, 403)
-  assert.equal((await request('delete', '/:id', 'admin')).status, 200)
-  assert.equal(review, null)
-  assert.equal(attempts, 5)
-  assert.equal(
-    (await request('post', '/reset-attempts', 'admin', { email: ' Member@Example.COM ' })).status,
-    200
-  )
-  assert.equal(attempts, 0)
+  proof.document_passed = false
+  await assert.rejects(requireMemberIdProof(supabase, actor, input, id), {
+    code: 'ID_VERIFICATION_REQUIRED'
+  })
 })

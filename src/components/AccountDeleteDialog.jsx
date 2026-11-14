@@ -6,18 +6,20 @@ import Spinner from './Spinner'
 
 export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
   const { token } = useAuth()
+  const [confirmation, setConfirmation] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const actionLock = useRef(false)
+  const confirmed = confirmation.trim() === 'DELETE'
 
-  const remove = async (event) => {
-    event.preventDefault()
-    if (actionLock.current) return
-    const values = new FormData(event.currentTarget)
-    if (values.get('confirmation') !== 'DELETE') {
-      setError('Type DELETE to confirm account deletion.')
-      return
-    }
+  const close = () => {
+    setConfirmation('')
+    onClose()
+  }
+
+  const remove = async (value) => {
+    const typedConfirmation = value.trim()
+    if (actionLock.current || typedConfirmation !== 'DELETE') return
     actionLock.current = true
     setBusy(true)
     setError('')
@@ -25,10 +27,7 @@ export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
       await apiRequest(`/admin/members/${account.id}`, {
         token,
         method: 'DELETE',
-        body: JSON.stringify({
-          confirmation: values.get('confirmation'),
-          currentPassword: values.get('currentPassword')
-        })
+        body: JSON.stringify({ confirmation: typedConfirmation })
       })
     } catch (cause) {
       setError(cause.message || 'Unable to delete the account. Please try again.')
@@ -45,36 +44,39 @@ export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
     <Dialog
       title="Delete member account?"
       busy={busy}
-      onClose={onClose}
+      onClose={close}
+      className="account-delete-dialog"
     >
-      <form className="mf" onSubmit={remove}>
+      <form
+        className="mf"
+        onSubmit={(event) => {
+          event.preventDefault()
+          if (error) void remove(confirmation)
+        }}
+      >
         <p className="modal-copy">
           Permanently delete <strong>{account.name}</strong> ({account.email}), including the login,
           profile photos, saved face data, membership, payments, and attendance history. This cannot
           be undone.
         </p>
         <label className="field">
-          Your current password
-          <input
-            className="clay-in"
-            name="currentPassword"
-            type="password"
-            autoComplete="current-password"
-            required
-            disabled={busy}
-            data-autofocus
-          />
-        </label>
-        <label className="field">
-          Type DELETE to confirm
+          Type DELETE to delete immediately
           <input
             className="clay-in"
             name="confirmation"
+            value={confirmation}
+            onChange={(event) => {
+              const value = event.target.value
+              setConfirmation(value)
+              setError('')
+              if (!event.nativeEvent.isComposing) void remove(value)
+            }}
+            onCompositionEnd={(event) => void remove(event.currentTarget.value)}
             autoComplete="off"
             spellCheck={false}
-            pattern="DELETE"
             required
             disabled={busy}
+            data-autofocus
           />
         </label>
         {error && (
@@ -83,13 +85,19 @@ export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
           </p>
         )}
         <div className="ma">
-          <button className="btn ghost cancel-button" type="button" disabled={busy} onClick={onClose}>
+          <button className="btn ghost cancel-button" type="button" disabled={busy} onClick={close}>
             Cancel
           </button>
-          <button className="btn danger" type="submit" disabled={busy}>
-            {busy && <Spinner />}
-            {busy ? 'Deleting...' : 'Delete account permanently'}
-          </button>
+          {busy && (
+            <span className="loading-inline" role="status">
+              <Spinner /> Deleting account…
+            </span>
+          )}
+          {error && (
+            <button className="btn danger" type="submit" disabled={!confirmed}>
+              Retry deletion
+            </button>
+          )}
         </div>
       </form>
     </Dialog>
