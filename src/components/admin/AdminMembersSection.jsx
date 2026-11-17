@@ -34,63 +34,62 @@ export default function AdminMembersSection({ query, setQuery, currentUser, setM
                 .toLowerCase()
                 .includes(query.trim().toLowerCase())
             )
-            .map((member) => (
-              <tr key={member.id}>
-                <td className="record-id">{member.memberCode || member.id}</td>
-                <td>
-                  <div className="member-table-person">
-                    <ProfileAvatar user={member} memberId={member.id} />
-                    <span>{member.name}</span>
-                  </div>
-                </td>
-                <td>
-                  <span>{member.email}</span>
-                  <small className="table-secondary">{member.phone || 'No phone added'}</small>
-                </td>
-                <td>{member.plan}</td>
-                <td>{date(member.membershipEnd)}</td>
-                <td>
-                  <Pill status={memberBadge(member)} />
-                </td>
-                <td className="acts member-record-actions">
-                  <button
-                    className="report-icon-button"
-                    type="button"
-                    aria-label={`View ${member.name}`}
-                    onClick={() => setModal({ kind: 'view', member })}
-                  >
-                    <Icon name="eye" size={18} />
-                  </button>
-                  <button
-                    className="report-icon-button"
-                    type="button"
-                    aria-label={`Edit ${member.name}`}
-                    onClick={() => setModal({ kind: 'edit', member })}
-                  >
-                    <Icon name="edit" size={18} />
-                  </button>
+            .map((member) => {
+              const membershipStatus = memberBadge(member)
+              const showAccountStatus =
+                member.status &&
+                member.status !== 'active' &&
+                member.status !== membershipStatus.toLowerCase()
 
-
-                  {currentUser?.role === 'admin' && (
-                    member.status === 'active' ? (
-
+              return (
+                <tr key={member.id}>
+                  <td className="record-id">{member.memberCode || member.id}</td>
+                  <td>
+                    <div className="member-table-person">
+                      <ProfileAvatar user={member} memberId={member.id} />
+                      <span>{member.name}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span>{member.email}</span>
+                    <small className="table-secondary">{member.phone || 'No phone added'}</small>
+                  </td>
+                  <td>{member.plan}</td>
+                  <td>{date(member.membershipEnd)}</td>
+                  <td>
+                    <Pill status={membershipStatus} />
+                    {showAccountStatus && (
+                      <small className="table-secondary">Account {member.status}</small>
+                    )}
+                  </td>
+                  <td className="acts member-record-actions">
+                    <button
+                      className="report-icon-button"
+                      type="button"
+                      aria-label={`View ${member.name}`}
+                      onClick={() => setModal({ kind: 'view', member })}
+                    >
+                      <Icon name="eye" size={18} />
+                    </button>
+                    <button
+                      className="report-icon-button"
+                      type="button"
+                      aria-label={`Edit ${member.name}`}
+                      onClick={() => setModal({ kind: 'edit', member })}
+                    >
+                      <Icon name="edit" size={18} />
+                    </button>
+                    {currentUser?.role === 'admin' && member.status === 'active' && (
                       <RecordDeleteButton
                         label={`Deactivate account for ${member.name}`}
                         disabled={pending}
                         onClick={() => setModal({ kind: 'deactivate-account', member })}
                       />
-
-                    ) : (
-                      <span className="pill p-warn">
-                        {member.status}
-                      </span>
-                    )
-                  )}
-
-
-                </td>
-              </tr>
-            ))}
+                    )}
+                  </td>
+                </tr>
+              )
+            })}
         </DataTable>
       </article>
   )

@@ -118,10 +118,6 @@
 .admin-app .data-table .table-cell-actions > button {
   flex-shrink: 0;
 }
-.admin-app .member-record-actions .table-cell-actions {
-  display: grid;
-  grid-template-columns: repeat(2, 44px);
-}
 .admin-app .member-record-actions .report-icon-button {
   width: 44px;
   height: 44px;
