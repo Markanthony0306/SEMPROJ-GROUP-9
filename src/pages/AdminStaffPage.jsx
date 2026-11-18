@@ -13,6 +13,10 @@ import AdminReports from '../components/AdminReports'
 import AdminNotifications from '../components/AdminNotifications'
 import { membershipState, reminderMembers } from '../utils/membership'
 import AdminStaffDialogs from '../components/admin/AdminStaffDialogs'
+import { gorillaEvents, useGorilla } from '../components/gorilla/GorillaAssistant'
+import { MobileActivities, MobileMembers, MobileOverview } from '../components/mobile/MobileScreens'
+import { activityRows, useReminderActivity } from '../components/mobile/activity'
+import useIsMobile from '../components/mobile/useIsMobile'
 import './AdminStaffPage.css'
 
 const money = (value) =>
@@ -41,8 +45,10 @@ const dateTime = (value) =>
       minute: '2-digit'
     })
     : '—'
-export default function AdminStaffPage({ user, onSignOut }) {
+export default function AdminStaffPage({ user, onSignOut, startMemberCreation = false }) {
   const { token } = useAuth()
+  const { notify, latestEvent } = useGorilla() || {}
+  const mobile = useIsMobile()
   const [currentUser, setCurrentUser] = useState(user)
   const [section, setSection] = useState('Dashboard')
   const [data, setData] = useState({
@@ -56,16 +62,20 @@ export default function AdminStaffPage({ user, onSignOut }) {
     settings: { gym: 'FitPulse Gym', remind: 7 }
   })
   const [error, setError] = useState('')
+  const [fieldError, setFieldError] = useState(null)
   const [notice, setNotice] = useState('')
-  const [modal, setModal] = useState(null)
+  const [modal, setModal] = useState(() => startMemberCreation ? { kind: 'create' } : null)
   const [deletion, setDeletion] = useState(null)
   const [query, setQuery] = useState('')
+  const [onlyExpiring, setOnlyExpiring] = useState(false)
   const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState(false)
   const actionLock = useRef(false)
+  const loadVersion = useRef(0)
   const canDeleteHistory = currentUser?.role === 'admin'
   const load = useCallback(
     async (signal) => {
+      const version = ++loadVersion.current
       try {
         const [
           members,
@@ -90,7 +100,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
             issue: cause.message
           }))
         ])
-        if (signal?.aborted) return
+        if (signal?.aborted || version !== loadVersion.current) return
         setCurrentUser(profile.user)
         setData({
           ...members,
@@ -104,10 +114,10 @@ export default function AdminStaffPage({ user, onSignOut }) {
         setError('')
         return true
       } catch (cause) {
-        if (!signal?.aborted) setError(cause.message)
+        if (!signal?.aborted && version === loadVersion.current) setError(cause.message)
         return false
       } finally {
-        if (!signal?.aborted) setLoading(false)
+        if (!signal?.aborted && version === loadVersion.current) setLoading(false)
       }
     },
     [token]
@@ -117,6 +127,18 @@ export default function AdminStaffPage({ user, onSignOut }) {
     load(controller.signal)
     return () => controller.abort()
   }, [load])
+  useEffect(() => {
+    if (!latestEvent || actionLock.current) return
+    const controller = new AbortController()
+    // Coalesce operations that emit two events, such as paid registration.
+    const timer = window.setTimeout(() => {
+      if (!actionLock.current) void load(controller.signal)
+    }, 160)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [latestEvent, load])
   useEffect(() => {
     if (section !== 'Attendance') return
     const controller = new AbortController()
@@ -152,6 +174,7 @@ export default function AdminStaffPage({ user, onSignOut }) {
     actionLock.current = true
     setPending(true)
     setError('')
+    setFieldError(null)
     setNotice('')
     try {
 
@@ -170,12 +193,13 @@ export default function AdminStaffPage({ user, onSignOut }) {
       setNotice(result.message || message)
 
 
-      setModal(null)
+      if (onSuccess) onSuccess(result)
+      else setModal(null)
       await load()
-      onSuccess?.(result)
       return true
     } catch (cause) {
       setError(cause.message)
+      setFieldError(cause.field ? { name: cause.field } : null)
       return false
     } finally {
       actionLock.current = false
@@ -189,9 +213,34 @@ export default function AdminStaffPage({ user, onSignOut }) {
   const active = members.filter((member) => membershipState(member).status === 'active').length
   const expiredMembers = members.filter((member) => membershipState(member).status === 'expired')
   const reminderList = reminderMembers(members, data.settings.remind)
+  const expiring = reminderList.filter((member) => membershipState(member).status === 'active')
   const renewals = data.payments.filter((payment) => payment.type === 'Renewal')
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
   const revenue = data.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+  const reminderActivity = useReminderActivity(token, mobile, latestEvent)
+  const activity = mobile ? activityRows({
+    ...data, members, reminders: reminderActivity.reminders, money, staff: true
+  }) : []
+  const onManilaDay = (row) => new Date(row.date).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }) === today
+  const showMember = (member) => setModal({ kind: 'view', member })
+  const selectSection = useCallback((nextSection) => {
+    if (nextSection === 'Members') setOnlyExpiring(false)
+    setSection(nextSection)
+  }, [])
+  const showMemberAlert = useCallback(async (memberId) => {
+    // Another admin's new record may arrive before this dashboard has refreshed its list.
+    let member = members.find((record) => record.id === memberId)
+    try {
+      if (!member) {
+        const result = await apiRequest('/members', { token })
+        member = result.members.find((record) => record.id === memberId && ['user', 'member'].includes(record.role))
+      }
+      if (member) setModal({ kind: 'view', member })
+      else setError('This member is no longer available.')
+    } catch (cause) {
+      setError(cause.message)
+    }
+  }, [members, token])
 
   const scanQr = useCallback(async (qrToken) => {
     setError('')
@@ -203,7 +252,11 @@ export default function AdminStaffPage({ user, onSignOut }) {
         method: 'POST',
         body: JSON.stringify({
           qrToken,
-          requestId: crypto.randomUUID()
+          // randomUUID is unavailable on some HTTP gym-network pages.
+          requestId: globalThis.crypto.randomUUID?.() || Array.from(
+            globalThis.crypto.getRandomValues(new Uint8Array(16)),
+            (byte) => byte.toString(16).padStart(2, '0')
+          ).join('')
         })
       })
 
@@ -256,7 +309,11 @@ export default function AdminStaffPage({ user, onSignOut }) {
       },
       'Member account created.',
       (result) => {
-        if (result.member) setModal({ kind: 'credentials', member: result.member, temporaryPassword: result.temporaryPassword })
+        if (!result.member) return
+        setModal({ kind: 'credentials', member: result.member, temporaryPassword: result.temporaryPassword })
+        // The matching SSE ID keeps the creator's confirmation and live event to one alert.
+        if (result.notificationId)
+          notify?.(gorillaEvents.memberCreated(result.member.name, result.member.id), result.notificationId)
       }
     )
   }
@@ -296,7 +353,8 @@ export default function AdminStaffPage({ user, onSignOut }) {
         method: 'PATCH',
         body: JSON.stringify({
           gym: form.get('gym'),
-          remind: Number(form.get('remind'))
+          remind: Number(form.get('remind')),
+          ...(mobile && { emailOn: form.has('emailOn') })
         })
       },
       'Preferences saved.'
@@ -407,6 +465,47 @@ export default function AdminStaffPage({ user, onSignOut }) {
       />
     )
   }[section]
+  const mobileViews = mobile ? {
+    Dashboard: (
+      <MobileOverview stats={[
+        ['Active members', active, 'users'],
+        ['Expiring soon', expiring.length, 'bell'],
+        ['Check-ins today', data.attendance.filter(onManilaDay).length, 'qr'],
+        ['Revenue today', money(data.payments.filter(onManilaDay).reduce((sum, item) => sum + Number(item.amount || 0), 0)), 'wallet']
+      ]} expiring={expiring} date={date} onMember={showMember} loading={loading} rows={activity}
+        onExpiring={() => { setOnlyExpiring(true); setQuery(''); setSection('Members') }}
+        onActivities={() => setSection('Activities')} />
+    ),
+    Members: <MobileMembers members={members} expiring={expiring} date={date} query={query}
+      setQuery={setQuery} onMember={showMember} filter={onlyExpiring} setFilter={setOnlyExpiring} loading={loading} />,
+    Activities: <MobileActivities rows={activity} loading={loading} select={selectSection} reminderError={reminderActivity.error} />
+  } : {}
+  const dialogs = (
+    <AdminStaffDialogs
+      modal={modal}
+      setModal={setModal}
+      currentUser={currentUser}
+      pending={pending}
+      error={error}
+      fieldError={fieldError}
+      deletion={deletion}
+      setDeletion={setDeletion}
+      load={load}
+      setNotice={setNotice}
+      renewals={renewals}
+      money={money}
+      date={date}
+      members={members}
+      data={data}
+      planOptionLabel={planOptionLabel}
+      act={act}
+      createMember={createMember}
+      updateMember={updateMember}
+      enrollFace={enrollFace}
+      requestFaceChallenge={requestFaceChallenge}
+      recordPayment={recordPayment}
+    />
+  )
   return (
     <DashboardShell
       className="admin-app"
@@ -414,7 +513,16 @@ export default function AdminStaffPage({ user, onSignOut }) {
       user={currentUser}
       onSignOut={onSignOut}
       activeSection={section}
-      onSectionChange={setSection}
+      onSectionChange={selectSection}
+      onMemberAlert={showMemberAlert}
+      onCreateMember={() => {
+        setError('')
+        setFieldError(null)
+        setModal({ kind: 'create' })
+      }}
+      content={content}
+      mobileViews={mobileViews}
+      dialogs={dialogs}
       notificationCount={loading ? 0 : data.notificationState.notifications.length}
       loading={loading}
     >
@@ -445,30 +553,6 @@ export default function AdminStaffPage({ user, onSignOut }) {
           </button>
         </div>
       )}
-      {content}
-      <AdminStaffDialogs
-        modal={modal}
-        setModal={setModal}
-        currentUser={currentUser}
-        pending={pending}
-        error={error}
-        deletion={deletion}
-        setDeletion={setDeletion}
-        load={load}
-        setNotice={setNotice}
-        renewals={renewals}
-        money={money}
-        date={date}
-        members={members}
-        data={data}
-        planOptionLabel={planOptionLabel}
-        act={act}
-        createMember={createMember}
-        updateMember={updateMember}
-        enrollFace={enrollFace}
-        requestFaceChallenge={requestFaceChallenge}
-        recordPayment={recordPayment}
-      />
     </DashboardShell>
   )
 }

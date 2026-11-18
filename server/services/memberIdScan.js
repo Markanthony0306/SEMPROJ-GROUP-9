@@ -3,6 +3,7 @@ import { memberIdImageLimit, memberIdImageTypes } from '../../shared/memberIdTyp
 import { readDocumentPortrait } from './faceVerification.js'
 import { parseMemberId } from './memberIdParsing.js'
 import { MemberIdError } from './memberIdRecords.js'
+import { networkErrorCode } from '../lib/networkErrors.js'
 
 export class MemberIdImageError extends Error {}
 
@@ -25,7 +26,7 @@ async function recognizeDocument(image) {
         visualize: false
       })
     })
-    if (!response.ok) throw new Error('OCR request failed.')
+    if (!response.ok) throw new Error(`OCR service returned HTTP ${response.status}.`)
     const payload = await response.json()
     const result = payload?.result?.ocrResults?.[0]?.prunedResult
     const { rec_texts: texts, rec_scores: scores, rec_polys: polygons } = result ?? {}
@@ -60,14 +61,16 @@ async function recognizeDocument(image) {
   } catch (error) {
     console.error(
       '[FitPulse ID OCR] Recognition failed:',
+      networkErrorCode(error) || 'ID_READER_ERROR',
       error?.name,
       error?.message
     )
 
     throw new MemberIdError(
       503,
-      'The server ID reader is offline. Ask the gym admin to start PaddleOCR or configure ' +
-        'ID_PADDLE_OCR_URL.',
+      networkErrorCode(error) === 'ECONNREFUSED'
+        ? 'The ID verification service is not running. Contact the gym administrator.'
+        : 'ID verification is temporarily unavailable. Try again later or contact the gym administrator.',
       'ID_READER_UNAVAILABLE'
     )
   }

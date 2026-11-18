@@ -21,7 +21,7 @@ function cameraError(cause) {
   return cause.message || 'Could not start the ID camera. Try again.'
 }
 
-export default function MemberIdCamera({ side, onCapture, previousFingerprint, disabled = false }) {
+export default function MemberIdCamera({ side, onCapture, previousFingerprint, disabled = false, disabledStatus = 'Reading the ID…' }) {
   const video = useRef(null)
   const scan = useRef(null)
   const captureHandler = useRef(onCapture)
@@ -39,7 +39,7 @@ export default function MemberIdCamera({ side, onCapture, previousFingerprint, d
     scan.current = { side, previousFingerprint, captured: false, stable: null }
     setOutline(null)
     setStatus(sideLabel[side])
-  }, [side, previousFingerprint, retry])
+  }, [side, previousFingerprint, retry, disabled])
 
   useEffect(() => {
     if (disabled) return undefined
@@ -198,7 +198,7 @@ export default function MemberIdCamera({ side, onCapture, previousFingerprint, d
         ) : (
           <div className="id-check-camera-guide" aria-hidden="true" />
         )}
-        <p role="status">{error ? 'Camera unavailable' : disabled ? 'Reading the ID…' : status}</p>
+        <p role="status">{error ? 'Camera unavailable' : disabled ? disabledStatus : status}</p>
       </div>
       {error && (
         <div className="id-check-camera-error">

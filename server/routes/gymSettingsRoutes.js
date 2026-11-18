@@ -8,7 +8,8 @@ export function registerSettingsRoutes(app, { authenticate, requireRole, loadDat
       database.settings.gym = req.body.gym.trim()
     if (Number.isInteger(req.body.remind) && req.body.remind >= 1 && req.body.remind <= 30)
       database.settings.remind = req.body.remind
-    database.settings.emailOn = false
+    // Saving the name or reminder window should preserve the current email preference.
+    if (typeof req.body.emailOn === 'boolean') database.settings.emailOn = req.body.emailOn
     await saveDatabase(database)
     res.json({ settings: database.settings })
   })

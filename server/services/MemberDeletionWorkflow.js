@@ -6,10 +6,10 @@ export class MemberDeletionWorkflow {
   }
 
   // Coordinate the complete deletion process.
-  async execute({ account, beforeDelete }) {
+  async execute({ account, beforeDelete, manual = false }) {
     // Phase 4 safety guard:
     // Preserve member accounts and transaction history.
-    if (!PERMANENT_MEMBER_DELETION_ENABLED) {
+    if (!manual && !PERMANENT_MEMBER_DELETION_ENABLED) {
       throw Object.assign(
         new Error(
           'Permanent member deletion is temporarily disabled.'

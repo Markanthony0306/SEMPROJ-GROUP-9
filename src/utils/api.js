@@ -1,5 +1,8 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
 
+// Resolve EventSource against the same API host as the authenticated ticket request.
+export const apiUrl = (path) => `${API_URL.replace(/\/$/, '')}${path}`
+
 function buildHeaders(options = {}) {
   const headers = { ...(options.headers || {}) }
   // The browser adds the boundary required to read multipart uploads.
@@ -12,7 +15,7 @@ export async function apiResponse(path, options = {}) {
   const { token, ...requestOptions } = options
   let response
   try {
-    response = await fetch(`${API_URL}${path}`, {
+    response = await fetch(apiUrl(path), {
       ...requestOptions,
       headers: buildHeaders(options)
     })
@@ -27,6 +30,7 @@ export async function apiResponse(path, options = {}) {
     const error = new Error(payload.message || `Request failed (${response.status}).`)
     error.status = response.status
     error.code = payload.code
+    error.field = payload.field
     error.remainingAttempts = payload.remainingAttempts
     error.rejectedAttempts = payload.rejectedAttempts
     throw error

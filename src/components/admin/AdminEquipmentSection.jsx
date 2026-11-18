@@ -81,6 +81,13 @@ export default function AdminEquipmentSection({ data, loading, pending, act, set
                   >
                     Log repair
                   </button>
+                  {canDeleteHistory && (
+                    <RecordDeleteButton
+                      label={`Delete equipment ${item.name}`}
+                      disabled={loading || pending}
+                      onClick={() => setDeletion({ category: 'equipment', id: item.id, label: item.name })}
+                    />
+                  )}
                 </td>
               </tr>
             ))}

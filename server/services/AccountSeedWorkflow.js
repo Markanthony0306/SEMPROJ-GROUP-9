@@ -1,8 +1,7 @@
 import crypto from 'node:crypto'
 
 /**
- * Startup seeding workflow extracted from server.js without intentional
- * changes to existing account, demo data or save behavior.
+ * Ensure the administrator account exists when the server starts.
  */
 export class AccountSeedWorkflow {
   constructor({
@@ -119,52 +118,5 @@ export class AccountSeedWorkflow {
       plan: 'Staff access'
     })
 
-    let demoMemberId = null
-    // Demo accounts and sample activity only run outside production.
-    if (!this.isProduction) {
-      demoMemberId = await this.ensureSeedAccount({
-        email: 'member@fitpulse.com',
-        name: 'Mia Cruz',
-        password: 'member123',
-        role: 'member',
-        plan: 'Monthly - Student',
-        membershipDays: 30
-      })
-
-      const database = await this.repository.load(['accounts', 'attendance', 'payments'])
-      const demoMember = database.accounts.find((account) => account.id === demoMemberId)
-      if (database.attendance.length === 0) {
-        const day = 86_400_000
-        const now = Date.now()
-        for (const offset of [0, 2 * day, 4 * day, 7 * day]) {
-          database.attendance.push({
-            id: crypto.randomUUID(),
-            memberId: demoMember.id,
-            memberName: demoMember.name,
-            date: new Date(now - offset).toISOString(),
-            source: 'Demo'
-          })
-        }
-      }
-      if (database.payments.length === 0) {
-        database.payments.push(
-          {
-            id: crypto.randomUUID(), memberId: demoMember.id, memberName: demoMember.name,
-            amount: 1500, method: 'GCash', plan: demoMember.plan, type: 'New',
-            date: new Date(Date.now() - 32 * 86_400_000).toISOString(),
-            subscriptionId: demoMember.subscriptionId,
-            processedByUserId: demoMember.id
-          },
-          {
-            id: crypto.randomUUID(), memberId: demoMember.id, memberName: demoMember.name,
-            amount: 1500, method: 'Cash', plan: demoMember.plan, type: 'Renewal',
-            date: new Date().toISOString(),
-            subscriptionId: demoMember.subscriptionId,
-            processedByUserId: demoMember.id
-          }
-        )
-      }
-      await this.repository.save(database)
-    }
   }
 }

@@ -25,6 +25,10 @@ const CATEGORIES = {
   maintenance: {
     title: 'maintenance',
     effect: 'Equipment and its current condition stay unchanged.'
+  },
+  equipment: {
+    title: 'equipment',
+    effect: 'Existing maintenance history is retained.'
   }
 }
 
@@ -70,7 +74,7 @@ export default function RecordDeleteDialog({ target, onClose, onChanged, onNotic
     setError('')
     try {
       const collection = target.category === 'renewals' ? 'payments' : target.category
-      const base =
+      const base = target.category === 'equipment' ? '/admin/equipment' :
         target.category === 'notifications'
           ? '/admin/notifications'
           : `/admin/reports/${collection}`

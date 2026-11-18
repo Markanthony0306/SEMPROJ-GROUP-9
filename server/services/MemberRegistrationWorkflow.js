@@ -18,6 +18,20 @@ export class MemberRegistrationWorkflowError extends Error {
   }
 }
 
+// Release only the Auth user created for a registration that definitely rolled back.
+export async function cleanupRejectedAuthUser(authAdmin, authUserId) {
+  try {
+    const { error } = await authAdmin.deleteUser(authUserId)
+    if (error) throw error
+  } catch (cause) {
+    throw new MemberRegistrationWorkflowError(
+      'AUTH_CLEANUP_UNCONFIRMED',
+      'Database registration was rejected, but Auth cleanup needs review.',
+      { status: 503, cause }
+    )
+  }
+}
+
 // Determine whether PostgreSQL definitely rejected the transaction.
 function isConfirmedRollback(error) {
   const pg = error?.cause
@@ -123,21 +137,7 @@ export class MemberRegistrationWorkflow {
 
       // PostgreSQL definitely rejected the transaction.
       // Clean up only the Auth account created by this workflow.
-      try {
-        const { error: cleanupError } =
-          await this.authAdmin.deleteUser(authUserId)
-
-        if (cleanupError) {
-          throw cleanupError
-        }
-
-      } catch (cleanupError) {
-        throw new MemberRegistrationWorkflowError(
-          'AUTH_CLEANUP_UNCONFIRMED',
-          'Database registration was rejected, but Auth cleanup needs review.',
-          { status: 503, cause: cleanupError }
-        )
-      }
+      await cleanupRejectedAuthUser(this.authAdmin, authUserId)
 
       const conflict = error.code === 'REGISTRATION_CONFLICT'
 

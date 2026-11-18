@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { getMemberQr, readCachedMemberQr } from '../utils/memberQr'
 
-export default function MemberQr({ member }) {
+export default function MemberQr({ member, viewOnly = false }) {
   const { token } = useAuth()
   const [qr, setQr] = useState(() => readCachedMemberQr(member))
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
+  const [expiredCode, setExpiredCode] = useState(null)
   const qrImageRef = useRef(null)
   useEffect(() => {
     let active = true
@@ -24,8 +25,22 @@ export default function MemberQr({ member }) {
       .finally(() => { if (active) setPending(false) })
     return () => { active = false }
   }, [token, member?.id, member?.membershipStart, member?.membershipEnd, member?.joined, member?.status])
+  // Repaint an open pass at the exact membership cutoff, even on a long plan.
+  useEffect(() => {
+    if (!qr?.expiresAt) return
+    let timer
+    const expire = () => {
+      const remaining = qr.expiresAt - Date.now()
+      if (remaining <= 0) setExpiredCode(qr)
+      else timer = window.setTimeout(expire, Math.min(remaining, 2_147_483_647))
+    }
+    expire()
+    return () => window.clearTimeout(timer)
+  }, [qr])
   const daysLeft = qr ? Math.max(0, Math.ceil((qr.expiresAt - Date.now()) / 86400000)) : 0
-  const expiryDate = qr ? new Date(qr.expiresAt).toLocaleDateString() : ''
+  const expiryDate = qr ? new Date(qr.expiresAt).toLocaleDateString(
+    viewOnly ? 'en-PH' : undefined, viewOnly ? { timeZone: 'Asia/Manila' } : undefined
+  ) : ''
 
   const downloadQrCard = () => {
     if (!qr) return
@@ -100,7 +115,7 @@ export default function MemberQr({ member }) {
 
   return (
     <div className="member-qr-content">
-      {qr && daysLeft > 0 ? (
+      {qr && qr !== expiredCode && daysLeft > 0 ? (
         <section className="member-qr-card" aria-label="FitPulse member pass">
           <header className="member-qr-card-header">
             <strong>FITPULSE</strong>
@@ -118,16 +133,16 @@ export default function MemberQr({ member }) {
             <p className="member-qr-card-expiry">
               Expires {expiryDate} - {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left
             </p>
-            <button className="btn" type="button" onClick={downloadQrCard}>
+            {!viewOnly && <button className="btn" type="button" onClick={downloadQrCard}>
               Download QR code
-            </button>
+            </button>}
           </div>
         </section>
       ) : (
         <p>
           {qr
             ? 'This code expired. Renew your membership to get a new code.'
-            : pending ? 'Generating your member QR code...' : 'Your QR code is unavailable.'}
+            : pending ? 'Loading your member QR code...' : 'Your QR code is unavailable.'}
         </p>
       )}
       {error && (

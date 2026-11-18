@@ -1,7 +1,11 @@
 import ProfilePhoto from '../ProfilePhoto'
 import PasswordChangeForm from '../PasswordChangeForm'
+import { useContext } from 'react'
+import { DashboardSheetContext } from '../Dialog'
 
 export default function AdminSettingsSection({ currentUser, setCurrentUser, profile, pending, loading, setModal, settings, data }) {
+  // The mobile settings screen can opt in to automatic reminder delivery.
+  const mobile = useContext(DashboardSheetContext)
   return (
       <section className="grid g2">
         <article className="card clay">
@@ -64,6 +68,13 @@ export default function AdminSettingsSection({ currentUser, setCurrentUser, prof
                 <option value="7">7 days</option>
               </select>
             </label>
+            {mobile && (
+              <label className="set">
+                Send automatic email reminders
+                <input key={String(data.settings.emailOn)} type="checkbox" name="emailOn"
+                  defaultChecked={Boolean(data.settings.emailOn)} />
+              </label>
+            )}
             <button className="btn" disabled={pending || loading}>
               {pending ? 'Saving...' : 'Save preferences'}
             </button>

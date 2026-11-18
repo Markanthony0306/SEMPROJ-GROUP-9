@@ -1,6 +1,7 @@
 import { createSessionAuth } from '../middleware/sessionAuth.js'
 import { createFaceChallenges } from '../services/faceVerification.js'
 import { createAdminNotificationService } from '../services/adminNotifications.js'
+import { createFitPulseEvents } from '../services/fitPulseEvents.js'
 import { MembershipService } from '../services/MembershipService.js'
 import { MembershipRenewalWorkflow } from '../services/MembershipRenewalWorkflow.js'
 import { MembershipRepository } from '../repositories/MembershipRepository.js'
@@ -45,7 +46,8 @@ export function createDependencies({ supabase, jwtSecret, isProduction, identity
     generateTemporaryPassword
   })
   const adminNotifications = createAdminNotificationService({ supabase, loadDatabase })
-  const { createSession, authenticate, requireRole, rateLimit } = createSessionAuth({
+  const events = createFitPulseEvents()
+  const { createSession, authenticate, authenticateEventStream, requireRole, rateLimit } = createSessionAuth({
     jwtSecret, loadAccount, membershipStatus, supabase, identityVerificationEnabled
   })
   const accountSeedWorkflow = new AccountSeedWorkflow({
@@ -56,8 +58,8 @@ export function createDependencies({ supabase, jwtSecret, isProduction, identity
   return {
     supabase, databaseGateway, loadDatabase, loadAccount, saveDatabase,
     membershipRenewalWorkflow, memberRegistrationService, memberRegistrationWorkflow, verifiedRegistrationWorkflow,
-    adminNotifications, faceChallenges,
-    createSession, authenticate, requireRole, rateLimit,
+    adminNotifications, faceChallenges, events,
+    createSession, authenticate, authenticateEventStream, requireRole, rateLimit,
     accountSeedWorkflow, availablePlan, publicAccount, membershipStatus,
     addMembershipDays, validAccountInput, paymentMethod, emailPattern,
     passwordPolicy, passwordPolicyMessage, isRetiredPlan

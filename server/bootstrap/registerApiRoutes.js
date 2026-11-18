@@ -22,25 +22,29 @@ import { passwordLoginHandler } from '../routes/passwordLogin.js'
 import { membershipRenewalRoutes } from '../routes/membershipRenewal.js'
 import { faceVerificationRoutes } from '../routes/faceVerification.js'
 import { memberRegistrationRoutes } from '../routes/memberRegistration.js'
+import { eventRoutes } from '../routes/events.js'
 
 /** Route registration order is intentionally identical to the original server.js. */
 export function registerApiRoutes(app, dependencies, config) {
   const {
     supabase, loadDatabase, loadAccount, saveDatabase,
     membershipRenewalWorkflow, memberRegistrationService, memberRegistrationWorkflow, verifiedRegistrationWorkflow,
-    adminNotifications, faceChallenges,
-    createSession, authenticate, requireRole, rateLimit,
+    adminNotifications, faceChallenges, events,
+    createSession, authenticate, authenticateEventStream, requireRole, rateLimit,
     availablePlan, publicAccount, validAccountInput, paymentMethod, emailPattern,
     passwordPolicy, passwordPolicyMessage, isRetiredPlan
   } = dependencies
   const { jwtSecret, isProduction, clientUrl, faceLoginEnabled, faceEncryptionKey, memberIdKey, identityVerificationEnabled, faceMatchThreshold } = config
+  const { emitEvent } = events
 
+  // Rocky's stream is scoped separately from ordinary API sessions.
+  app.use('/api', eventRoutes({ authenticate, authenticateEventStream, events, jwtSecret, supabase }))
 
   app.use('/api', accountRoutes({
     authenticate, requireRole, rateLimit, loadAccount, supabase,
     createAuthClient: createSupabaseAuthClient
   }))
-  app.use('/api', reportRoutes({ authenticate, requireRole, loadDatabase, supabase, rateLimit }))
+  app.use('/api', reportRoutes({ authenticate, requireRole, loadDatabase, supabase, rateLimit, emitEvent }))
   app.use('/api', notificationRoutes({
     authenticate, requireRole, rateLimit, notifications: adminNotifications
   }))
@@ -54,7 +58,7 @@ export function registerApiRoutes(app, dependencies, config) {
       return !error
     }
   }))
-  app.use('/api', scannerRoutes({ loadAccount, authenticate, requireRole, rateLimit, jwtSecret }))
+  app.use('/api', scannerRoutes({ loadAccount, authenticate, requireRole, rateLimit, jwtSecret, emitEvent }))
 
   app.use('/api', membershipRenewalRoutes({
     authenticate,
@@ -64,6 +68,7 @@ export function registerApiRoutes(app, dependencies, config) {
     availablePlan,
     paymentMethod,
     publicAccount,
+    emitEvent,
     workflow: membershipRenewalWorkflow
   }))
 
@@ -86,6 +91,7 @@ export function registerApiRoutes(app, dependencies, config) {
     registrationWorkflow: memberRegistrationWorkflow,
     verifiedRegistrationWorkflow,
     identityVerificationEnabled,
+    emitEvent,
     faceKey: faceEncryptionKey,
     publicAccount
   }))
@@ -148,7 +154,7 @@ export function registerApiRoutes(app, dependencies, config) {
 
   registerMemberUpdateRoutes(app, { authenticate, requireRole, loadDatabase, validAccountInput, passwordPolicy, passwordPolicyMessage, supabase, publicAccount })
 
-  registerEquipmentRoutes(app, { authenticate, requireRole, loadDatabase, saveDatabase })
+  registerEquipmentRoutes(app, { authenticate, requireRole, loadDatabase, saveDatabase, supabase, emitEvent })
 
   registerSettingsRoutes(app, { authenticate, requireRole, loadDatabase, saveDatabase })
 
@@ -156,5 +162,5 @@ export function registerApiRoutes(app, dependencies, config) {
 
   registerChangePasswordRoutes(app, { authenticate, rateLimit, passwordPolicy, passwordPolicyMessage, supabase, loadDatabase, saveDatabase, createAuthClient: createSupabaseAuthClient, createSession })
 
-  registerActivityAndPaymentRoutes(app, { authenticate, requireRole, loadDatabase, supabase, paymentMethod })
+  registerActivityAndPaymentRoutes(app, { authenticate, requireRole, loadDatabase, supabase, paymentMethod, emitEvent })
 }

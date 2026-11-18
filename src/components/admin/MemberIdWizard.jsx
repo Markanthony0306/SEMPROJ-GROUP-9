@@ -1,9 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { namesMatch } from '../../../shared/memberIdParsing.js'
+import { useContext, useEffect, useRef, useState } from 'react'
 import { memberIdTypes } from '../../../shared/memberIdTypes'
 import { apiRequest } from '../../utils/api'
-import { readMemberId } from '../../utils/readMemberId'
-import Dialog from '../Dialog'
+import Dialog, { DashboardSheetContext } from '../Dialog'
 import FaceCapture from '../FaceCapture'
 import Spinner from '../Spinner'
 import MemberIdCamera from './MemberIdCamera'
@@ -13,18 +11,9 @@ const idVerificationPath = '/admin/id-verifications'
 const stepTitles = [
   'Member details',
   'Scan front and back',
-  'Review ID details',
+  'Verify ID',
   'Face check · Normal view',
   'Face check · Close-up'
-]
-const stepLabels = ['Details', 'ID scan', 'Review', 'Face', 'Close-up']
-const reviewFields = [
-  ['name', 'Full name'],
-  ['idNumber', 'ID number'],
-  ['birthDate', 'Birth date'],
-  ['idType', 'ID type'],
-  ['expiryDate', 'Expiry date'],
-  ['address', 'Address']
 ]
 
 function WizardFooter({ note, children }) {
@@ -36,28 +25,17 @@ function WizardFooter({ note, children }) {
   )
 }
 
-function IdPreview({ file, label }) {
-  const [preview, setPreview] = useState('')
-
-  useEffect(() => {
-    if (!file) return
-    const url = URL.createObjectURL(file)
-    setPreview(url)
-    return () => URL.revokeObjectURL(url)
-  }, [file])
-
-  return preview && <img src={preview} alt={label} />
-}
-
 export default function MemberIdWizard({
   token,
   plans,
   planOptionLabel,
   pending,
   error,
+  fieldError,
   onClose,
   onCreate
 }) {
+  const mobile = useContext(DashboardSheetContext)
   const [step, setStep] = useState(1)
   const [scanSide, setScanSide] = useState('front')
   const [details, setDetails] = useState({
@@ -65,26 +43,29 @@ export default function MemberIdWizard({
     email: '',
     phone: '',
     plan: '',
-    method: 'Cash',
+    method: '',
     recordPayment: false
   })
   const [idType, setIdType] = useState('')
   const [consent, setConsent] = useState(false)
   const [captures, setCaptures] = useState({})
-  const [review, setReview] = useState({})
-  const [reviewEdits, setReviewEdits] = useState({})
-  const [readerIssue, setReaderIssue] = useState('')
   const [working, setWorking] = useState('')
   const [faceSaved, setFaceSaved] = useState(false)
   const [issue, setIssue] = useState('')
+  const [invalidField, setInvalidField] = useState(null)
   const verificationId = useRef(null)
   const heading = useRef(null)
   const actionLock = useRef(false)
   const busy = pending || Boolean(working)
+  const waitingForBack = scanSide === 'front' && Boolean(captures.front) && !captures.back
 
   useEffect(() => {
-    heading.current?.focus()
-  }, [step])
+    if (!(mobile && step === 1 && (fieldError || invalidField))) heading.current?.focus()
+  }, [step, mobile, fieldError, invalidField])
+
+  useEffect(() => {
+    if (mobile && fieldError) setStep(1)
+  }, [mobile, fieldError])
 
   function changeField(event) {
     const { name, value, checked, type } = event.target
@@ -95,11 +76,16 @@ export default function MemberIdWizard({
     if (actionLock.current || busy) return
     actionLock.current = true
     setIssue('')
+    setInvalidField(null)
     setWorking(label)
     try {
       return await callback()
     } catch (cause) {
       setIssue(cause.message)
+      if (mobile && cause.field) {
+        setInvalidField({ name: cause.field })
+        setStep(1)
+      }
     } finally {
       setWorking('')
       actionLock.current = false
@@ -125,47 +111,27 @@ export default function MemberIdWizard({
     if (!consent || !idType) return
     discardDraft()
     setCaptures({})
-    setReview({})
-    setReviewEdits({})
-    setReaderIssue('')
     setIssue('')
+    setFaceSaved(false)
     setScanSide('front')
     setStep(2)
-  }
-
-  async function readCaptures(next) {
-    await run('Reading both sides in your browser…', async () => {
-      setReaderIssue('')
-      try {
-        setReview(await readMemberId(idType, next.front.file, next.back.file))
-      } catch {
-        setReview({})
-        setReaderIssue(
-          'The browser could not read this ID. Retry the reader or enter the details for review.'
-        )
-      }
-      setStep(3)
-    })
   }
 
   function captureSide(file, fingerprint) {
     const next = { ...captures, [scanSide]: { file, fingerprint } }
     setCaptures(next)
-    if (next.front && next.back) void readCaptures(next)
-    else setScanSide('back')
+    if (next.front && next.back) void verifyDocument(next)
   }
 
   function rescanSide(side) {
     setCaptures((current) => ({ ...current, [side]: null }))
-    setReviewEdits({})
     setIssue('')
     setScanSide(side)
     setStep(2)
   }
 
-  function verifyDocument(event) {
-    event.preventDefault()
-    if (!captures.front || !captures.back) return
+  function verifyDocument(images) {
+    if (!images.front || !images.back) return
     void run('Verifying both sides of the ID…', async () => {
       if (!verificationId.current) {
         const result = await apiRequest(idVerificationPath, {
@@ -176,8 +142,8 @@ export default function MemberIdWizard({
         verificationId.current = result.verification.id
       }
       const body = new FormData()
-      body.append('front', captures.front.file)
-      body.append('back', captures.back.file)
+      body.append('front', images.front.file)
+      body.append('back', images.back.file)
       await apiRequest(
         `${idVerificationPath}/${verificationId.current}/document?type=${encodeURIComponent(idType)}`,
         { token, method: 'POST', body }
@@ -206,22 +172,9 @@ export default function MemberIdWizard({
       onClose={closeWizard}
       busy={busy}
       className="id-check-dialog"
+      invalidField={step === 1 ? fieldError || invalidField : null}
     >
       <div className="mf id-check-wizard">
-        <p className="form-help id-check-step">
-          Step {step} of {stepTitles.length} · {stepTitles[step - 1]}
-        </p>
-        <ol className="id-check-steps" aria-label="Member creation progress">
-          {stepLabels.map((label, index) => (
-            <li
-              key={label}
-              className={index + 1 < step ? 'complete' : undefined}
-              aria-current={index + 1 === step ? 'step' : undefined}
-            >
-              {label}
-            </li>
-          ))}
-        </ol>
         <h3 ref={heading} tabIndex={-1}>
           {step === 2 ? 'Scan the member’s ID' : stepTitles[step - 1]}
         </h3>
@@ -248,6 +201,7 @@ export default function MemberIdWizard({
                   autoComplete="name"
                   required
                   maxLength={100}
+                  pattern={mobile ? '.*\\S.*' : undefined}
                 />
               </label>
               <label className="field">
@@ -256,6 +210,7 @@ export default function MemberIdWizard({
                   className="clay-in"
                   name="phone"
                   type="tel"
+                  placeholder="Optional"
                   autoComplete="tel"
                   value={details.phone}
                   onChange={changeField}
@@ -268,6 +223,7 @@ export default function MemberIdWizard({
                   name="email"
                   type="email"
                   autoComplete="email"
+                  placeholder={mobile ? 'john123@gmail.com' : undefined}
                   value={details.email}
                   onChange={changeField}
                   required
@@ -307,6 +263,7 @@ export default function MemberIdWizard({
                       type="radio"
                       name="method"
                       value={method}
+                      required
                       checked={details.method === method}
                       onChange={changeField}
                     />
@@ -314,21 +271,7 @@ export default function MemberIdWizard({
                   </label>
                 ))}
               </fieldset>
-              <label className="set id-check-consent id-check-payment">
-                <input
-                  type="checkbox"
-                  name="recordPayment"
-                  checked={details.recordPayment}
-                  onChange={changeField}
-                />
-                <span>
-                  <strong>Payment received</strong>
-                  <small>
-                    Tick only after collecting it. A temporary password is shown once after
-                    creation.
-                  </small>
-                </span>
-              </label>
+              <p className="form-help">The temporary password is shown once after creation. Record payment separately after receiving it.</p>
             </section>
             <h4>Identity check</h4>
             <label className="field">
@@ -367,7 +310,7 @@ export default function MemberIdWizard({
               />
               <span>
                 The member agrees to the ID and face check and to storage of their ID and face
-                template for sign-in.
+                template for identity verification.
               </span>
             </label>
             <WizardFooter note="Fill in the required fields and accept consent to continue.">
@@ -377,9 +320,7 @@ export default function MemberIdWizard({
               <button
                 className="btn"
                 type="submit"
-                disabled={
-                  !details.name.trim() || !details.email || !details.plan || !consent || !idType
-                }
+                disabled={mobile ? busy : !details.name.trim() || !details.email || !details.plan || !consent || !idType}
               >
                 Continue
               </button>
@@ -391,7 +332,8 @@ export default function MemberIdWizard({
             <MemberIdCamera
               side={scanSide}
               previousFingerprint={captures[scanSide === 'front' ? 'back' : 'front']?.fingerprint}
-              disabled={busy}
+              disabled={busy || waitingForBack || Boolean(captures.front && captures.back)}
+              disabledStatus={working ? 'Verifying the ID…' : waitingForBack ? 'Front captured. Choose when to scan the back.' : 'ID photos captured'}
               onCapture={captureSide}
             />
             <div className="id-check-slots" aria-label="ID photos" aria-live="polite">
@@ -413,11 +355,24 @@ export default function MemberIdWizard({
                 </div>
               ))}
             </div>
+            {waitingForBack && !busy && (
+              <div className="ma">
+                <button className="btn ghost" type="button" onClick={() => rescanSide('front')}>Rescan front</button>
+                <button className="btn" type="button" onClick={() => setScanSide('back')}>Scan back</button>
+              </div>
+            )}
+            {captures.front && captures.back && !busy && (
+              <div className="ma">
+                <button className="btn ghost" type="button" onClick={() => rescanSide('front')}>Rescan front</button>
+                <button className="btn ghost" type="button" onClick={() => rescanSide('back')}>Rescan back</button>
+                <button className="btn" type="button" onClick={() => verifyDocument(captures)}>Retry verification</button>
+              </div>
+            )}
             <WizardFooter
               note={
                 idType === 'passport'
                   ? 'Use the passport photo page, then its reverse side.'
-                  : 'The camera captures each side when the ID is steady and clear.'
+                  : 'The camera captures each side when the ID is steady and clear. Choose when to scan the back.'
               }
             >
               <button
@@ -433,85 +388,6 @@ export default function MemberIdWizard({
             </WizardFooter>
           </section>
         )}
-        {step === 3 && (
-          <form className="mf" onSubmit={verifyDocument}>
-            <div className="id-check-slots">
-              {['front', 'back'].map((side) => (
-                <figure className="id-check-review-photo" key={side}>
-                  <figcaption>
-                    {side === 'front' ? 'Front' : 'Back'}
-                    <button
-                      className="id-check-text-button"
-                      type="button"
-                      disabled={busy}
-                      onClick={() => rescanSide(side)}
-                      aria-label={`Rescan ${side} of ID`}
-                    >
-                      Rescan
-                    </button>
-                  </figcaption>
-                  <IdPreview
-                    file={captures[side]?.file}
-                    label={side === 'front' ? 'Front of ID' : 'Back of ID'}
-                  />
-                </figure>
-              ))}
-            </div>
-            {readerIssue && (
-              <div className="id-check-progress">
-                <p className="form-help" role="status">
-                  {readerIssue}
-                </p>
-                <button
-                  className="id-check-text-button"
-                  type="button"
-                  disabled={busy}
-                  onClick={() => readCaptures(captures)}
-                >
-                  Retry reader
-                </button>
-              </div>
-            )}
-            <fieldset className="modal-fields id-check-details" disabled={busy}>
-              {reviewFields.map(([key, label]) => (
-                <label className="field" key={key}>
-                  {label}
-                  {key === 'idType' ? (
-                    <input className="clay-in" value={memberIdTypes[idType]} readOnly />
-                  ) : (
-                    <input
-                      className="clay-in"
-                      value={reviewEdits[key] ?? review[key] ?? ''}
-                      onChange={(event) => {
-                        const value = event.target.value
-                        setReviewEdits((current) => ({ ...current, [key]: value }))
-                      }}
-                      autoComplete="off"
-                    />
-                  )}
-                </label>
-              ))}
-            </fieldset>
-            {namesMatch(review.name, details.name) && (
-              <p className="id-check-name-status">
-                <span aria-hidden="true">✓</span> Name read from the ID matches the member details
-              </p>
-            )}
-            <WizardFooter note="Check the fields against both photos. Your edits are for this review. FitPulse verifies the images separately.">
-              <button
-                className="btn ghost cancel-button"
-                type="button"
-                disabled={busy}
-                onClick={() => rescanSide('back')}
-              >
-                Back
-              </button>
-              <button className="btn" type="submit" disabled={busy}>
-                Continue to face check
-              </button>
-            </WizardFooter>
-          </form>
-        )}
         {step >= 4 && (
           <section className="mf" aria-label="Capture the member’s face">
             {faceSaved ? (
@@ -524,10 +400,10 @@ export default function MemberIdWizard({
                       type="button"
                       onClick={() => {
                         setFaceSaved(false)
-                        setStep(3)
+                        setStep(2)
                       }}
                     >
-                      Back to ID details
+                      Back to ID scan
                     </button>
                     <button className="btn" type="button" onClick={finishCreation}>
                       Retry account creation
@@ -558,7 +434,7 @@ export default function MemberIdWizard({
                     className="btn ghost cancel-button"
                     type="button"
                     disabled={busy}
-                    onClick={() => setStep(3)}
+                    onClick={() => setStep(2)}
                   >
                     Back
                   </button>

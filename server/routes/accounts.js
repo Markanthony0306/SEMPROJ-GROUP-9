@@ -15,6 +15,9 @@ import {
 import {
   MemberDeactivationWorkflow
 } from '../services/MemberDeactivationWorkflow.js'
+import { MemberDeletionService } from '../services/MemberDeletionService.js'
+import { MemberDeletionRepository } from '../repositories/MemberDeletionRepository.js'
+import { MemberDeletionWorkflow } from '../services/MemberDeletionWorkflow.js'
 
 export function accountRoutes({
   authenticate,
@@ -31,13 +34,37 @@ export function accountRoutes({
     service: new MemberDeactivationService(),
     repository: new MemberDeactivationRepository(supabase)
   })
+  const deletionWorkflow = new MemberDeletionWorkflow({
+    service: new MemberDeletionService(),
+    repository: new MemberDeletionRepository(supabase)
+  })
 
-  // Permanent member deletion remains disabled. Use deactivation to retain records.
   router.delete('/profile', authenticate, (_req, res) => res.status(403).json({
     message: 'Member accounts cannot be permanently deleted. Contact the gym.'
   }))
-  router.delete('/admin/members/:id', authenticate, requireRole('admin'), rateLimit({ max: 5 }), (_req, res) =>
-    res.status(403).json({ message: 'Permanent deletion is disabled. Deactivate the member instead.' }))
+  router.delete('/admin/members/:id', authenticate, requireRole('admin'), rateLimit({ max: 5 }), async (req, res) => {
+    if (req.body?.confirmation !== 'DELETE')
+      return res.status(400).json({ message: 'Type DELETE to confirm.' })
+    const password = req.body?.currentPassword
+    if (typeof password !== 'string' || !password || Buffer.byteLength(password, 'utf8') > 72)
+      return res.status(400).json({ message: 'Enter your current password.' })
+    try {
+      const actor = await loadAccount(req.user.id)
+      if (!actor || actor.role !== 'admin' || actor.status !== 'active')
+        return res.status(403).json({ message: 'Administrator account is unavailable.' })
+      const verified = await authenticatePassword({ createAuthClient, email: actor.email, password })
+      if (verified.id !== actor.authUserId)
+        return res.status(401).json({ message: 'Your login could not be verified.' })
+      const account = await loadAccount(req.params.id)
+      await deletionWorkflow.execute({ account, manual: true })
+      return res.json({ message: 'Member account deleted.' })
+    } catch (error) {
+      if (error instanceof PasswordAuthenticationError || error.status)
+        return res.status(error.status || 401).json({ message: error.message })
+      console.error('Member deletion failed:', error.code || 'MEMBER_DELETION_ERROR')
+      return res.status(503).json({ message: 'Unable to delete the member account.' })
+    }
+  })
 
   const deactivate = async (req, res) => {
     if (req.body?.confirmation !== 'DEACTIVATE') {

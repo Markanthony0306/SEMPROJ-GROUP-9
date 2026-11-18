@@ -1,11 +1,15 @@
+import { useContext } from 'react'
 import DataTable from '../DataTable'
 import ProfileAvatar from '../ProfileAvatar'
 import CreatedMemberCredentials from '../CreatedMemberCredentials'
 import { membershipState } from '../../utils/membership'
 import { Pill, memberBadge } from './AdminStatus'
 import { Modal } from './AdminDialogParts'
+import { DashboardSheetContext } from '../Dialog'
 
-export default function AdminMemberDialogs({ modal, setModal, pending, error, renewals, money, date, createMember, updateMember, data, planOptionLabel, recordPayment, members, currentUser, act, idVerificationEnabled = false }) {
+export default function AdminMemberDialogs({ modal, setModal, pending, error, renewals, money, date, updateMember, data, planOptionLabel, recordPayment, members, currentUser, act, idVerificationEnabled = false }) {
+  // Mobile rows expose the existing record actions inside the member profile.
+  const mobile = useContext(DashboardSheetContext)
   return (
     <>
       {modal?.kind === 'view' && (
@@ -58,6 +62,16 @@ export default function AdminMemberDialogs({ modal, setModal, pending, error, re
             </dl>
           </section>
           <div className="ma">
+            {mobile && (
+              <button className="btn ghost" type="button" onClick={() => setModal({ kind: 'edit', member: modal.member })}>
+                Edit member
+              </button>
+            )}
+            {mobile && currentUser?.role === 'admin' && (
+              <button className="btn ghost" type="button" onClick={() => setModal({ kind: 'deactivate-account', member: modal.member })}>
+                Delete account
+              </button>
+            )}
             <button
               className="btn ghost"
               type="button"
@@ -94,69 +108,6 @@ export default function AdminMemberDialogs({ modal, setModal, pending, error, re
           </section>
         </Modal>
       )}
-      {!idVerificationEnabled && modal?.kind === 'create' && currentUser?.role === 'admin' && (
-        <Modal
-          busy={pending}
-          error={error}
-          title="Create Member Account"
-          onClose={() => setModal(null)}
-        >
-          <form onSubmit={createMember} className="mf">
-            <label className="field">
-              Full name
-              <input className="clay-in" name="name" required />
-            </label>
-            <label className="field">
-              Contact number
-              <input className="clay-in" name="phone" />
-            </label>
-            <label className="field">
-              Email
-              <input className="clay-in" name="email" type="email" required />
-            </label>
-            <p className="form-help">
-              A temporary password will be shown once so you can give it to the member.
-            </p>
-            <label className="field">
-              Plan
-              <select className="clay-in" name="plan" defaultValue="" required>
-                <option value="" disabled>
-                  Select a membership plan
-                </option>
-                {data.membershipPlans.map((plan) => (
-                  <option key={plan.plan_id} value={plan.plan_name}>
-                    {planOptionLabel(plan)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p className="form-help">
-              Choose the Student plan to apply its configured student rate. Confirm eligibility
-              before selecting it.
-            </p>
-            <label className="field">
-              Payment
-              <select className="clay-in" name="method">
-                <option>Cash</option>
-                <option>GCash</option>
-              </select>
-            </label>
-            <label className="set">
-              Payment already received
-              <input type="checkbox" name="recordPayment" />
-            </label>
-            <p className="form-help">
-              Check this only after receiving the plan payment through Cash or GCash.
-            </p>
-            <div className="ma">
-              <button className="btn ghost" type="button" onClick={() => setModal(null)}>
-                Cancel
-              </button>
-              <button className="btn">Create</button>
-            </div>
-          </form>
-        </Modal>
-      )}
       {modal?.kind === 'edit' && (
         <Modal busy={pending} error={error} title="Edit Member" onClose={() => setModal(null)}>
           <form onSubmit={updateMember} className="mf">
@@ -185,11 +136,13 @@ export default function AdminMemberDialogs({ modal, setModal, pending, error, re
         </Modal>
       )}
       {modal?.kind === 'credentials' && (
-        <Modal title="Member sign-in details" onClose={() => setModal(null)}>
+        <Modal title={mobile ? 'Successful creation of a new member' : 'Member sign-in details'} onClose={() => setModal(null)}>
           <CreatedMemberCredentials
             member={modal.member}
             temporaryPassword={modal.temporaryPassword}
-            onDismiss={() => idVerificationEnabled ? setModal(null) : setModal({ kind: 'face', member: modal.member })}
+            date={mobile ? date : undefined}
+            onDismiss={() => mobile || idVerificationEnabled ? setModal(null) : setModal({ kind: 'face', member: modal.member })}
+            onFaceSetup={mobile && !idVerificationEnabled ? () => setModal({ kind: 'face', member: modal.member }) : undefined}
           />
         </Modal>
       )}

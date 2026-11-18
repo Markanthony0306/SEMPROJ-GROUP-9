@@ -20,9 +20,10 @@ function validAccountInput(body) {
   const name = typeof body.name === 'string' ? body.name.trim() : ''
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
   const plan = typeof body.plan === 'string' ? body.plan.trim() : ''
-  if (!name || name.length > 100) return { error: 'Please enter a name of up to 100 characters.' }
-  if (!emailPattern.test(email)) return { error: 'Please enter a valid email address.' }
-  if (!plan || plan.length > 100) return { error: 'Choose a valid membership plan.' }
+  // Field names let the registration sheet focus the control the server rejected.
+  if (!name || name.length > 100) return { error: 'Please enter a name of up to 100 characters.', field: 'name' }
+  if (!emailPattern.test(email)) return { error: 'Please enter a valid email address.', field: 'email' }
+  if (!plan || plan.length > 100) return { error: 'Choose a valid membership plan.', field: 'plan' }
   return {
     name,
     email,

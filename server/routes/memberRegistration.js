@@ -1,5 +1,7 @@
 
 import { Router } from 'express'
+import { gorillaEvents } from '../../shared/gorillaEvents.js'
+import { emitPayment } from '../services/fitPulseEvents.js'
 import { MemberIdError } from '../services/memberIdRecords.js'
 import { FaceVerificationError } from '../services/faceVerification.js'
 
@@ -21,6 +23,7 @@ export function memberRegistrationRoutes({
   registrationService,
   registrationWorkflow,
   verifiedRegistrationWorkflow,
+  emitEvent,
   identityVerificationEnabled = false,
   faceKey,
   publicAccount
@@ -36,29 +39,38 @@ export function memberRegistrationRoutes({
       try {
         const body = req.body || {}
 
+        if (!identityVerificationEnabled) {
+          return res.status(503).json({
+            code: 'ID_VERIFICATION_UNAVAILABLE',
+            message: 'Member creation requires ID and face verification. Ask the administrator to configure it.'
+          })
+        }
+
         // 1. Reject invalid input before querying Supabase.
         const preliminaryInput = validAccountInput(body)
 
         if (preliminaryInput.error) {
           return res.status(400).json({
-            message: preliminaryInput.error
+            message: preliminaryInput.error,
+            field: preliminaryInput.field
           })
         }
 
-        if (identityVerificationEnabled &&
+        /**if (identityVerificationEnabled &&
             (typeof body.verificationId !== 'string' || !body.verificationId)) {
           return res.status(409).json({
             code: 'ID_VERIFICATION_REQUIRED',
             message: 'Complete ID and face verification before creating this account.'
           })
-        }
+        }**/
 
         if (
           body.recordPayment === true &&
           !paymentMethod(body)
         ) {
           return res.status(400).json({
-            message: 'Choose Cash or GCash for a recorded payment.'
+            message: 'Choose Cash or GCash for a recorded payment.',
+            field: 'method'
           })
         }
 
@@ -99,7 +111,8 @@ export function memberRegistrationRoutes({
 
         if (existingProfile) {
           return res.status(409).json({
-            message: 'An account with this email already exists.'
+            message: 'An account with this email already exists.',
+            field: 'email'
           })
         }
 
@@ -149,11 +162,24 @@ export function memberRegistrationRoutes({
           idVerified: identityVerificationEnabled
         }
 
-        // 7. Return the same response format as the original route.
+        // Notify after commit. The opaque ID also deduplicates the creator's local alert.
+        if (prepared.recordPayment) {
+          emitPayment(emitEvent, {
+            memberId: member.id, memberName: member.name,
+            amount: Number(prepared.planRecord.price), method: prepared.method
+          })
+        }
+        const notificationId = emitEvent?.(
+          { to: 'admins' },
+          gorillaEvents.memberCreated(member.name, member.id)
+        )
+
+        // 7. Return the original credentials and member details.
         res.set('Cache-Control', 'no-store')
 
         return res.status(201).json({
           temporaryPassword,
+          notificationId,
           message: 'Member account created.',
           member: {
             ...publicAccount(member),
@@ -171,7 +197,7 @@ export function memberRegistrationRoutes({
           error instanceof MemberIdError || error instanceof FaceVerificationError
         ) {
           return res.status(error.status).json({
-            message: error.message, code: error.code
+            message: error.message, code: error.code, field: error.field
           })
         }
 

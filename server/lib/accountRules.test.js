@@ -6,7 +6,7 @@ test('account validation normalizes fields without changing existing API message
   assert.deepEqual(validAccountInput({ name: ' Test ', email: 'TEST@EXAMPLE.COM ', plan: ' Monthly - Student ', phone: ' 123 ' }), {
     name: 'Test', email: 'test@example.com', plan: 'Monthly - Student', phone: '123'
   })
-  assert.deepEqual(validAccountInput({ name: '', email: 'a@b.co', plan: 'Monthly' }), { error: 'Please enter a name of up to 100 characters.' })
+  assert.deepEqual(validAccountInput({ name: '', email: 'a@b.co', plan: 'Monthly' }), { error: 'Please enter a name of up to 100 characters.', field: 'name' })
 })
 
 test('payment method preserves Cash default and GCash handling', () => {

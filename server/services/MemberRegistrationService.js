@@ -1,10 +1,11 @@
 
 export class MemberRegistrationError extends Error {
-  constructor(message, status = 400) {
+  constructor(message, status = 400, field) {
     super(message)
 
     this.name = 'MemberRegistrationError'
     this.status = status
+    this.field = field
   }
 }
 
@@ -24,7 +25,7 @@ export class MemberRegistrationService {
     const input = this.validAccountInput(body)
 
     if (input.error) {
-      throw new MemberRegistrationError(input.error)
+      throw new MemberRegistrationError(input.error, 400, input.field)
     }
 
     // 2. Check whether payment recording is requested.
@@ -33,7 +34,7 @@ export class MemberRegistrationService {
 
     if (recordPayment && !method) {
       throw new MemberRegistrationError(
-        'Choose Cash or GCash for a recorded payment.'
+        'Choose Cash or GCash for a recorded payment.', 400, 'method'
       )
     }
 
@@ -44,7 +45,7 @@ export class MemberRegistrationService {
 
     if (!planRecord) {
       throw new MemberRegistrationError(
-        `The ${input.plan} membership plan is not active in Supabase.`
+        `The ${input.plan} membership plan is not active in Supabase.`, 400, 'plan'
       )
     }
 
@@ -58,7 +59,7 @@ export class MemberRegistrationService {
       )
     ) {
       throw new MemberRegistrationError(
-        `The ${method} payment method is not configured in Supabase.`
+        `The ${method} payment method is not configured in Supabase.`, 400, 'method'
       )
     }
 
@@ -71,7 +72,8 @@ export class MemberRegistrationService {
     if (duplicate) {
       throw new MemberRegistrationError(
         'An account with this email already exists.',
-        409
+        409,
+        'email'
       )
     }
 

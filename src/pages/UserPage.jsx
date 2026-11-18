@@ -13,6 +13,10 @@ import { downloadPayments } from '../utils/paymentExport'
 import { getMemberQr } from '../utils/memberQr'
 import PasswordChangeForm from '../components/PasswordChangeForm'
 import { membershipState } from '../utils/membership'
+import { useGorilla } from '../components/gorilla/GorillaAssistant'
+import { MobileActivities, MobileOverview } from '../components/mobile/MobileScreens'
+import { activityRows, useReminderActivity } from '../components/mobile/activity'
+import useIsMobile from '../components/mobile/useIsMobile'
 
 const validDate = (value) => value && !Number.isNaN(new Date(value).getTime())
 const date = (value) =>
@@ -56,6 +60,8 @@ function StatCard({ label, value, hint, icon }) {
 
 export default function UserPage({ user, onSignOut }) {
   const { token } = useAuth()
+  const { latestEvent } = useGorilla() || {}
+  const mobile = useIsMobile()
   const [section, setSection] = useState('Dashboard')
   const [notificationsRead, setNotificationsRead] = useState(false)
   const [attendance, setAttendance] = useState([])
@@ -65,6 +71,7 @@ export default function UserPage({ user, onSignOut }) {
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(true)
   const [actionPending, setActionPending] = useState(false)
+  const reminderActivity = useReminderActivity(token, mobile, latestEvent)
   const load = useCallback(
     async (signal) => {
       try {
@@ -101,7 +108,11 @@ export default function UserPage({ user, onSignOut }) {
     const controller = new AbortController()
     load(controller.signal)
     return () => controller.abort()
-  }, [load])
+  }, [load, latestEvent])
+  const selectSection = useCallback((nextSection) => {
+    if (nextSection === 'Notifications') setNotificationsRead(true)
+    setSection(nextSection)
+  }, [])
   useEffect(() => {
     if (!['user', 'member'].includes(currentUser?.role) || !currentUser?.membershipEnd) return
     getMemberQr(currentUser, token).catch(() => { })
@@ -395,6 +406,18 @@ export default function UserPage({ user, onSignOut }) {
     ),
     Settings: settings
   }
+  // All member views use records already scoped to this account by the API.
+  const activity = mobile ? activityRows({ attendance, payments, reminders: reminderActivity.reminders, money }) : []
+  const mobileViews = mobile ? {
+    Dashboard: <MobileOverview stats={[
+      ['Membership', currentUser?.plan || 'Not set', 'card'],
+      ['Status', status, 'bell'],
+      ['Days remaining', expiry ?? '—', 'chart'],
+      ['Total check-ins', attendance.length, 'qr']
+    ]} rows={activity} onActivities={() => selectSection('Activities')} loading={loading} />,
+    Membership: views.Dashboard,
+    Activities: <MobileActivities rows={activity} loading={loading} select={selectSection} reminderError={reminderActivity.error} />
+  } : {}
   return (
     <DashboardShell
       profileLoading={loading}
@@ -403,10 +426,10 @@ export default function UserPage({ user, onSignOut }) {
       user={currentUser}
       onSignOut={onSignOut}
       activeSection={section}
-      onSectionChange={(nextSection) => {
-        if (nextSection === 'Notifications') setNotificationsRead(true)
-        setSection(nextSection)
-      }}
+      onSectionChange={selectSection}
+      content={views[section]}
+      mobileViews={mobileViews}
+      mobileQr={<MemberQr member={currentUser} viewOnly />}
       notificationCount={loading ? 0 : unreadNotificationCount}
       loading={loading}
     >
@@ -437,7 +460,6 @@ export default function UserPage({ user, onSignOut }) {
           </button>
         </div>
       )}
-      {views[section]}
     </DashboardShell>
   )
 }

@@ -1,8 +1,9 @@
 
 export class AttendanceWorkflow {
-  constructor({ service, repository }) {
+  constructor({ service, repository, onRecorded }) {
     this.service = service
     this.repository = repository
+    this.onRecorded = onRecorded
   }
 
   // Coordinate a scanner check-in from start to finish.
@@ -43,9 +44,18 @@ export class AttendanceWorkflow {
       })
 
     // STEP 6: Return the attendance result.
-    return this.service.formatResult(
+    const formatted = this.service.formatResult(
       result,
       member
     )
+    // Replayed scanner requests already have an attendance record.
+    if (formatted.status === 201) {
+      try {
+        this.onRecorded?.(member)
+      } catch (error) {
+        console.error('Attendance notification failed:', error.code || error.name)
+      }
+    }
+    return formatted
   }
 }

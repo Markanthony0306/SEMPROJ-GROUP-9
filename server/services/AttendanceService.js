@@ -125,6 +125,14 @@ export class AttendanceService {
       )
     }
 
+    if (!['CHECK_IN_RECORDED', 'ALREADY_RECORDED'].includes(result.result_code) || !result.attendance_id) {
+      throw new AttendanceError(
+        'CHECK_IN_UNAVAILABLE',
+        'Attendance could not be confirmed. Please try again.',
+        503
+      )
+    }
+
     return {
       status: result.result_code === 'CHECK_IN_RECORDED'
         ? 201

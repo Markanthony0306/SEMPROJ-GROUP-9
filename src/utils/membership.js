@@ -1,5 +1,14 @@
 const DAY_MS = 86400000
 
+// One search rule for both the mobile member rows and the desktop records table.
+export function filterMemberRecords(members, query) {
+  const term = query.trim().toLowerCase()
+  return members.filter((member) =>
+    `${member.name} ${member.memberCode || ''} ${member.id} ${member.email} ${member.phone || ''}`
+      .toLowerCase().includes(term)
+  )
+}
+
 export function membershipState(member, now = Date.now()) {
   const start = Date.parse(member?.membershipStart || member?.joined)
   const end = Date.parse(member?.membershipEnd)

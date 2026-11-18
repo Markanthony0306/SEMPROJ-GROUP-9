@@ -4,9 +4,12 @@ import FaceCapture, { preloadFaceCapture } from '../components/FaceCapture'
 import Dialog from '../components/Dialog'
 import Spinner from '../components/Spinner'
 import { apiRequest } from '../utils/api'
+import { gorillaEvents } from '../../shared/gorillaEvents'
 import './Login.css'
 
 const FAILED_LOGIN_LIMIT = 5
+// Login uses the same alert wording inside its existing accessible dialog.
+const loginLockAlert = gorillaEvents.loginLocked()
 
 const ICONS = {
   alert: (
@@ -246,7 +249,7 @@ export default function Login({ onLogin }) {
         if (nextAttempts >= FAILED_LOGIN_LIMIT) {
           setPassword('')
           setShaking(false)
-          setErrors({ email: '', password: '', general: 'Refresh the page to try logging in again.' })
+          setErrors({ email: '', password: '', general: loginLockAlert.message })
           setShowLockAlert(true)
           return
         }
@@ -390,7 +393,7 @@ export default function Login({ onLogin }) {
                 <h3 id="terms-intro">Before you continue</h3>
                 <p>Please read this short summary of how we use your information.</p>
                 <h4>What we collect</h4>
-                <p>Your login details and a scan of your face.</p>
+                <p>Your login and account information, and any ID and face data collected during registration.</p>
                 <h4>Why we collect it</h4>
                 <p>To confirm it's really you and keep your account and our gym secure.</p>
                 <h4>How we protect it</h4>
@@ -398,7 +401,7 @@ export default function Login({ onLogin }) {
                 <h4>Your choices</h4>
                 <p>You can ask us to delete your data or withdraw your consent at any time by contacting the gym admin.</p>
                 <h4>If you don't agree</h4>
-                <p>You won't be able to continue to face verification or use your account.</p>
+                <p>You won't be able to continue or use your account.</p>
               </section>
               <label className="login-face-consent">
                 <input
@@ -557,8 +560,8 @@ export default function Login({ onLogin }) {
         </section>
       </div>
       {showLockAlert && (
-        <Dialog title="OOPS" onClose={() => setShowLockAlert(false)} alert>
-          <p className="modal-copy">Too many failed attempts. Please refresh the page to try again.</p>
+        <Dialog title={loginLockAlert.title} onClose={() => setShowLockAlert(false)} alert>
+          <p className="modal-copy">{loginLockAlert.message}</p>
           <div className="ma">
             <button className="btn" type="button" onClick={() => window.location.reload()} data-autofocus>
               Refresh page

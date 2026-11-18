@@ -1,11 +1,10 @@
 import jwt from 'jsonwebtoken'
-import { requiresFaceAndId } from '../lib/face-auth.js'
 import { hasActiveFaceEnrollment } from '../services/faceVerification.js'
 
 export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus, supabase, identityVerificationEnabled = false }) {
   function createSession(account, { faceVerified = false, allowUnenrolledAdmin = false } = {}) {
     const passwordOnlyAdmin = account.role === 'admin' && allowUnenrolledAdmin
-    if (identityVerificationEnabled && requiresFaceAndId(account.role) && !faceVerified && !passwordOnlyAdmin)
+    if (identityVerificationEnabled && account.role === 'admin' && !faceVerified && !passwordOnlyAdmin)
       throw new Error('A verified face is required to issue this session.')
     const user = {
       id: account.id,
@@ -31,13 +30,18 @@ export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus, su
     }
   }
 
-  async function authenticate(req, res, next) {
-    const token = req.headers.authorization?.replace(/^Bearer\s+/i, '')
+  // Stream tickets use the same account, role, face and password checks as Bearer sessions.
+  async function verifySession(req, res, next, token, stream = false) {
     if (!token) return res.status(401).json({ message: 'Authentication is required.' })
     let claims
     try {
-      claims = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] })
-      if (claims.purpose || typeof claims.id !== 'string') throw new Error('Invalid session claims')
+      const audience = stream ? { audience: 'fitpulse-events' } : {}
+      claims = jwt.verify(token, jwtSecret, { algorithms: ['HS256'], ...audience })
+      const purpose = stream ? 'fitpulse-events' : undefined
+      if (claims.purpose !== purpose || typeof claims.id !== 'string')
+        throw new Error('Invalid session claims')
+      if (stream && (!Number.isFinite(claims.sessionExp) || claims.sessionExp * 1000 <= Date.now()))
+        throw new Error('Expired stream session')
     } catch {
       return res.status(401).json({ message: 'Your session is invalid or has expired.' })
     }
@@ -45,7 +49,9 @@ export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus, su
       const account = await loadAccount(claims.id)
       if (!account || account.status !== 'active' || (claims.authVersion || 0) !== (account.authVersion || 0))
         return res.status(401).json({ message: 'Your session has expired. Please log in again.' })
-      if (identityVerificationEnabled && requiresFaceAndId(account.role)) {
+      if (claims.role !== account.role)
+        return res.status(401).json({ message: 'Your permissions changed. Please log in again.' })
+      if (identityVerificationEnabled && account.role === 'admin') {
         const passwordOnlyAdmin = account.role === 'admin' && claims.faceVerified === false
         if (claims.role !== account.role || (claims.faceVerified !== true &&
           (!passwordOnlyAdmin || await hasActiveFaceEnrollment(supabase, account.id))))
@@ -63,6 +69,11 @@ export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus, su
       return res.status(503).json({ message: 'Account service is temporarily unavailable.' })
     }
   }
+
+  const authenticate = (req, res, next) =>
+    verifySession(req, res, next, req.headers.authorization?.replace(/^Bearer\s+/i, ''))
+  const authenticateEventStream = (req, res, next) =>
+    verifySession(req, res, next, req.query.ticket, true)
 
   function requireRole(...roles) {
     return (req, res, next) =>
@@ -94,5 +105,5 @@ export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus, su
     }
   }
 
-  return { createSession, authenticate, requireRole, rateLimit }
+  return { createSession, authenticate, authenticateEventStream, requireRole, rateLimit }
 }

@@ -3,7 +3,9 @@ import ProfileAvatar from '../ProfileAvatar'
 import { RecordDeleteButton } from '../RecordDeleteControls'
 import { Icon } from '../DashboardShell'
 import { Pill, memberBadge } from './AdminStaffDialogs'
+import { filterMemberRecords } from '../../utils/membership'
 
+// Desktop and mobile use the same search fields and matching rules.
 export default function AdminMembersSection({ query, setQuery, currentUser, setModal, members, pending, date }) {
   return (
       <article className="card clay">
@@ -28,12 +30,7 @@ export default function AdminMembersSection({ query, setQuery, currentUser, setM
           searchable={false}
           headings={['ID', 'Name', 'Contact', 'Plan', 'Expires', 'Status', 'Actions']}
         >
-          {members
-            .filter((member) =>
-              `${member.name} ${member.memberCode || ''} ${member.id} ${member.email} ${member.phone || ''}`
-                .toLowerCase()
-                .includes(query.trim().toLowerCase())
-            )
+          {filterMemberRecords(members, query)
             .map((member) => {
               const membershipStatus = memberBadge(member)
               const showAccountStatus =
@@ -79,9 +76,9 @@ export default function AdminMembersSection({ query, setQuery, currentUser, setM
                     >
                       <Icon name="edit" size={18} />
                     </button>
-                    {currentUser?.role === 'admin' && member.status === 'active' && (
+                    {currentUser?.role === 'admin' && (
                       <RecordDeleteButton
-                        label={`Deactivate account for ${member.name}`}
+                        label={`Delete account for ${member.name}`}
                         disabled={pending}
                         onClick={() => setModal({ kind: 'deactivate-account', member })}
                       />

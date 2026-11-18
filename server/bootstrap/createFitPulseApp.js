@@ -6,6 +6,8 @@ import { createDependencies } from './createDependencies.js'
 import { registerApiRoutes } from './registerApiRoutes.js'
 import { httpErrorHandler } from '../middleware/httpErrorHandler.js'
 import { FACE_BODY_LIMIT } from '../../shared/faceLiveness.js'
+import { createEmailDelivery, emailConfiguration } from '../services/emailDelivery.js'
+import { createMembershipReminderService, startMembershipReminders } from '../services/membershipReminders.js'
 
 /** Creates the app without listening; startup seeding is still done by server.js. */
 export function createFitPulseApp({ supabaseClient = supabase } = {}) {
@@ -30,5 +32,27 @@ export function createFitPulseApp({ supabaseClient = supabase } = {}) {
   registerApiRoutes(app, dependencies, config)
   app.use(httpErrorHandler)
 
-  return { app, port: config.port, accountSeedWorkflow: dependencies.accountSeedWorkflow }
+  function startReminders() {
+    // Keep mail startup outside the app factory so tests and other consumers can opt in.
+    const email = emailConfiguration()
+    const mailer = createEmailDelivery(email)
+    if (!mailer) return () => {}
+    const { runDue } = createMembershipReminderService({
+      supabase: supabaseClient,
+      loadDatabase: dependencies.loadDatabase,
+      mailer,
+      from: email.from,
+      loginUrl: config.clientUrl,
+      emitEvent: dependencies.events.emitEvent
+    })
+    const stop = startMembershipReminders({ runDue })
+    return () => {
+      stop()
+      mailer.close()
+    }
+  }
+
+  return {
+    app, port: config.port, accountSeedWorkflow: dependencies.accountSeedWorkflow, startReminders
+  }
 }

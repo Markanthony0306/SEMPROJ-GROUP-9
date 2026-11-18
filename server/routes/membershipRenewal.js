@@ -1,6 +1,7 @@
 
 import { Router } from 'express'
 import { MembershipError } from '../services/MembershipService.js'
+import { emitPayment } from '../services/fitPulseEvents.js'
 
 export function membershipRenewalRoutes({
   authenticate,
@@ -10,6 +11,7 @@ export function membershipRenewalRoutes({
   availablePlan,
   paymentMethod,
   publicAccount,
+  emitEvent,
   workflow
 }) {
   const router = Router()
@@ -116,6 +118,7 @@ export function membershipRenewalRoutes({
         }
 
         // 5. Respond only after the database operation succeeds
+        emitPayment(emitEvent, result.payment)
         return res.json({
           member: publicAccount(result.member),
           payment: result.payment

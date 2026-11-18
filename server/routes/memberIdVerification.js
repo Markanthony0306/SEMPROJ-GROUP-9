@@ -120,14 +120,14 @@ export function memberIdVerificationRoutes({
       if (req.body?.consent !== true)
         throw new MemberIdError(400, 'Record the member’s consent before capturing an ID or face.')
       const input = validAccountInput(req.body)
-      if (input.error) throw new MemberIdError(400, input.error)
+      if (input.error) return res.status(400).json({ message: input.error, field: input.field })
       const { data: existingMember, error: memberError } = await supabase
         .from('users')
         .select('id')
         .eq('email', input.email)
         .maybeSingle()
       if (memberError) throw memberError
-      if (existingMember) throw new MemberIdError(409, 'An account with this email already exists.')
+      if (existingMember) return res.status(409).json({ message: 'An account with this email already exists.', field: 'email' })
 
       const { data, error } = await cases()
         .insert({
@@ -233,7 +233,7 @@ export function memberIdVerificationRoutes({
         if (!namesMatch(details.name, row.applicant_name))
           throw new MemberIdError(
             422,
-            'The name read from the ID does not match the member name. Check the spelling and retake the photo.'
+            'Make sure ID details match the entered details. Check the name and retake the photo.'
           )
         const frontNumber = frontScan.fields.idNumber.value
         const backNumber = backScan.fields.idNumber.value

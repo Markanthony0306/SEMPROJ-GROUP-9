@@ -52,10 +52,7 @@ export function faceVerificationRoutes({
           role: account.role
         })
       })
-      if (account.role === 'user' && identityVerificationEnabled) {
-        return key ? issueFaceChallenge() : res.status(503).json(unavailable)
-      }
-      if (staffFaceEnabled) {
+      if (account.role !== 'user' && staffFaceEnabled) {
         const { data: enrollment, error } = await supabase
           .from('face_enrollments')
           .select('enrollment_id')

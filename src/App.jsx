@@ -9,6 +9,7 @@ import ChangePasswordPage from './pages/ChangePasswordPage'
 // Load dashboard styles up front; the shared shell owns the entrance timing.
 import AdminStaffPage from './pages/AdminStaffPage'
 import UserPage from './pages/UserPage'
+import { GorillaProvider } from './components/gorilla/GorillaAssistant'
 
 // Vite injects BASE_URL (with a trailing slash) when the app is hosted under a
 // subpath such as GitHub Pages. Every generated link must respect it.
@@ -22,7 +23,7 @@ function initialState() {
 }
 
 export default function App() {
-  const { login, logout, user, token } = useAuth()
+  const { login, logout, user, token, role } = useAuth()
   const [route, setRoute] = useState(initialState)
 
   // Re-validate an existing session on startup so an expired token does not leave
@@ -87,5 +88,11 @@ export default function App() {
     )
   }
 
-  return pages[route] || pages.login
+  const page = pages[route] || pages.login
+  // Login, terms, face verification and forced password changes never mount Rocky.
+  const dashboard = token && (
+    ((route === 'admin' || route === 'register') && role === 'admin') ||
+    (route === 'user' && ['user', 'member'].includes(role))
+  )
+  return dashboard ? <GorillaProvider key={user?.id} side="right" eventsUrl="/api/events">{page}</GorillaProvider> : page
 }

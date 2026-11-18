@@ -21,7 +21,8 @@ function createTestApp(options = {}) {
   const calls = {
     databaseLoads: 0,
     profileLookups: 0,
-    workflowCalls: []
+    workflowCalls: [],
+    events: []
   }
 
   // Test version of the existing account input validator.
@@ -215,6 +216,10 @@ function createTestApp(options = {}) {
     paymentMethod,
     registrationService,
     registrationWorkflow,
+    emitEvent(recipient, alert) {
+      calls.events.push({ recipient, alert })
+      return 'registration-alert'
+    },
 
     // Simulate the existing public-account formatter.
     publicAccount(member) {
@@ -296,6 +301,16 @@ test('returns HTTP 201 and a temporary password without exposing internal fields
 
   assert.equal(response.body.member.authUserId, undefined)
   assert.equal(response.body.member.subscriptionId, undefined)
+  assert.equal(response.body.notificationId, 'registration-alert')
+  assert.deepEqual(calls.events, [{
+    recipient: { to: 'admins' },
+    alert: {
+      type: 'success',
+      title: 'New member created',
+      message: 'Mia Cruz joined FitPulse.',
+      target: { section: 'Members', memberId: MEMBER_ID }
+    }
+  }])
 
   assert.equal(calls.workflowCalls.length, 1)
   assert.equal(calls.workflowCalls[0].actorId, ACTOR_ID)
@@ -431,7 +446,7 @@ test('does not call the workflow if profile lookup fails', async () => {
 
 // TEST 11: Confirmed registration conflict.
 test('returns HTTP 409 for a confirmed registration conflict', async () => {
-  const { app } = createTestApp({
+  const { app, calls } = createTestApp({
     workflowError: new MemberRegistrationWorkflowError(
       'REGISTRATION_CONFLICT',
       'A member account with conflicting details already exists.',
@@ -443,6 +458,7 @@ test('returns HTTP 409 for a confirmed registration conflict', async () => {
 
   assert.equal(response.status, 409)
   assert.match(response.body.message, /conflicting details/)
+  assert.deepEqual(calls.events, [])
 })
 
 // TEST 12: Uncertain registration result.

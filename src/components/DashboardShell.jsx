@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTheme } from './brand/useTheme'
 import ProfileAvatar from './ProfileAvatar'
 import Dialog from './Dialog'
@@ -6,6 +6,9 @@ import dayBanner from '../assets/db-day-v.jpg'
 import nightBanner from '../assets/db-night-v.jpg'
 import '../styles/dashboard-features.css'
 import './DashboardShell.css'
+import MobileLayout from './mobile/MobileLayout'
+import useIsMobile from './mobile/useIsMobile'
+import { useGorilla } from './gorilla/GorillaAssistant'
 
 const bannerStyles = {
   '--dashboard-day-image': `url("${dayBanner}")`,
@@ -132,10 +135,12 @@ const PATHS = {
   ),
   moon: <path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z" />,
   menu: <path d="M3 6h18M3 12h18M3 18h18" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  search: <path d="m21 21-5-5m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />,
   x: <path d="M6 6l12 12M18 6 6 18" />
 }
 
-export function Icon({ name, size = 20 }) {
+export function Icon({ name, size = 20, strokeWidth = 2 }) {
   return (
     <svg
       width={size}
@@ -143,7 +148,7 @@ export function Icon({ name, size = 20 }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -179,20 +184,52 @@ export default function DashboardShell({
   onSignOut,
   activeSection,
   onSectionChange,
+  onMemberAlert,
   notificationCount = 0,
   loading = false,
   children,
+  content,
+  dialogs,
+  mobileViews = {},
+  mobileQr,
+  onCreateMember,
   className = '',
   profileLoading = false,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [modal, setModal] = useState('')
   const { dark, toggle } = useTheme()
+  const isMobile = useIsMobile()
+  const registerNavigation = useGorilla()?.registerNavigation
   const isAdmin = role === 'admin'
   const navigation = isAdmin ? ADMIN_NAVIGATION : MEMBER_NAVIGATION
+  useEffect(() => registerNavigation?.(({ section, memberId }) => {
+    if (!navigation.some(([label]) => label === section)) return
+    setSidebarOpen(false)
+    onSectionChange(section)
+    if (isAdmin && section === 'Members' && typeof memberId === 'string')
+      onMemberAlert?.(memberId)
+  }), [isAdmin, navigation, onMemberAlert, onSectionChange, registerNavigation])
+  useEffect(() => {
+    // A tab without a desktop counterpart falls back to its existing desktop screen.
+    if (!isMobile && Object.hasOwn({ More: true, Membership: true, Activities: true }, activeSection)) {
+      onSectionChange(activeSection === 'Activities' ? 'Attendance' : activeSection === 'More' ? 'Settings' : 'Dashboard')
+    }
+  }, [activeSection, isMobile, onSectionChange])
   const select = (section) => {
     setSidebarOpen(false)
     onSectionChange(section)
+  }
+  if (isMobile) {
+    return (
+      <MobileLayout activeSection={activeSection} onSectionChange={onSectionChange}
+        onSignOut={onSignOut} onCreateMember={onCreateMember} role={role} className={className}
+        loading={loading} Brand={Brand} Icon={Icon} dark={dark} toggle={toggle}
+        content={mobileViews[activeSection] ?? content} dialogs={dialogs} qr={mobileQr}
+      >
+        {children}
+      </MobileLayout>
+    )
   }
   return (
     <div className={`app ${className}`} style={bannerStyles}>
@@ -294,6 +331,8 @@ export default function DashboardShell({
             aria-busy={loading}
           >
             {children}
+            {content}
+            {dialogs}
           </section>
         </div>
       </main>

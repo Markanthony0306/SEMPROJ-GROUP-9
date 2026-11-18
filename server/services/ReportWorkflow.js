@@ -2,9 +2,10 @@
 import { randomUUID } from 'node:crypto'
 
 export class ReportWorkflow {
-  constructor({ service, repository }) {
+  constructor({ service, repository, onPaymentRecorded }) {
     this.service = service
     this.repository = repository
+    this.onPaymentRecorded = onPaymentRecorded
   }
 
   // Retrieve report records.
@@ -69,6 +70,18 @@ export class ReportWorkflow {
       values,
       updating: Boolean(existing)
     })
+
+    // The Reports screen can also record a payment. An edit is not a new receipt.
+    if (this.onPaymentRecorded && kind === 'payments' && !existing) {
+      const member = database.accounts.find((account) => account.id === body.memberId)
+      const method = database.paymentMethods.find((item) => item.method_id === values.method_id)
+      this.onPaymentRecorded({
+        memberId: member.id,
+        memberName: member.name,
+        amount: values.amount_paid,
+        method: method.method_name
+      })
+    }
 
     return {
       status: existing ? 200 : 201,

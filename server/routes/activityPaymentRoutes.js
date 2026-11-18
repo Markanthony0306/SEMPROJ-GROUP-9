@@ -1,8 +1,9 @@
 import { PaymentService } from '../services/PaymentService.js'
 import { PaymentRepository } from '../repositories/PaymentRepository.js'
 import { PaymentWorkflow } from '../services/PaymentWorkflow.js'
+import { emitPayment } from '../services/fitPulseEvents.js'
 
-export function registerActivityAndPaymentRoutes(app, { authenticate, requireRole, loadDatabase, supabase, paymentMethod }) {
+export function registerActivityAndPaymentRoutes(app, { authenticate, requireRole, loadDatabase, supabase, paymentMethod, emitEvent }) {
   app.get('/api/attendance', authenticate, async (req, res) => {
     const database = await loadDatabase(['attendance'])
     const isAdmin = req.user.role === 'admin'
@@ -60,6 +61,7 @@ export function registerActivityAndPaymentRoutes(app, { authenticate, requireRol
         })
 
         // STEP 3: Return the result.
+        emitPayment(emitEvent, payment)
         return res.status(201).json({
           payment
         })

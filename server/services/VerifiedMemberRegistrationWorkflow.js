@@ -1,5 +1,6 @@
 import { MemberIdError, requireMemberIdProof } from './memberIdRecords.js'
-import { MemberRegistrationWorkflowError } from './MemberRegistrationWorkflow.js'
+import { FaceVerificationError } from './faceVerification.js'
+import { cleanupRejectedAuthUser, MemberRegistrationWorkflowError } from './MemberRegistrationWorkflow.js'
 
 export class VerifiedMemberRegistrationWorkflow {
   constructor({ repository, authAdmin, generateTemporaryPassword }) {
@@ -29,9 +30,13 @@ export class VerifiedMemberRegistrationWorkflow {
       })
       return { ...saved, temporaryPassword }
     } catch (error) {
+      // These checks fail before a write or after a confirmed SQL rollback.
+      if (error instanceof MemberIdError || error instanceof FaceVerificationError) {
+        await cleanupRejectedAuthUser(this.authAdmin, auth.user.id)
+        throw error
+      }
       // The DB may have committed despite a lost network reply. Preserve the Auth
       // user until the operator verifies both Auth and profile state manually.
-      if (error instanceof MemberIdError) throw error
       throw new MemberRegistrationWorkflowError('ENROLLMENT_OUTCOME_UNCERTAIN',
         'Enrollment could not be confirmed. Check member records and Supabase Auth before retrying.',
         { status: 503, cause: error })

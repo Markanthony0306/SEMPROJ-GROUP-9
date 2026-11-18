@@ -1,4 +1,4 @@
-import MemberIdWizard from './MemberIdWizard'
+import CreateMemberSheet from '../mobile/CreateMemberSheet'
 import { useAuth } from '../../auth/AuthContext'
 import RecordDeleteDialog from '../RecordDeleteControls'
 import AccountDeleteDialog from '../AccountDeleteDialog'
@@ -12,6 +12,7 @@ export default function AdminStaffDialogs({
   currentUser,
   pending,
   error,
+  fieldError,
   deletion,
   setDeletion,
   load,
@@ -37,13 +38,13 @@ export default function AdminStaffDialogs({
         <AccountDeleteDialog
           account={modal.member}
           onClose={() => setModal(null)}
-          onDeactivated={async () => {
+          onDeleted={async () => {
             setModal(null)
 
             const refreshed = await load()
 
             setNotice(
-              `Member account deactivated. ${refreshed === false
+              `Member account deleted. ${refreshed === false
                 ? 'Refresh failed. Reload to see the latest records.'
                 : 'Records refreshed.'
               }`
@@ -59,13 +60,16 @@ export default function AdminStaffDialogs({
           onNotice={setNotice}
         />
       )}
-      {idVerificationEnabled && modal?.kind === 'create' && currentUser?.role === 'admin' && (
-        <MemberIdWizard
+      {/* The mobile dashboard supplies sheet presentation to the existing modal steps. */}
+      {modal?.kind === 'create' && currentUser?.role === 'admin' && (
+        <CreateMemberSheet
+          verifyIdentity={idVerificationEnabled}
           token={token}
           plans={data.membershipPlans}
           planOptionLabel={planOptionLabel}
           pending={pending}
           error={error}
+          fieldError={fieldError}
           onClose={() => setModal(null)}
           onCreate={createMember}
         />
@@ -79,7 +83,6 @@ export default function AdminStaffDialogs({
         renewals={renewals}
         money={money}
         date={date}
-        createMember={createMember}
         updateMember={updateMember}
         data={data}
         planOptionLabel={planOptionLabel}

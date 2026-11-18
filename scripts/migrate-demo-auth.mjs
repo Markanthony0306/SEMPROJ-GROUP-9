@@ -165,11 +165,6 @@ async function migrateDemoAccounts() {
       expectedRole: 'admin',
       fallbackMemberCode: 'FP-ADMIN',
     },
-    {
-      email: 'member@fitpulse.com',
-      expectedRole: 'member',
-      fallbackMemberCode: 'FP-DEMO-MEMBER',
-    },
   ];
 
   const rl = readline.createInterface({ input, output });
@@ -345,7 +340,7 @@ async function migrateDemoAccounts() {
 
   console.log('\nDemo-account provisioning completed.');
   console.log('The app reads and writes account data through Supabase.');
-  console.log('This helper only provisions the two demo Auth accounts and their profiles.');
+  console.log('This helper only provisions the administrator Auth account and profile.');
 }
 
 migrateDemoAccounts().catch((error) => {

@@ -1,9 +1,13 @@
 import crypto from 'node:crypto'
+import { networkErrorCode } from './networkErrors.js'
 
 const snapshots = new WeakMap()
 
 function fail(error, table) {
-  if (error) throw new Error(`Supabase ${table} query failed: ${error.message}`)
+  if (error) {
+    const code = networkErrorCode(error)
+    throw new Error(`Supabase ${table} query failed: ${error.message}${code ? ` [${code}]` : ''}`, { cause: error })
+  }
 }
 
 async function selectAll(supabase, table, columns, orderBy) {
@@ -207,7 +211,7 @@ export async function loadDatabase(supabase, sections = [
           remind: settingsRow.data.reminder_days,
           emailOn: settingsRow.data.email_enabled ?? settingsRow.data.email_notifications ?? false
         }
-      : { gym: 'FitPulse Gym', remind: 7, emailOn: true }
+      : { gym: 'FitPulse Gym', remind: 7, emailOn: false }
   }
 
   snapshots.set(database, {

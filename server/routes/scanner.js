@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import express from 'express'
 import jwt from 'jsonwebtoken'
 import QRCode from 'qrcode'
+import { gorillaEvents } from '../../shared/gorillaEvents.js'
 
 import {
   AttendanceService,
@@ -21,7 +22,7 @@ import { supabase } from '../lib/supabase.js'
 
 export { membershipFailure }
 
-export function scannerRoutes({ loadAccount, authenticate, requireRole, rateLimit, jwtSecret }) {
+export function scannerRoutes({ loadAccount, authenticate, requireRole, rateLimit, jwtSecret, emitEvent }) {
   const router = express.Router()
   // A QR token must never be usable as a web login token.
   const qrSecret = crypto.createHmac('sha256', jwtSecret).update('fitpulse-qr-v1').digest('hex')
@@ -38,7 +39,11 @@ export function scannerRoutes({ loadAccount, authenticate, requireRole, rateLimi
     repository: new AttendanceRepository({
       supabase,
       loadAccount
-    })
+    }),
+    onRecorded(member) {
+      emitEvent?.({ to: 'admins' }, gorillaEvents.qrCheckIn(member.name))
+      emitEvent?.({ to: { userId: member.id } }, gorillaEvents.qrCheckIn())
+    }
   })
 
 

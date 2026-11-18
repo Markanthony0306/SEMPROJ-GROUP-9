@@ -2,9 +2,10 @@ import { useState } from 'react'
 import Dialog from '../Dialog'
 import FaceCapture from '../FaceCapture'
 
-export function Modal({ title, children, onClose, busy, error, className }) {
+export function Modal({ title, children, onClose, busy, error, className, invalidField }) {
+  // Dialog handles mobile focus without adding a second form or submit path.
   return (
-    <Dialog title={title} onClose={onClose} busy={busy} className={className}>
+    <Dialog title={title} onClose={onClose} busy={busy} className={className} invalidField={invalidField}>
       {error && (
         <p className="form-error" role="alert">
           {error}

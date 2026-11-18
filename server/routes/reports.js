@@ -1,5 +1,6 @@
 
 import { Router } from 'express'
+import { emitPayment } from '../services/fitPulseEvents.js'
 
 import {
   ReportService
@@ -18,7 +19,8 @@ export function reportRoutes({
   requireRole,
   loadDatabase,
   supabase,
-  rateLimit
+  rateLimit,
+  emitEvent
 }) {
   const router = Router()
 
@@ -29,7 +31,8 @@ export function reportRoutes({
     repository: new ReportRepository({
       supabase,
       loadDatabase
-    })
+    }),
+    onPaymentRecorded: (payment) => emitPayment(emitEvent, payment)
   })
 
   // Preserve authentication, roles, and rate limits.

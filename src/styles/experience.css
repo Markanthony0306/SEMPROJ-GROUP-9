@@ -7,6 +7,7 @@
   --ui-control-height: 44px;
   --ui-duration: 200ms;
   --ui-action-orange: #b45309;
+  --ui-action-gradient: linear-gradient(145deg, var(--ui-action-orange), var(--red));
   --ui-error: #ab2633;
   --ui-action-red: #d62828;
 }
@@ -33,7 +34,7 @@
   opacity: 1;
 }
 .app .clay-in:focus-visible,
-.app .btn:focus-visible,
+:is(.app, .rocky) .btn:focus-visible,
 #login .clay-in:focus-visible {
   outline: 2px solid var(--orange);
   outline-offset: 2px;
@@ -50,7 +51,7 @@
   color: var(--ui-error);
   overflow-wrap: anywhere;
 }
-.app .btn,
+:is(.app, .rocky) .btn,
 #login .btn {
   min-height: var(--ui-control-height);
   max-width: 100%;
@@ -58,13 +59,13 @@
   transition: transform var(--ui-duration) ease, box-shadow var(--ui-duration) ease,
     background-color var(--ui-duration) ease, color var(--ui-duration) ease;
 }
-.app .btn:not(:disabled):active,
+:is(.app, .rocky) .btn:not(:disabled):active,
 #login .btn:not(:disabled):active {
   transform: translateY(1px);
 }
-.app .btn:not(.ghost, .danger),
+:is(.app, .rocky) .btn:not(.ghost, .danger),
 #login .btn:not(.ghost, .danger) {
-  background-image: linear-gradient(145deg, var(--ui-action-orange), var(--red));
+  background-image: var(--ui-action-gradient);
 }
 #login .login-face-back.cancel-button {
   padding-inline: var(--ui-space-2);

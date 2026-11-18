@@ -1,5 +1,6 @@
 import crypto from 'node:crypto'
 import { expiryEmail } from './emailTemplates.js'
+import { gorillaEvents } from '../../shared/gorillaEvents.js'
 
 const DAY_MS = 86_400_000
 const CHECK_INTERVAL_MS = 60 * 60 * 1000
@@ -78,6 +79,7 @@ export function createMembershipReminderService({
   mailer,
   from,
   loginUrl,
+  emitEvent,
   logger = console,
   now = Date.now
 }) {
@@ -185,6 +187,12 @@ export function createMembershipReminderService({
       throw new Error(
         'A membership reminder was accepted by SMTP, but its delivery record could not be saved. Check membership_reminders before retrying.'
       )
+    }
+    // Announce only after acceptance is saved and the duplicate guard is in place.
+    const days = Math.max(1, Math.ceil((Date.parse(membershipEnd) - now()) / DAY_MS))
+    for (const to of ['admins', { userId: member.id }]) {
+      const name = to === 'admins' ? member.name : null
+      emitEvent?.({ to }, type === 'upcoming' ? gorillaEvents.expiring(name, days) : gorillaEvents.expired(name))
     }
     return true
   }

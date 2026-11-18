@@ -1,8 +1,9 @@
 
 export class EquipmentWorkflow {
-  constructor({ service, repository }) {
+  constructor({ service, repository, onSaved }) {
     this.service = service
     this.repository = repository
+    this.onSaved = onSaved
   }
 
   // Retrieve equipment and maintenance history.
@@ -27,10 +28,12 @@ export class EquipmentWorkflow {
       await this.repository.loadRecords()
 
     // STEP 3: Save the equipment.
-    return this.repository.create(
+    const saved = await this.repository.create(
       database,
       equipment
     )
+    this.onSaved?.(saved)
+    return saved
   }
 
   // Update equipment and create maintenance logs.
@@ -53,9 +56,14 @@ export class EquipmentWorkflow {
       })
 
     // STEP 4: Persist equipment and maintenance.
-    return this.repository.update(
+    const saved = await this.repository.update(
       database,
       prepared
     )
+    if (saved.condition !== existingEquipment.condition || saved.category !== existingEquipment.category ||
+        body.inspected || body.maintenanceNote !== undefined) {
+      this.onSaved?.(saved, existingEquipment, body)
+    }
+    return saved
   }
 }
