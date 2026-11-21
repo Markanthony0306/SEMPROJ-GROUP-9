@@ -575,11 +575,14 @@
     bottom: var(--dashboard-padding);
     width: min(280px, calc(100vw - var(--dashboard-padding) - var(--dashboard-padding)));
     height: auto;
+    visibility: hidden;
     transform: translateX(-120%);
-    transition: transform 0.3s;
+    transition: transform 0.3s, visibility 0s 0.3s;
   }
   .app.admin-app aside.open {
+    visibility: visible;
     transform: none;
+    transition-delay: 0s;
   }
   .admin-app .ov.show {
     display: block;
@@ -591,6 +594,19 @@
 @media (max-width: 760px) {
   .admin-app .g2 {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (width < 40rem) {
+  .fitpulse-mobile .notification-list li {
+    flex-wrap: wrap;
+    gap: var(--ui-space-2);
+  }
+  .fitpulse-mobile .notification-list li > :first-child {
+    flex-basis: 100%;
+  }
+  .fitpulse-mobile .notification-row-actions {
+    flex-wrap: wrap;
+    flex-shrink: 1;
   }
 }
 @media (max-width: 560px) {

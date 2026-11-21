@@ -2,7 +2,7 @@ import 'dotenv/config'
 import { createClient } from '@supabase/supabase-js'
 import { passwordPolicy, passwordPolicyMessage } from '../shared/passwordPolicy.js'
 
-const email = process.env.ADMIN_EMAIL || 'admin@fitpulse.com'
+const email = (process.env.ADMIN_EMAIL || 'admin@fitpulse.com').trim().toLowerCase()
 const newPassword = process.env.ADMIN_PASSWORD
 const url = process.env.SUPABASE_URL
 const secretKey = process.env.SUPABASE_SECRET_KEY

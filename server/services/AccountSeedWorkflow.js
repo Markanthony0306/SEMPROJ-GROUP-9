@@ -6,14 +6,12 @@ import crypto from 'node:crypto'
 export class AccountSeedWorkflow {
   constructor({
     repository,
-    isProduction,
     passwordPolicy,
     passwordPolicyMessage,
     availablePlan,
     addMembershipDays
   }) {
     this.repository = repository
-    this.isProduction = isProduction
     this.passwordPolicy = passwordPolicy
     this.passwordPolicyMessage = passwordPolicyMessage
     this.availablePlan = availablePlan
@@ -34,11 +32,25 @@ export class AccountSeedWorkflow {
   async ensureSeedAccount({ email, name, password, role, plan, membershipDays = 0 }) {
     const database = await this.repository.load(['accounts'])
     let account = database.accounts.find((item) => item.email.toLowerCase() === email)
+    if (role === 'admin') {
+      if (account && account.role !== 'admin') {
+        throw new Error('ADMIN_EMAIL belongs to a non-admin FitPulse account.')
+      }
+      if (account?.authUserId) return account.id
+      // This is a first-admin bootstrap. An existing admin keeps its identity on restart.
+      if (!account && database.accounts.some((item) => item.role === 'admin')) return
+    }
     let authUser = account?.authUserId
       ? { id: account.authUserId }
       : await this.findAuthUser(email)
 
+    if (authUser && !account && role === 'admin') {
+      throw new Error('ADMIN_EMAIL belongs to an Auth user without a linked FitPulse admin profile.')
+    }
     if (!authUser) {
+      if (!this.passwordPolicy(password)) {
+        throw new Error('Set ADMIN_PASSWORD in the server environment. ' + this.passwordPolicyMessage)
+      }
       const { data, error } = await this.repository.createAuthUser({ email, name, password })
       if (error || !data.user) {
         throw new Error(
@@ -95,25 +107,11 @@ export class AccountSeedWorkflow {
     return account.id
   }
 
-  async run() {
-    const adminPassword = process.env.ADMIN_PASSWORD || (this.isProduction ? '' : 'admin123')
-    const existingDatabase = await this.repository.load(['accounts'])
-    const existingAdmin = existingDatabase.accounts.find(
-      (account) => account.email === 'admin@fitpulse.com'
-    )
-    const existingAdminAuth = existingAdmin?.authUserId ||
-      await this.findAuthUser('admin@fitpulse.com')
-
-    if (this.isProduction && !existingAdminAuth && !this.passwordPolicy(adminPassword)) {
-      throw new Error(
-        'ADMIN_PASSWORD must meet the password policy. ' + this.passwordPolicyMessage
-      )
-    }
-
+  async run(env = process.env) {
     await this.ensureSeedAccount({
-      email: 'admin@fitpulse.com',
+      email: (env.ADMIN_EMAIL || 'admin@fitpulse.com').trim().toLowerCase(),
       name: 'FitPulse Staff',
-      password: adminPassword,
+      password: env.ADMIN_PASSWORD || '',
       role: 'admin',
       plan: 'Staff access'
     })

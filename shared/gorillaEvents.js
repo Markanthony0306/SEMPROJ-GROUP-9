@@ -1,6 +1,7 @@
 // Share event wording between persisted API operations and local UI actions.
 export const gorillaTitles = {
   memberCreated: 'New member created',
+  memberDeleted: 'Member account deleted',
   expiring: 'Membership expiring',
   expired: 'Membership expired',
   equipmentAdded: 'Equipment added',
@@ -19,6 +20,12 @@ export const gorillaEvents = {
     title: gorillaTitles.memberCreated,
     message: `${name} joined FitPulse.`,
     target: { section: 'Members', memberId }
+  }),
+  memberDeleted: () => ({
+    type: 'success',
+    title: gorillaTitles.memberDeleted,
+    message: 'The member account and its history were removed.',
+    target: { section: 'Members' }
   }),
   expiring: (name, days) => ({
     type: 'warning',

@@ -4,6 +4,7 @@ import { gorillaEvents } from '../../shared/gorillaEvents.js'
 import { emitPayment } from '../services/fitPulseEvents.js'
 import { MemberIdError } from '../services/memberIdRecords.js'
 import { FaceVerificationError } from '../services/faceVerification.js'
+import { validateMemberEmail } from '../services/memberEmail.js'
 
 import {
   MemberRegistrationError
@@ -16,6 +17,7 @@ import {
 export function memberRegistrationRoutes({
   authenticate,
   requireRole,
+  rateLimit = () => (_req, _res, next) => next(),
   loadDatabase,
   supabase,
   validAccountInput,
@@ -26,9 +28,22 @@ export function memberRegistrationRoutes({
   emitEvent,
   identityVerificationEnabled = false,
   faceKey,
-  publicAccount
+  publicAccount,
+  checkEmailDomain = validateMemberEmail
 }) {
   const router = Router()
+
+  // This check reads DNS only. It never creates an Auth user or reserves an email.
+  router.post('/admin/members/validate-email', authenticate, requireRole('admin'),
+    rateLimit({ max: 30 }), async (req, res) => {
+      try {
+        await checkEmailDomain(req.body?.email)
+        return res.json({ valid: true })
+      } catch (error) {
+        if (!(error instanceof MemberRegistrationError)) throw error
+        return res.status(error.status).json({ message: error.message, field: error.field })
+      }
+    })
 
   router.post(
     '/admin/members',
@@ -56,13 +71,12 @@ export function memberRegistrationRoutes({
           })
         }
 
-        /**if (identityVerificationEnabled &&
-            (typeof body.verificationId !== 'string' || !body.verificationId)) {
+        if (typeof body.verificationId !== 'string' || !body.verificationId.trim()) {
           return res.status(409).json({
             code: 'ID_VERIFICATION_REQUIRED',
             message: 'Complete ID and face verification before creating this account.'
           })
-        }**/
+        }
 
         if (
           body.recordPayment === true &&
@@ -115,6 +129,8 @@ export function memberRegistrationRoutes({
             field: 'email'
           })
         }
+
+        await checkEmailDomain(input.email)
 
         // 5. Use the staged, ID-verified enrollment transaction when enabled.
         let persisted, authUserId, temporaryPassword, member
@@ -169,7 +185,7 @@ export function memberRegistrationRoutes({
             amount: Number(prepared.planRecord.price), method: prepared.method
           })
         }
-        const notificationId = emitEvent?.(
+        const notificationId = await emitEvent?.(
           { to: 'admins' },
           gorillaEvents.memberCreated(member.name, member.id)
         )

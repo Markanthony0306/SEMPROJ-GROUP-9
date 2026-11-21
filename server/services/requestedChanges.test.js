@@ -61,29 +61,59 @@ test('member registration fails closed when identity verification is disabled', 
   assert.equal(response.body.code, 'ID_VERIFICATION_UNAVAILABLE')
 })
 
-test('admin deletion requires confirmation and password before deleting a member', async () => {
+test('admin deletion checks Mia Cruz’s login and removes the fixture records after password confirmation', async () => {
   const admin = { id: 'admin', role: 'admin', status: 'active', email: 'admin@test.local', authUserId: 'auth-admin' }
-  const member = { id: 'member', role: 'user', authUserId: 'auth-member' }
-  const removed = []
+  const member = { id: '11111111-1111-4111-8111-111111111111', name: 'Mia Cruz', role: 'user', authUserId: 'auth-member' }
+  const records = new Set(['login', 'profile', 'ID', 'face', 'subscriptions', 'payments', 'attendance', 'avatar'])
+  const calls = []
+  let readiness = 'login_missing'
   const supabase = {
-    rpc: async () => ({ data: true }),
-    storage: { from: () => ({ list: async () => ({ data: [] }) }) },
-    auth: { admin: { deleteUser: async (id) => { removed.push(id); return {} } } }
+    rpc: async (name, ids) => {
+      assert.equal(name, 'fitpulse_member_deletion_readiness')
+      assert.deepEqual(ids, { p_user_id: member.id, p_auth_user_id: member.authUserId })
+      return { data: readiness }
+    },
+    storage: { from: () => ({
+      list: async () => ({ data: [{ name: 'profile.jpg' }] }),
+      remove: async (paths) => {
+        assert.deepEqual(paths, [`${member.id}/profile.jpg`])
+        calls.push('avatar')
+        records.delete('avatar')
+        return {}
+      }
+    }) },
+    auth: { admin: { deleteUser: async (id) => {
+      assert.equal(id, member.authUserId)
+      calls.push('login')
+      // Stand in for the database trigger and cascades in this API fixture.
+      records.clear()
+      return {}
+    } } }
   }
   const createAuthClient = () => ({ auth: { signInWithPassword: async ({ password }) =>
     password === 'correct' ? { data: { user: { id: 'auth-admin' } } } : { error: { code: 'invalid_credentials' } } } })
   const router = accountRoutes({ authenticate() {}, requireRole: () => () => {}, rateLimit: () => () => {},
-    loadAccount: async (id) => id === admin.id ? admin : member, supabase, createAuthClient })
+    loadAccount: async (id) => id === admin.id ? admin : member, supabase, createAuthClient,
+    emitEvent: ({ to }, alert) => { assert.equal(to, 'admins'); calls.push(alert.title) } })
   const handler = router.stack.find((layer) => layer.route?.path === '/admin/members/:id').route.stack.at(-1).handle
   const run = async (body) => {
     const response = { statusCode: 200, status(code) { this.statusCode = code; return this },
       json(value) { this.body = value; return this } }
     await handler({ body, params: { id: member.id }, user: { id: admin.id } }, response)
-    return response.statusCode
+    return response
   }
-  assert.equal(await run({ confirmation: 'wrong', currentPassword: 'correct' }), 400)
-  assert.equal(await run({ confirmation: 'DELETE', currentPassword: 'wrong' }), 401)
-  assert.deepEqual(removed, [])
-  assert.equal(await run({ confirmation: 'DELETE', currentPassword: 'correct' }), 200)
-  assert.deepEqual(removed, ['auth-member'])
+  assert.equal((await run({ confirmation: 'wrong', currentPassword: 'correct' })).statusCode, 400)
+  assert.equal((await run({ confirmation: 'DELETE', currentPassword: 'wrong' })).statusCode, 401)
+  const rejected = await run({ confirmation: 'DELETE', currentPassword: 'correct' })
+  assert.equal(rejected.statusCode, 409)
+  assert.match(rejected.body.message, /login that no longer exists/)
+  assert.deepEqual(calls, [])
+  assert.equal(records.size, 8)
+
+  readiness = 'ready'
+  const removed = await run({ confirmation: 'DELETE', currentPassword: 'correct' })
+  assert.equal(removed.statusCode, 200)
+  assert.equal(removed.body.message, 'Member account deleted.')
+  assert.deepEqual(calls, ['avatar', 'login', 'Member account deleted'])
+  assert.equal(records.size, 0)
 })

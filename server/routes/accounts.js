@@ -1,4 +1,6 @@
 import { Router } from 'express'
+import { withMemberAccountLock } from '../lib/memberAccountLock.js'
+import { gorillaEvents } from '../../shared/gorillaEvents.js'
 import {
   authenticatePassword,
   PasswordAuthenticationError
@@ -25,7 +27,8 @@ export function accountRoutes({
   rateLimit,
   loadAccount,
   supabase,
-  createAuthClient
+  createAuthClient,
+  emitEvent
 }) {
   const router = Router()
 
@@ -55,9 +58,19 @@ export function accountRoutes({
       const verified = await authenticatePassword({ createAuthClient, email: actor.email, password })
       if (verified.id !== actor.authUserId)
         return res.status(401).json({ message: 'Your login could not be verified.' })
-      const account = await loadAccount(req.params.id)
-      await deletionWorkflow.execute({ account, manual: true })
-      return res.json({ message: 'Member account deleted.' })
+      if (!/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(req.params.id))
+        return res.status(400).json({ message: 'Invalid member account ID.' })
+      await withMemberAccountLock(req.params.id, async () => {
+        const account = await loadAccount(req.params.id)
+        await deletionWorkflow.execute({ account, manual: true })
+      })
+      let notificationId
+      try {
+        notificationId = await emitEvent?.({ to: 'admins' }, gorillaEvents.memberDeleted())
+      } catch {
+        console.error('Rocky could not announce the completed member deletion.')
+      }
+      return res.json({ message: 'Member account deleted.', notificationId })
     } catch (error) {
       if (error instanceof PasswordAuthenticationError || error.status)
         return res.status(error.status || 401).json({ message: error.message })

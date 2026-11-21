@@ -28,6 +28,8 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Load the pinned UMD global before React creates any analytics canvases. -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

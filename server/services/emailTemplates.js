@@ -80,10 +80,10 @@ export function welcomeEmail({ name, email, temporaryPassword, loginUrl }) {
   }
 }
 
-export function expiryEmail({ name, expiryDate, expired }) {
+export function expiryEmail({ name, expiryDate, expired, daysLeft }) {
   const message = expired
     ? `Dear ${name}, your FitPulse membership expired on ${expiryDate}. Please renew to restore your access. Thank you. - FitPulse`
-    : `Dear ${name}, your FitPulse membership expires on ${expiryDate}. Please renew before this date to continue your access. Thank you. - FitPulse`
+    : `Dear ${name}, your FitPulse membership expires ${daysLeft ? `in ${daysLeft} days, ` : ''}on ${expiryDate}. Please visit the front desk to renew. Thank you. - FitPulse`
   return {
     subject: 'Membership Expiry Reminder',
     text: message,
@@ -91,20 +91,21 @@ export function expiryEmail({ name, expiryDate, expired }) {
   }
 }
 
-export function recoveryEmail({ name, recoveryUrl }) {
-  const message =
-    'We received a request to reset your FitPulse password. Use the button below to choose a new one and get back to your fitness journey.'
+export function recoveryEmail({ name, recoveryUrl, expiresInMinutes }) {
+  const message = 'We received a request to reset your FitPulse password.'
+  const expiry = expiresInMinutes ? ` This link expires in ${expiresInMinutes} minutes.` : ''
+  const note = `Use this link once.${expiry} If you did not request a reset, ignore this email.`
   return {
     subject: 'Reset your FitPulse password',
-    text: `Hi ${name || 'there'},\n\n${message}\n\nReset password: ${recoveryUrl}\n\nThis link is time-limited and can only be used once. If you didn’t request a reset, ignore this email; your password stays unchanged. Never share this link.`,
+    text: `Dear ${name || 'FitPulse member'},\n\n${message}\n\nReset password: ${recoveryUrl}\n\n${note}\n\nFitPulse`,
     ...emailLayout({
-      eyebrow: 'LET’S GET YOU BACK IN',
-      title: 'A fresh start for your password.',
+      eyebrow: 'ACCOUNT SECURITY',
+      title: 'Reset your password',
       name,
       message,
       actionUrl: recoveryUrl,
-      actionLabel: 'Choose a new password',
-      note: 'This link is time-limited and can only be used once. If you didn’t request this reset, you can safely ignore this email. Never share this link.'
+      actionLabel: 'Reset password',
+      note
     })
   }
 }

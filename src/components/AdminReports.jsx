@@ -202,6 +202,7 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
           {REPORT_TYPES.map(([value, label]) => (
             <button
               type="button"
+              className="btn"
               key={value}
               title={label}
               aria-pressed={kind === value}
@@ -226,7 +227,7 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
         </div>
         <div className="report-heading-actions">
           <button
-            className="btn ghost"
+            className="btn"
             type="button"
             disabled={!report.rows.length}
             onClick={() => downloadCsvRows(`fitpulse-${kind}`, report.headings, report.rows)}
@@ -277,7 +278,7 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
             ))}
             <td className="acts">
               <button
-                className="report-icon-button"
+                className="btn report-icon-button"
                 type="button"
                 title="View record"
                 aria-label={`View ${row[0]} record`}
@@ -286,7 +287,7 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
                 <Icon name="eye" size={18} />
               </button>
               <button
-                className="report-icon-button"
+                className="btn report-icon-button"
                 type="button"
                 title="Edit record"
                 aria-label={`Edit ${row[0]} record`}
@@ -300,6 +301,7 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
               </button>
               {!membership && role === 'admin' && (
                 <RecordDeleteButton
+                  primary
                   label={`Delete ${row[0]} record`}
                   disabled={busy}
                   onClick={() =>

@@ -15,6 +15,15 @@ export default defineConfig({
     exclude: ['@paddleocr/paddleocr-js']
   },
   server: {
+    port: 5173,
+    strictPort: true,
+    allowedHosts: ['surprise-datebook-glancing.ngrok-free.dev'],
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true
+      }
+    },
     fs: {
       deny: [
         '.env',

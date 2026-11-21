@@ -8,7 +8,7 @@ import '../styles/dashboard-features.css'
 import './DashboardShell.css'
 import MobileLayout from './mobile/MobileLayout'
 import useIsMobile from './mobile/useIsMobile'
-import { useGorilla } from './gorilla/GorillaAssistant'
+import { RockyNotificationButton, useGorilla } from './gorilla/GorillaAssistant'
 
 const bannerStyles = {
   '--dashboard-day-image': `url("${dayBanner}")`,
@@ -198,18 +198,30 @@ export default function DashboardShell({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [modal, setModal] = useState('')
+  const [membershipFocus, setMembershipFocus] = useState(0)
   const { dark, toggle } = useTheme()
   const isMobile = useIsMobile()
   const registerNavigation = useGorilla()?.registerNavigation
   const isAdmin = role === 'admin'
   const navigation = isAdmin ? ADMIN_NAVIGATION : MEMBER_NAVIGATION
   useEffect(() => registerNavigation?.(({ section, memberId }) => {
+    if (!isAdmin && section === 'Membership') {
+      onSectionChange(isMobile ? 'Membership' : 'Dashboard')
+      setMembershipFocus((count) => count + 1)
+      return
+    }
     if (!navigation.some(([label]) => label === section)) return
     setSidebarOpen(false)
     onSectionChange(section)
     if (isAdmin && section === 'Members' && typeof memberId === 'string')
       onMemberAlert?.(memberId)
-  }), [isAdmin, navigation, onMemberAlert, onSectionChange, registerNavigation])
+  }), [isAdmin, isMobile, navigation, onMemberAlert, onSectionChange, registerNavigation])
+  useEffect(() => {
+    if (!membershipFocus) return
+    const plan = document.getElementById('member-plan-details')
+    plan?.focus({ preventScroll: true })
+    plan?.scrollIntoView({ block: 'start' })
+  }, [membershipFocus])
   useEffect(() => {
     // A tab without a desktop counterpart falls back to its existing desktop screen.
     if (!isMobile && Object.hasOwn({ More: true, Membership: true, Activities: true }, activeSection)) {
@@ -278,6 +290,7 @@ export default function DashboardShell({
             <Icon name="menu" />
           </button>
           <h1>{activeSection}</h1>
+          <RockyNotificationButton Icon={Icon} />
           <button
             className="ib"
             type="button"

@@ -1,4 +1,5 @@
 import AdminDashboardSection from '../components/admin/AdminDashboardSection'
+import AdminAnalytics from '../components/admin/analytics/AdminAnalytics'
 import AdminMembersSection from '../components/admin/AdminMembersSection'
 import AdminEquipmentSection from '../components/admin/AdminEquipmentSection'
 import AdminAttendanceSection from '../components/admin/AdminAttendanceSection'
@@ -354,7 +355,7 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
         body: JSON.stringify({
           gym: form.get('gym'),
           remind: Number(form.get('remind')),
-          ...(mobile && { emailOn: form.has('emailOn') })
+          emailOn: form.has('emailOn')
         })
       },
       'Preferences saved.'
@@ -467,12 +468,14 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
   }[section]
   const mobileViews = mobile ? {
     Dashboard: (
-      <MobileOverview stats={[
-        ['Active members', active, 'users'],
-        ['Expiring soon', expiring.length, 'bell'],
-        ['Check-ins today', data.attendance.filter(onManilaDay).length, 'qr'],
-        ['Revenue today', money(data.payments.filter(onManilaDay).reduce((sum, item) => sum + Number(item.amount || 0), 0)), 'wallet']
-      ]} expiring={expiring} date={date} onMember={showMember} loading={loading} rows={activity}
+      <MobileOverview
+        summary={currentUser?.role === 'admin' ? <AdminAnalytics refreshKey={data} /> : null}
+        stats={[
+          ['Active members', active, 'users'],
+          ['Expiring soon', expiring.length, 'bell'],
+          ['Check-ins today', data.attendance.filter(onManilaDay).length, 'qr'],
+          ['Revenue today', money(data.payments.filter(onManilaDay).reduce((sum, item) => sum + Number(item.amount || 0), 0)), 'wallet']
+        ]} expiring={expiring} date={date} onMember={showMember} loading={loading} rows={activity}
         onExpiring={() => { setOnlyExpiring(true); setQuery(''); setSection('Members') }}
         onActivities={() => setSection('Activities')} />
     ),

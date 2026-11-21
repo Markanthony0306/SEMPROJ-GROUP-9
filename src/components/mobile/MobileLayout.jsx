@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { DashboardSheetContext } from '../Dialog'
+import { RockyNotificationButton } from '../gorilla/GorillaAssistant'
 import BottomNav from './BottomNav'
 import BottomSheet from './BottomSheet'
 import MoreRow from './MoreRow'
@@ -61,14 +62,17 @@ export default function MobileLayout({
           <div className="logo brand">
             <Brand />
           </div>
-          <button
-            type="button"
-            className="ib fitpulse-icon-button"
-            onClick={toggle}
-            aria-label={dark ? 'Use light theme' : 'Use dark theme'}
-          >
-            <Icon name={dark ? 'sun' : 'moon'} />
-          </button>
+          <div className="fitpulse-mobile-header-actions">
+            <RockyNotificationButton Icon={Icon} />
+            <button
+              type="button"
+              className="ib fitpulse-icon-button"
+              onClick={toggle}
+              aria-label={dark ? 'Use light theme' : 'Use dark theme'}
+            >
+              <Icon name={dark ? 'sun' : 'moon'} />
+            </button>
+          </div>
         </header>
         <main className="fitpulse-mobile-scroll" ref={scroller}>
           <div className="fitpulse-mobile-content" aria-busy={loading}>

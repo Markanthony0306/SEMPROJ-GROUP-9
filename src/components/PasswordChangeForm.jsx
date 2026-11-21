@@ -12,22 +12,32 @@ export default function PasswordChangeForm() {
   const [visible, setVisible] = useState({})
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
+  const [errorField, setErrorField] = useState('')
   const [message, setMessage] = useState('')
   const submit = async (event) => {
     event.preventDefault()
     if (pending) return
     setError('')
+    setErrorField('')
     setMessage('')
+    if (!values.currentPassword) {
+      setError('Enter your current password.')
+      setErrorField('currentPassword')
+      return
+    }
     if (!passwordPolicy(values.password)) {
       setError(passwordPolicyMessage)
+      setErrorField('password')
       return
     }
     if (values.password !== values.confirmPassword) {
       setError('The new passwords do not match.')
+      setErrorField('confirmPassword')
       return
     }
     if (values.password === values.currentPassword) {
       setError('Choose a password different from your current password.')
+      setErrorField('password')
       return
     }
     setPending(true)
@@ -47,12 +57,13 @@ export default function PasswordChangeForm() {
       setMessage('Password updated. Use your new password the next time you log in.')
     } catch (cause) {
       setError(cause.message || 'Could not update your password.')
+      if (cause.message === passwordPolicyMessage) setErrorField('password')
     } finally {
       setPending(false)
     }
   }
   return (
-    <form className="mf password-form" onSubmit={submit} aria-busy={pending}>
+    <form className="mf password-form" onSubmit={submit} aria-busy={pending} noValidate>
       <p id={helpId} className="form-help">
         {passwordPolicyMessage} Your current password is required.
       </p>
@@ -72,12 +83,16 @@ export default function PasswordChangeForm() {
               required
               minLength={name === 'currentPassword' ? undefined : MIN_PASSWORD_LENGTH}
               maxLength={name === 'currentPassword' ? 72 : MAX_PASSWORD_LENGTH}
-              aria-describedby={helpId}
+              aria-invalid={errorField === name && Boolean(error)}
+              aria-describedby={
+                errorField === name && error ? `${helpId} ${helpId}-${name}-error` : helpId
+              }
               value={values[name]}
               disabled={pending}
               onChange={(event) => {
                 setValues((previous) => ({ ...previous, [name]: event.target.value }))
                 setError('')
+                setErrorField('')
                 setMessage('')
               }}
             />
@@ -88,9 +103,14 @@ export default function PasswordChangeForm() {
               onToggle={() => setVisible((previous) => ({ ...previous, [name]: !previous[name] }))}
             />
           </span>
+          {errorField === name && error && (
+            <span id={`${helpId}-${name}-error`} className="form-error" role="alert">
+              {error}
+            </span>
+          )}
         </label>
       ))}
-      {error && (
+      {error && !errorField && (
         <p className="form-error" role="alert">
           {error}
         </p>

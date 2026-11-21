@@ -23,6 +23,7 @@ import { membershipRenewalRoutes } from '../routes/membershipRenewal.js'
 import { faceVerificationRoutes } from '../routes/faceVerification.js'
 import { memberRegistrationRoutes } from '../routes/memberRegistration.js'
 import { eventRoutes } from '../routes/events.js'
+import { analyticsRoutes } from '../routes/analytics.js'
 
 /** Route registration order is intentionally identical to the original server.js. */
 export function registerApiRoutes(app, dependencies, config) {
@@ -42,9 +43,10 @@ export function registerApiRoutes(app, dependencies, config) {
 
   app.use('/api', accountRoutes({
     authenticate, requireRole, rateLimit, loadAccount, supabase,
-    createAuthClient: createSupabaseAuthClient
+    createAuthClient: createSupabaseAuthClient, emitEvent
   }))
   app.use('/api', reportRoutes({ authenticate, requireRole, loadDatabase, supabase, rateLimit, emitEvent }))
+  app.use('/api', analyticsRoutes({ authenticate, requireRole, supabase }))
   app.use('/api', notificationRoutes({
     authenticate, requireRole, rateLimit, notifications: adminNotifications
   }))
@@ -83,6 +85,7 @@ export function registerApiRoutes(app, dependencies, config) {
   app.use('/api', memberRegistrationRoutes({
     authenticate,
     requireRole,
+    rateLimit,
     loadDatabase,
     supabase,
     validAccountInput,
@@ -146,7 +149,7 @@ export function registerApiRoutes(app, dependencies, config) {
 
   registerFaceEnrollmentRoutes(app, { authenticate, requireRole, rateLimit, supabase })
 
-  registerPasswordRecoveryRoutes(app, { rateLimit, emailPattern, passwordPolicy, passwordPolicyMessage, supabase, createAuthClient: createSupabaseAuthClient, clientUrl })
+  registerPasswordRecoveryRoutes(app, { rateLimit, emailPattern, passwordPolicy, passwordPolicyMessage, supabase, clientUrl })
 
   registerCurrentUserRoutes(app, { authenticate, loadAccount, publicAccount })
 

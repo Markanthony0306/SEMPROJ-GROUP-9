@@ -12,7 +12,7 @@ export class MemberDeletionRepository {
   async checkDeletionReady(account) {
     const { data: ready, error } =
       await this.supabase.rpc(
-        'check_fitpulse_account_deletion',
+        'fitpulse_member_deletion_readiness',
         {
           p_user_id: account.id,
           p_auth_user_id: account.authUserId
@@ -21,16 +21,20 @@ export class MemberDeletionRepository {
 
     if (error) {
       throw deletionError(
-        'Account deletion is unavailable. Apply migration 006_delete_member_accounts.sql.'
+        error.code === 'PGRST202'
+          ? 'Account deletion requires Supabase migration 023_member_deletion_readiness.sql.'
+          : 'Supabase could not check the member’s login link. Please try again.'
       )
     }
 
-    if (ready !== true) {
-      throw deletionError(
-        'The account link or cleanup setup changed. Check migrations 001 and 006, then refresh.',
-        409
-      )
+    const issues = {
+      profile_link_changed: 'This member’s login link changed. Refresh the member list and try again.',
+      login_missing: 'This profile points to a Supabase login that no longer exists.',
+      cascade_missing: 'The Supabase login-to-profile cascade is missing. Check migration 023.',
+      cleanup_missing: 'The member history cleanup trigger is disabled or missing. Check migration 023.'
     }
+    if (ready !== 'ready')
+      throw deletionError(issues[ready] || 'Supabase returned an invalid deletion check result.', 409)
 
     return true
   }
@@ -87,7 +91,7 @@ export class MemberDeletionRepository {
   }
 
   // 4. Delete the Supabase Auth account.
-  // Migration 006 handles the dependent database records.
+  // The Auth cascade and cleanup trigger remove the dependent database records.
   async deleteAuthUser(authUserId) {
     const { error } =
       await this.supabase.auth.admin.deleteUser(
@@ -96,7 +100,7 @@ export class MemberDeletionRepository {
 
     if (error) {
       throw deletionError(
-        'Unable to delete the member login. Please try again.'
+        'Supabase could not remove this login and its linked records. Check the Auth logs for the database or Storage error.'
       )
     }
   }

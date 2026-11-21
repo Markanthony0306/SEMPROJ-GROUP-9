@@ -4,8 +4,9 @@ import assert from 'node:assert/strict'
 import express from 'express'
 
 import { memberRegistrationRoutes } from './memberRegistration.js'
-import { MemberRegistrationService } from '../services/MemberRegistrationService.js'
+import { MemberRegistrationError, MemberRegistrationService } from '../services/MemberRegistrationService.js'
 import { MemberRegistrationWorkflowError } from '../services/MemberRegistrationWorkflow.js'
+import { validateMemberEmail } from '../services/memberEmail.js'
 
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 const AUTH_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
@@ -216,6 +217,26 @@ function createTestApp(options = {}) {
     paymentMethod,
     registrationService,
     registrationWorkflow,
+    identityVerificationEnabled: true,
+    checkEmailDomain: async (email) => {
+      if (options.domainRejected) {
+        throw new MemberRegistrationError('This email domain cannot receive email.', 400, 'email')
+      }
+      return email
+    },
+    verifiedRegistrationWorkflow: {
+      async execute({ actor, prepared }) {
+        const result = await registrationWorkflow.execute({ actorId: actor.id, prepared })
+        return {
+          authUserId: result.authUserId,
+          temporaryPassword: result.temporaryPassword,
+          profile: { id: MEMBER_ID, member_code: 'FP-TEST1234', created_at: DATE },
+          now: DATE,
+          membershipEnd: END_DATE,
+          subscriptionId: SUBSCRIPTION_ID
+        }
+      }
+    },
     emitEvent(recipient, alert) {
       calls.events.push({ recipient, alert })
       return 'registration-alert'
@@ -261,6 +282,7 @@ async function postRegistration(app, overrides = {}) {
           name: 'Mia Cruz',
           email: 'mia@example.test',
           plan: 'Monthly',
+          verificationId: 'test-verification-id',
           recordPayment: false,
           ...overrides
         })
@@ -387,6 +409,32 @@ test('rejects unsupported recorded payment methods', async () => {
   assert.equal(response.status, 400)
   assert.equal(calls.databaseLoads, 0)
   assert.equal(calls.workflowCalls.length, 0)
+})
+
+test('rejects an email domain before the registration workflow can reserve it', async () => {
+  const { app, calls } = createTestApp({ domainRejected: true })
+  const response = await postRegistration(app)
+  assert.equal(response.status, 400)
+  assert.equal(response.body.field, 'email')
+  assert.deepEqual(calls.workflowCalls, [])
+})
+
+test('email validation rejects bad syntax, missing MX and null MX', async () => {
+  await assert.rejects(() => validateMemberEmail('name..test@example.com', () => {
+    assert.fail('Malformed addresses must not reach DNS')
+  }), { status: 400, field: 'email' })
+  await assert.rejects(() => validateMemberEmail(' ASDF@ASDF.COM '), { status: 400, field: 'email' })
+  for (const records of [[], [{ exchange: '.', priority: 0 }]]) {
+    await assert.rejects(() => validateMemberEmail('name@example.com', async () => records),
+      { status: 400, field: 'email' })
+  }
+  assert.equal(await validateMemberEmail(' Name@Example.COM ', async (domain) => {
+    assert.equal(domain, 'example.com')
+    return [{ exchange: 'mx.example.com', priority: 10 }]
+  }), 'name@example.com')
+  await assert.rejects(() => validateMemberEmail('name@example.com', async () => {
+    throw Object.assign(new Error('DNS timeout'), { code: 'ETIMEOUT' })
+  }), { status: 503, field: 'email' })
 })
 
 // TEST 7: Membership plan validation.

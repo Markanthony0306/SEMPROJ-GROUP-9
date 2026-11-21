@@ -39,15 +39,13 @@ export default function AdminStaffDialogs({
           account={modal.member}
           onClose={() => setModal(null)}
           onDeleted={async () => {
+            const memberName = modal.member.name
             setModal(null)
-
             const refreshed = await load()
-
             setNotice(
-              `Member account deleted. ${refreshed === false
-                ? 'Refresh failed. Reload to see the latest records.'
-                : 'Records refreshed.'
-              }`
+              refreshed === false
+                ? `${memberName} was deleted. Reload to refresh the member list and totals.`
+                : `${memberName} was deleted. The member list and totals are up to date.`
             )
           }}
         />

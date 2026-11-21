@@ -8,6 +8,7 @@ import ActivityRow from './ActivityRow'
 // Admin and member screens consume the same records and dashboard actions as desktop.
 export function MobileOverview({
   stats,
+  summary,
   expiring,
   date,
   onMember,
@@ -18,16 +19,18 @@ export function MobileOverview({
 }) {
   return (
     <>
-      <section className="fitpulse-stat-grid" aria-label="Overview totals">
-        {stats.map(([label, value, icon]) => (
-          <StatCard
-            key={label}
-            label={label}
-            value={loading ? '—' : value}
-            icon={<Icon name={icon} size={20} />}
-          />
-        ))}
-      </section>
+      {summary || (
+        <section className="fitpulse-stat-grid" aria-label="Overview totals">
+          {stats.map(([label, value, icon]) => (
+            <StatCard
+              key={label}
+              label={label}
+              value={loading ? '—' : value}
+              icon={<Icon name={icon} size={20} />}
+            />
+          ))}
+        </section>
+      )}
       {expiring && (
         <section>
           <SectionHeader title="Expiring soon" onViewAll={onExpiring} />
@@ -130,10 +133,18 @@ export function MobileActivities({ rows, loading, reminderError, select }) {
   return (
     <>
       <div className="fitpulse-screen-actions">
-        <button className="btn ghost fitpulse-secondary" type="button" onClick={() => select('Attendance')}>
+        <button
+          className="btn ghost fitpulse-secondary"
+          type="button"
+          onClick={() => select('Attendance')}
+        >
           Attendance
         </button>
-        <button className="btn ghost fitpulse-secondary" type="button" onClick={() => select('Payments')}>
+        <button
+          className="btn ghost fitpulse-secondary"
+          type="button"
+          onClick={() => select('Payments')}
+        >
           Payments
         </button>
       </div>

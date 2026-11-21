@@ -8,6 +8,7 @@ import { httpErrorHandler } from '../middleware/httpErrorHandler.js'
 import { FACE_BODY_LIMIT } from '../../shared/faceLiveness.js'
 import { createEmailDelivery, emailConfiguration } from '../services/emailDelivery.js'
 import { createMembershipReminderService, startMembershipReminders } from '../services/membershipReminders.js'
+import { startRockyMembershipAlerts } from '../services/rockyMembershipAlerts.js'
 
 /** Creates the app without listening; startup seeding is still done by server.js. */
 export function createFitPulseApp({ supabaseClient = supabase } = {}) {
@@ -26,7 +27,6 @@ export function createFitPulseApp({ supabaseClient = supabase } = {}) {
   const dependencies = createDependencies({
     supabase: supabaseClient,
     jwtSecret: config.jwtSecret,
-    isProduction: config.isProduction,
     identityVerificationEnabled: config.identityVerificationEnabled
   })
   registerApiRoutes(app, dependencies, config)
@@ -42,8 +42,7 @@ export function createFitPulseApp({ supabaseClient = supabase } = {}) {
       loadDatabase: dependencies.loadDatabase,
       mailer,
       from: email.from,
-      loginUrl: config.clientUrl,
-      emitEvent: dependencies.events.emitEvent
+      loginUrl: config.clientUrl
     })
     const stop = startMembershipReminders({ runDue })
     return () => {
@@ -53,6 +52,9 @@ export function createFitPulseApp({ supabaseClient = supabase } = {}) {
   }
 
   return {
-    app, port: config.port, accountSeedWorkflow: dependencies.accountSeedWorkflow, startReminders
+    app, port: config.port, accountSeedWorkflow: dependencies.accountSeedWorkflow, startReminders,
+    startRockyAlerts: () => startRockyMembershipAlerts({
+      loadDatabase: dependencies.loadDatabase, emitEvent: dependencies.events.emitEvent
+    })
   }
 }

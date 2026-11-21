@@ -17,7 +17,9 @@ The `migrate:demo-auth` command is an older one-time helper for provisioning the
 
 Apply `migrations/005_admin_notifications.sql` after migration 001 to enable private notification dismissals. Staff can view membership and equipment alerts. Administrators can also dismiss alerts individually or by group. Set the expiry window in **Settings → Gym Preferences**.
 
-FitPulse no longer sends welcome or expiry emails. Staff hand off the one-time password shown at member creation. **Forgot password** still uses Supabase Auth recovery and requires the frontend reset URL in the project's redirect allow list.
+Staff hand off the one-time password shown at member creation. Apply migrations `025_password_recovery_tokens.sql` and `026_member_expiry_reminders.sql` before restarting the updated API. Set `CLIENT_URL` to the frontend URL and configure the `SMTP_*` values on the server. FitPulse sends its own 30-minute reset link and Supabase Auth hashes the new password. Supabase Auth redirect settings are only needed for links issued by Supabase.
+
+Enable **Email reminders** in FitPulse Settings to send an email exactly three Manila calendar days before an active member’s plan ends. The API runs a check at startup and at Manila midnight, so keep one API instance running. Rocky can show the member reminder even when email is disabled. Existing staff alerts use the configured staff reminder window.
 
 ## Clear a report category
 
@@ -29,13 +31,18 @@ Report clearing is for historical entries. Members use account editing and statu
 
 The duplicate Memberships sidebar page was removed. Use **Members → View member → Renew membership**, or the renewal actions in Reports. Membership fields and the shared renewal dialog remain available.
 
-## Member account deactivation (not permanent deletion)
+## Member account deletion and deactivation
 
-Member accounts are deactivated through the administrator's existing password-confirmed
-workflow, retaining membership history, payments, and attendance. Do **not** apply
-older teammate migrations `013_member_id_account_deletion.sql` or
-`015_audit_member_account_deletion.sql`: permanent deletion remains disabled
-in this integration.
+Apply [023_member_deletion_readiness.sql](migrations/023_member_deletion_readiness.sql)
+after 001 and 006. It repairs the Auth-to-profile cascade and checks the exact login
+link and cleanup trigger before manual deletion. Apply migrations 002 and 019–022
+for the existing face and ID tables. An administrator must enter their current password
+and type `DELETE`. Automatic permanent deletion remains disabled. The separate
+deactivation workflow retains membership, payments, and attendance history.
+
+Apply [024_rocky_notifications.sql](migrations/024_rocky_notifications.sql) for the Rocky inbox.
+The API saves alerts for staff or one member and checks membership expiry every five minutes,
+independently of email delivery. The browser saves unread state and the Rocky preference per account.
 
 ## Face sign-in and membership plans
 

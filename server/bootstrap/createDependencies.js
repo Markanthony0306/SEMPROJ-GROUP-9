@@ -18,7 +18,7 @@ import { passwordPolicy, passwordPolicyMessage } from '../../shared/passwordPoli
 import { isRetiredPlan } from '../../shared/membershipPlans.js'
 import { availablePlan, publicAccount, membershipStatus, addMembershipDays, validAccountInput, paymentMethod, emailPattern } from '../lib/accountRules.js'
 
-export function createDependencies({ supabase, jwtSecret, isProduction, identityVerificationEnabled = false }) {
+export function createDependencies({ supabase, jwtSecret, identityVerificationEnabled = false }) {
   const databaseGateway = new SupabaseDatabaseGateway(supabase)
   const loadDatabase = (sections) => databaseGateway.loadDatabase(sections)
   const loadAccount = (id) => databaseGateway.loadAccount(id)
@@ -46,13 +46,13 @@ export function createDependencies({ supabase, jwtSecret, isProduction, identity
     generateTemporaryPassword
   })
   const adminNotifications = createAdminNotificationService({ supabase, loadDatabase })
-  const events = createFitPulseEvents()
+  const events = createFitPulseEvents(supabase)
   const { createSession, authenticate, authenticateEventStream, requireRole, rateLimit } = createSessionAuth({
     jwtSecret, loadAccount, membershipStatus, supabase, identityVerificationEnabled
   })
   const accountSeedWorkflow = new AccountSeedWorkflow({
     repository: new AccountSeedRepository({ supabase, loadDatabase, saveDatabase }),
-    isProduction, passwordPolicy, passwordPolicyMessage, availablePlan, addMembershipDays
+    passwordPolicy, passwordPolicyMessage, availablePlan, addMembershipDays
   })
 
   return {

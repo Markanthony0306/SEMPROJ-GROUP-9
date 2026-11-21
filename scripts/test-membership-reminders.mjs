@@ -30,7 +30,7 @@ const memberFixture = (patch = {}) => ({
   subscriptionId: crypto.randomUUID(),
   plan: 'Monthly',
   membershipStart: iso(-20),
-  membershipEnd: iso(7),
+  membershipEnd: iso(3),
   ...patch
 })
 const response = (body, status = 200) =>
@@ -110,7 +110,6 @@ function fixture({ smtp = true } = {}) {
               membershipStart: subscription?.start_date,
               membershipEnd: subscription?.end_date
             },
-            settings.reminder_days,
             state.time
           )
           if (
@@ -121,7 +120,8 @@ function fixture({ smtp = true } = {}) {
             return response(false)
           const key = keyFor(body)
           const prior = state.receipts.get(key)
-          if (prior && (prior.sent_at || Date.parse(prior.claimed_until) > state.time))
+          if (prior && (prior.sent_at || Date.parse(prior.claimed_until) > state.time ||
+              (prior.last_attempt_at && Date.parse(prior.claimed_until) !== 0)))
             return response(false)
           state.receipts.set(key, {
             subscription_id: body.p_subscription_id,
@@ -179,7 +179,7 @@ function fixture({ smtp = true } = {}) {
   const mailer = smtp
     ? {
         sendMail: async (mail) => {
-          if (state.smtpFailure) throw new Error('Synthetic SMTP outage')
+          if (state.smtpFailure) throw Object.assign(new Error('Synthetic SMTP outage'), { code: 'ECONNREFUSED' })
           if (state.rejectRecipient) return { accepted: [], rejected: [mail.to] }
           const result = await transport.sendMail(mail)
           state.messages.push(JSON.parse(result.message))
@@ -238,12 +238,13 @@ function fixture({ smtp = true } = {}) {
   }
 }
 
-test('timing uses the exact reminder boundary and expiry instant', () => {
+test('timing uses the Manila calendar boundary and excludes expired plans', () => {
   const member = memberFixture()
-  assert.equal(reminderType(member, 7, baseTime - 1), null)
-  assert.equal(reminderType(member, 7, baseTime), 'upcoming')
-  assert.equal(reminderType(member, 3, baseTime), null)
-  assert.equal(reminderType(member, 7, Date.parse(member.membershipEnd)), 'expired')
+  assert.equal(reminderType(member, baseTime - 1), null)
+  assert.equal(reminderType(member, baseTime), 'upcoming')
+  assert.equal(reminderType(member, baseTime + DAY_MS - 1), 'upcoming')
+  assert.equal(reminderType(member, baseTime + DAY_MS), null)
+  assert.equal(reminderType(member, Date.parse(member.membershipEnd)), null)
 })
 
 test('skips staff, inactive accounts, invalid dates, invalid email and future memberships', () => {
@@ -252,6 +253,8 @@ test('skips staff, inactive accounts, invalid dates, invalid email and future me
     { role: 'staff' },
     { status: 'suspended' },
     { status: 'inactive' },
+    { status: 'expired' },
+    { subscriptionStatus: 'inactive' },
     { membershipStart: null },
     { membershipEnd: 'invalid' },
     { membershipEnd: iso(-21) },
@@ -260,21 +263,19 @@ test('skips staff, inactive accounts, invalid dates, invalid email and future me
     { email: 'bad-email' },
     { subscriptionId: null }
   ])
-    assert.equal(reminderType(memberFixture(patch), 7, baseTime), null)
-  assert.equal(reminderType(memberFixture(), 0, baseTime), null)
-  assert.equal(reminderType(memberFixture(), 31, baseTime), null)
+    assert.equal(reminderType(memberFixture(patch), baseTime), null)
 })
 
 test('worker loads real account mappings, sends the formal reminder and stores a receipt', async () => {
   const f = fixture()
-  f.addMember({ membershipEnd: iso(0.5) })
+  f.addMember()
   f.addMember({ role: 'admin' })
   f.addMember({ membershipEnd: iso(10) })
   assert.deepEqual(await f.service.runDue(), { sent: 1, failed: 0 })
   assert.equal(f.state.messages.length, 1)
   const message = f.state.messages[0]
   assert.equal(message.subject, 'Membership Expiry Reminder')
-  assert.equal(message.text, 'Dear Test Member, your FitPulse membership expires on Oct 22, 2026. Please renew before this date to continue your access. Thank you. - FitPulse')
+  assert.equal(message.text, 'Dear Test Member, your FitPulse membership expires in 3 days, on Oct 25, 2026. Please visit the front desk to renew. Thank you. - FitPulse')
   assert.equal(message.html, `<p>${message.text}</p>`)
   assert.ok([...f.state.receipts.values()][0].sent_at)
 })
@@ -306,20 +307,18 @@ test('overlapping runs in one process share a single database load', async () =>
   assert.equal(f.state.loads, 1)
 })
 
-test('sends one expired reminder and a renewal starts a new reminder period', async () => {
+test('skips expired plans and starts a new reminder period after renewal', async () => {
   const f = fixture()
-  const member = f.addMember({ membershipEnd: iso(1) })
-  await f.service.runDue()
-  f.state.time = baseTime + DAY_MS
+  const member = f.addMember()
   assert.equal((await f.service.runDue()).sent, 1)
+  f.state.time = baseTime + 3 * DAY_MS
   assert.equal((await f.service.runDue()).sent, 0)
-  assert.match(f.state.messages[1].text, /expired on/)
   const subscription = f.project.subscriptions.find(
     (row) => row.subscription_id === member.subscriptionId
   )
   subscription.end_date = iso(6)
   assert.equal((await f.service.runDue()).sent, 1)
-  assert.equal(f.state.messages.length, 3)
+  assert.equal(f.state.messages.length, 2)
 })
 
 test('missing SMTP or disabled preferences send no mail', async () => {
@@ -371,7 +370,7 @@ test('missing migration stops the whole batch before any real reminder is reserv
   assert.equal(f.state.receipts.size, 0)
   assert.equal(f.state.claimRequests.length, 1)
   assert.equal(f.state.claimRequests[0].p_subscription_id, '00000000-0000-0000-0000-000000000000')
-  assert.match(f.service.getStatus().lastError, /005_admin_notifications.sql/)
+  assert.match(f.service.getStatus().lastError, /026_member_expiry_reminders.sql/)
   assert.equal(f.service.getStatus().lastCounts, null)
   assert.equal(f.service.getStatus().running, false)
   f.state.claimFailure = false
@@ -419,6 +418,7 @@ test('scheduler reports one setup error for three due subscriptions and retries 
   })
   const stop = startMembershipReminders({
     runDue: f.service.runDue,
+    now: () => baseTime,
     logger: { error: (message) => f.state.logs.push(message), info: () => {} },
     setTimer: (callback, delay) => {
       scheduled = { callback, delay }
@@ -429,9 +429,9 @@ test('scheduler reports one setup error for three due subscriptions and retries 
   })
   await ready
   assert.equal(f.state.logs.length, 1)
-  assert.match(f.state.logs[0], /005_admin_notifications.sql/)
+  assert.match(f.state.logs[0], /026_member_expiry_reminders.sql/)
   assert.equal(f.state.claimRequests.length, 1)
-  assert.equal(scheduled.delay, 60 * 60 * 1000)
+  assert.equal(scheduled.delay, DAY_MS)
   stop()
 })
 
@@ -445,15 +445,15 @@ test('a failed receipt keeps its lease; another member still receives a reminder
   f.state.saveFailure = false
   assert.equal((await f.service.runDue()).sent, 0)
   assert.equal(f.state.messages.length, 2)
-  // Simulate a worker that crashed before sending: its lease eventually expires.
+  // This worker recorded an SMTP attempt, so even an expired lease cannot resend it.
   const receipt = [...f.state.receipts.values()].find(
     (row) => row.subscription_id === first.subscriptionId
   )
   receipt.claimed_until = new Date(baseTime - 1).toISOString()
-  assert.equal((await f.service.runDue()).sent, 1)
+  assert.equal((await f.service.runDue()).sent, 0)
 })
 
-test('scheduler checks at startup, waits an hour, recovers from errors and stops', async () => {
+test('scheduler checks at startup, waits for Manila midnight and stops', async () => {
   let checks = 0
   let scheduled
   let cleared
@@ -465,6 +465,7 @@ test('scheduler checks at startup, waits an hour, recovers from errors and stops
       return { sent: 1, failed: 0 }
     },
     logger: { error: (message) => logs.push(message), info: () => {} },
+    now: () => baseTime + 9 * 60 * 60 * 1000,
     setTimer: (callback, delay) => {
       scheduled = { callback, delay }
       return scheduled
@@ -475,7 +476,7 @@ test('scheduler checks at startup, waits an hour, recovers from errors and stops
   })
   await nextTurn()
   assert.equal(checks, 1)
-  assert.equal(scheduled.delay, 60 * 60 * 1000)
+  assert.equal(scheduled.delay, 15 * 60 * 60 * 1000)
   assert.equal(logs.length, 1)
   await scheduled.callback()
   assert.equal(checks, 2)
@@ -505,25 +506,25 @@ test('legacy email_notifications preference is read and saved without changing i
   assert.equal(Object.hasOwn(settings, 'email_enabled'), false)
 })
 
-test('delivery status distinguishes failed attempts from SMTP acceptance and preserves receipts', async () => {
+test('SMTP stores failure and acceptance receipts independently of staff dismissals', async () => {
   const f = fixture()
   f.addMember()
   const service = notificationsFor(f)
-  assert.equal((await service.list('admin-a')).notifications[0].delivery.state, 'not_sent')
+  assert.equal((await service.list('admin-a')).notifications.length, 1)
   f.state.smtpFailure = true
   await f.service.runDue()
-  let list = await service.list('admin-a')
-  assert.equal(list.notifications[0].delivery.state, 'failed')
-  assert.equal(list.notifications[0].delivery.errorCode, 'SMTP_ERROR')
-  assert.ok(list.notifications[0].delivery.attemptedAt)
+  const failed = [...f.state.receipts.values()][0]
+  assert.equal(failed.last_error_code, 'ECONNREFUSED')
+  assert.ok(failed.last_attempt_at)
+  assert.equal(failed.sent_at, null)
   f.state.smtpFailure = false
   await f.service.runDue()
-  list = await service.list('admin-a')
-  assert.equal(list.notifications[0].delivery.state, 'sent')
-  assert.equal(list.notifications[0].delivery.messageId, '<reminder@fixture.test>')
-  assert.equal(list.notifications[0].delivery.sentAt, new Date(baseTime).toISOString())
-  assert.equal(list.email.lastCheckedAt, new Date(baseTime).toISOString())
-  assert.deepEqual(list.email.lastCounts, { sent: 1, failed: 0 })
+  const list = await service.list('admin-a')
+  const sent = [...f.state.receipts.values()][0]
+  assert.equal(sent.message_id, '<reminder@fixture.test>')
+  assert.equal(sent.sent_at, new Date(baseTime).toISOString())
+  assert.equal(f.service.getStatus().lastCheckedAt, new Date(baseTime).toISOString())
+  assert.deepEqual(f.service.getStatus().lastCounts, { sent: 1, failed: 0 })
   const receipts = structuredClone([...f.state.receipts])
   await service.dismiss('admin-a', list.notifications[0].id)
   assert.deepEqual([...f.state.receipts], receipts)
@@ -561,10 +562,11 @@ test('an expired claim with an unacknowledged SMTP attempt never claims that no 
   await f.service.runDue()
   assert.equal(f.state.messages.length, 1)
   f.state.time += 11 * 60_000
-  const list = await notificationsFor(f).list('admin-a')
-  assert.equal(list.notifications[0].delivery.state, 'unconfirmed')
-  assert.ok(list.notifications[0].delivery.attemptedAt)
-  assert.equal(list.notifications[0].delivery.sentAt, undefined)
+  const receipt = [...f.state.receipts.values()][0]
+  assert.ok(receipt.last_attempt_at)
+  assert.equal(receipt.sent_at, null)
+  assert.equal((await f.createService().runDue()).sent, 0)
+  assert.equal(f.state.messages.length, 1)
 })
 
 test('missing dismissal migration is visible and cannot report a successful clear', async () => {
@@ -580,23 +582,16 @@ test('missing dismissal migration is visible and cannot report a successful clea
   assert.equal(f.project.admin_notification_dismissals.length, 0)
 })
 
-test('notification API enforces roles, confirmation, group scope and SMTP checks without real mail', async () => {
+test('notification API enforces roles, confirmation and group scope without sending mail', async () => {
   const f = fixture()
   f.addMember()
   const notifications = notificationsFor(f)
-  let verifications = 0
   const app = express()
   app.use(express.json())
   app.use(
     '/api',
     notificationRoutes({
       notifications,
-      reminders: f.service,
-      mailer: {
-        verify: async () => {
-          verifications += 1
-        }
-      },
       authenticate: (req, res, next) => {
         const role = req.headers.authorization
         if (!role) return res.status(401).json({ message: 'Sign in.' })
@@ -625,7 +620,7 @@ test('notification API enforces roles, confirmation, group scope and SMTP checks
   try {
     assert.equal((await request('GET', '', null)).status, 401)
     assert.equal((await request('GET', '', 'member')).status, 403)
-    assert.equal((await request('GET', '', 'staff')).status, 200)
+    assert.equal((await request('GET', '', 'staff')).status, 403)
     assert.equal((await request('DELETE', '', 'staff', { confirmation: 'CLEAR' })).status, 403)
     assert.equal((await request('DELETE', '', 'admin', { confirmation: 'clear' })).status, 400)
     assert.equal(
@@ -633,20 +628,12 @@ test('notification API enforces roles, confirmation, group scope and SMTP checks
       400
     )
     assert.equal((await request('DELETE', '/invalid')).status, 400)
-    assert.equal((await request('POST', '/check-smtp', 'staff')).status, 403)
-    assert.equal((await request('POST', '/check-smtp')).status, 200)
-    assert.equal(verifications, 1)
-    assert.equal(f.state.messages.length, 0)
-    assert.equal((await request('POST', '/check-email', 'staff')).status, 403)
-    assert.equal((await request('POST', '/check-email')).body.sent, 1)
-    assert.equal((await request('POST', '/check-email')).body.sent, 0)
     const list = await request('GET')
-    assert.equal(list.body.notifications[0].delivery.state, 'sent')
     const id = list.body.notifications[0].id
     assert.equal((await request('DELETE', `/${id}`)).body.deleted, 1)
     assert.equal((await request('DELETE', `/${id}`)).status, 404)
     assert.equal((await request('GET')).body.notifications.length, 0)
-    assert.equal(f.state.messages.length, 1)
+    assert.equal(f.state.messages.length, 0)
   } finally {
     server.closeAllConnections()
     await new Promise((resolve) => server.close(resolve))

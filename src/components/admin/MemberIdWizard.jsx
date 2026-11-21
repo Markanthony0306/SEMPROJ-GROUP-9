@@ -1,9 +1,10 @@
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useId, useRef, useState } from 'react'
 import { memberIdTypes } from '../../../shared/memberIdTypes'
 import { apiRequest } from '../../utils/api'
 import Dialog, { DashboardSheetContext } from '../Dialog'
 import FaceCapture from '../FaceCapture'
 import Spinner from '../Spinner'
+import { useGorilla } from '../gorilla/GorillaAssistant'
 import MemberIdCamera from './MemberIdCamera'
 import './MemberIdVerification.css'
 
@@ -36,6 +37,7 @@ export default function MemberIdWizard({
   onCreate
 }) {
   const mobile = useContext(DashboardSheetContext)
+  const { notify } = useGorilla() || {}
   const [step, setStep] = useState(1)
   const [scanSide, setScanSide] = useState('front')
   const [details, setDetails] = useState({
@@ -53,23 +55,40 @@ export default function MemberIdWizard({
   const [faceSaved, setFaceSaved] = useState(false)
   const [issue, setIssue] = useState('')
   const [invalidField, setInvalidField] = useState(null)
+  const [emailEdited, setEmailEdited] = useState(false)
+  const emailErrorId = useId()
   const verificationId = useRef(null)
   const heading = useRef(null)
   const actionLock = useRef(false)
   const busy = pending || Boolean(working)
   const waitingForBack = scanSide === 'front' && Boolean(captures.front) && !captures.back
+  const emailError = invalidField?.name === 'email'
+    ? issue
+    : fieldError?.name === 'email' && !emailEdited ? error : ''
+  const generalError = (invalidField?.name !== 'email' && issue) ||
+    (fieldError?.name !== 'email' && error)
 
   useEffect(() => {
     if (!(mobile && step === 1 && (fieldError || invalidField))) heading.current?.focus()
   }, [step, mobile, fieldError, invalidField])
 
   useEffect(() => {
-    if (mobile && fieldError) setStep(1)
+    if (fieldError?.name === 'email' || (mobile && fieldError)) {
+      setEmailEdited(false)
+      setStep(1)
+    }
   }, [mobile, fieldError])
 
   function changeField(event) {
     const { name, value, checked, type } = event.target
     setDetails((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }))
+    if (name === 'email') {
+      setEmailEdited(true)
+      if (invalidField?.name === 'email') {
+        setIssue('')
+        setInvalidField(null)
+      }
+    }
   }
 
   async function run(label, callback) {
@@ -82,7 +101,7 @@ export default function MemberIdWizard({
       return await callback()
     } catch (cause) {
       setIssue(cause.message)
-      if (mobile && cause.field) {
+      if (cause.field && (mobile || cause.field === 'email')) {
         setInvalidField({ name: cause.field })
         setStep(1)
       }
@@ -92,29 +111,41 @@ export default function MemberIdWizard({
     }
   }
 
-  function discardDraft() {
+  function discardDraft(announce = false) {
     const id = verificationId.current
     verificationId.current = null
-    if (id)
-      void apiRequest(`${idVerificationPath}/${id}/draft`, { token, method: 'DELETE' }).catch(
-        () => {}
-      )
+    if (!id) return
+    void apiRequest(`${idVerificationPath}/${id}/draft`, { token, method: 'DELETE' }).then(() => {
+      if (announce) notify?.({
+        type: 'success', title: 'Draft discarded', message: 'The verification draft was deleted.'
+      })
+    }).catch((cause) => {
+      if (announce) notify?.({
+        type: 'error', title: 'Draft deletion failed', message: cause.message
+      })
+    })
   }
 
   function closeWizard() {
-    discardDraft()
+    discardDraft(true)
     onClose()
   }
 
   function chooseId(event) {
     event.preventDefault()
     if (!consent || !idType) return
-    discardDraft()
-    setCaptures({})
-    setIssue('')
-    setFaceSaved(false)
-    setScanSide('front')
-    setStep(2)
+    void run('Checking email domain…', async () => {
+      await apiRequest('/admin/members/validate-email', {
+        token,
+        method: 'POST',
+        body: JSON.stringify({ email: details.email })
+      })
+      discardDraft()
+      setCaptures({})
+      setFaceSaved(false)
+      setScanSide('front')
+      setStep(2)
+    })
   }
 
   function captureSide(file, fingerprint) {
@@ -178,9 +209,9 @@ export default function MemberIdWizard({
         <h3 ref={heading} tabIndex={-1}>
           {step === 2 ? 'Scan the member’s ID' : stepTitles[step - 1]}
         </h3>
-        {(issue || error) && (
+        {generalError && (
           <p className="form-error" role="alert">
-            {issue || error}
+            {generalError}
           </p>
         )}
         {working && (
@@ -226,8 +257,13 @@ export default function MemberIdWizard({
                   placeholder={mobile ? 'john123@gmail.com' : undefined}
                   value={details.email}
                   onChange={changeField}
+                  aria-invalid={Boolean(emailError)}
+                  aria-describedby={emailError ? emailErrorId : undefined}
                   required
                 />
+                {emailError && (
+                  <span className="form-error" id={emailErrorId} role="alert">{emailError}</span>
+                )}
               </label>
               <label className="field">
                 Plan
@@ -250,7 +286,7 @@ export default function MemberIdWizard({
               </label>
             </fieldset>
             <p className="form-help">Confirm eligibility before choosing the Student plan.</p>
-            <section className="mf" aria-label="Payment">
+            <section className="mf id-check-section" aria-label="Payment">
               <h4>Payment</h4>
               <fieldset
                 className="id-check-payment-methods"
@@ -273,46 +309,48 @@ export default function MemberIdWizard({
               </fieldset>
               <p className="form-help">The temporary password is shown once after creation. Record payment separately after receiving it.</p>
             </section>
-            <h4>Identity check</h4>
-            <label className="field">
-              ID type
-              <select
-                className="clay-in"
-                value={idType}
-                onChange={(event) => {
-                  setIdType(event.target.value)
-                  setCaptures({})
-                }}
-                required
-              >
-                <option value="" disabled>
-                  Choose ID type
-                </option>
-                {Object.entries(memberIdTypes).map(([value, label]) => (
-                  <option value={value} key={value}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="set id-check-consent">
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(event) => {
-                  setConsent(event.target.checked)
-                  if (!event.target.checked) {
-                    discardDraft()
+            <section className="mf id-check-section" aria-labelledby="member-id-type-heading">
+              <h4 id="member-id-type-heading">Identity check</h4>
+              <label className="field">
+                ID type
+                <select
+                  className="clay-in"
+                  value={idType}
+                  onChange={(event) => {
+                    setIdType(event.target.value)
                     setCaptures({})
-                  }
-                }}
-                required
-              />
-              <span>
-                The member agrees to the ID and face check and to storage of their ID and face
-                template for identity verification.
-              </span>
-            </label>
+                  }}
+                  required
+                >
+                  <option value="" disabled>
+                    Choose ID type
+                  </option>
+                  {Object.entries(memberIdTypes).map(([value, label]) => (
+                    <option value={value} key={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="set id-check-consent">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(event) => {
+                    setConsent(event.target.checked)
+                    if (!event.target.checked) {
+                      discardDraft()
+                      setCaptures({})
+                    }
+                  }}
+                  required
+                />
+                <span>
+                  The member agrees to the ID and face check and to storage of their ID and face
+                  template for identity verification.
+                </span>
+              </label>
+            </section>
             <WizardFooter note="Fill in the required fields and accept consent to continue.">
               <button className="btn ghost cancel-button" type="button" onClick={closeWizard}>
                 Cancel
@@ -336,7 +374,7 @@ export default function MemberIdWizard({
               disabledStatus={working ? 'Verifying the ID…' : waitingForBack ? 'Front captured. Choose when to scan the back.' : 'ID photos captured'}
               onCapture={captureSide}
             />
-            <div className="id-check-slots" aria-label="ID photos" aria-live="polite">
+            <div className="id-check-slots id-check-section" aria-label="ID photos" aria-live="polite">
               {['front', 'back'].map((side) => (
                 <div className="id-check-photo-status" key={side}>
                   <span className={captures[side] ? 'is-complete' : ''} aria-hidden="true">
@@ -356,13 +394,13 @@ export default function MemberIdWizard({
               ))}
             </div>
             {waitingForBack && !busy && (
-              <div className="ma">
+              <div className="ma id-check-footer">
                 <button className="btn ghost" type="button" onClick={() => rescanSide('front')}>Rescan front</button>
                 <button className="btn" type="button" onClick={() => setScanSide('back')}>Scan back</button>
               </div>
             )}
             {captures.front && captures.back && !busy && (
-              <div className="ma">
+              <div className="ma id-check-footer">
                 <button className="btn ghost" type="button" onClick={() => rescanSide('front')}>Rescan front</button>
                 <button className="btn ghost" type="button" onClick={() => rescanSide('back')}>Rescan back</button>
                 <button className="btn" type="button" onClick={() => verifyDocument(captures)}>Retry verification</button>
@@ -389,59 +427,68 @@ export default function MemberIdWizard({
           </section>
         )}
         {step >= 4 && (
-          <section className="mf" aria-label="Capture the member’s face">
-            {faceSaved ? (
-              <>
-                <p role="status">{pending ? 'Creating member account…' : 'Face scan complete.'}</p>
-                {!busy && (
-                  <div className="ma">
+          <>
+            <section className="mf" aria-labelledby="member-id-review-heading">
+              <h4 id="member-id-review-heading">Review member details</h4>
+              <dl className="id-check-review">
+                <div><dt>Member name</dt><dd>{details.name}</dd></div>
+                <div><dt>ID type</dt><dd>{memberIdTypes[idType]}</dd></div>
+              </dl>
+            </section>
+            <section className="mf id-check-section" aria-label="Capture the member’s face">
+              {faceSaved ? (
+                <>
+                  <p role="status">{pending ? 'Creating member account…' : 'Face scan complete.'}</p>
+                  {!busy && (
+                    <div className="ma id-check-footer">
+                      <button
+                        className="btn ghost cancel-button"
+                        type="button"
+                        onClick={() => {
+                          setFaceSaved(false)
+                          setStep(2)
+                        }}
+                      >
+                        Back to ID scan
+                      </button>
+                      <button className="btn" type="button" onClick={finishCreation}>
+                        Retry account creation
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="form-help">
+                    Center one face in the frame. Follow the live prompts at a normal distance, then
+                    move closer when asked.
+                  </p>
+                  <FaceCapture
+                    purpose="enrollment"
+                    actionLabel="Start normal scan"
+                    closeShot
+                    onReset={() => setStep(4)}
+                    onCloseUp={() => setStep(5)}
+                    disabled={busy}
+                    getChallenge={() =>
+                      apiRequest(faceEndpoint() + '/challenge', { token, method: 'POST' })
+                    }
+                    onCaptured={submitFace}
+                  />
+                  <WizardFooter>
                     <button
                       className="btn ghost cancel-button"
                       type="button"
-                      onClick={() => {
-                        setFaceSaved(false)
-                        setStep(2)
-                      }}
+                      disabled={busy}
+                      onClick={() => setStep(2)}
                     >
-                      Back to ID scan
+                      Back
                     </button>
-                    <button className="btn" type="button" onClick={finishCreation}>
-                      Retry account creation
-                    </button>
-                  </div>
-                )}
-              </>
-            ) : (
-              <>
-                <p className="form-help">
-                  Center one face in the frame. Follow the live prompts at a normal distance, then
-                  move closer when asked.
-                </p>
-                <FaceCapture
-                  purpose="enrollment"
-                  actionLabel="Start normal scan"
-                  closeShot
-                  onReset={() => setStep(4)}
-                  onCloseUp={() => setStep(5)}
-                  disabled={busy}
-                  getChallenge={() =>
-                    apiRequest(faceEndpoint() + '/challenge', { token, method: 'POST' })
-                  }
-                  onCaptured={submitFace}
-                />
-                <WizardFooter>
-                  <button
-                    className="btn ghost cancel-button"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => setStep(2)}
-                  >
-                    Back
-                  </button>
-                </WizardFooter>
-              </>
-            )}
-          </section>
+                  </WizardFooter>
+                </>
+              )}
+            </section>
+          </>
         )}
       </div>
     </Dialog>

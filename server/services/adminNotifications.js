@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import { reminderType } from './membershipReminders.js'
+import { membershipAlertType } from './membershipReminders.js'
 
 const DAY_MS = 86_400_000
 const key = (parts) => crypto.createHash('sha256').update(JSON.stringify(parts)).digest('hex')
@@ -7,7 +7,8 @@ const key = (parts) => crypto.createHash('sha256').update(JSON.stringify(parts))
 export function buildAdminNotifications(database, now = Date.now()) {
   const notifications = []
   for (const member of database.accounts) {
-    const type = reminderType(member, database.settings.remind, now)
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email || '')) continue
+    const type = membershipAlertType(member, database.settings.remind, now)
     if (!type) continue
     const membershipEnd = new Date(member.membershipEnd).toISOString()
     notifications.push({

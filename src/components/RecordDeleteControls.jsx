@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
 import Dialog from './Dialog'
 import { Icon } from './DashboardShell'
+import { RockyDeleteError, useGorilla } from './gorilla/GorillaAssistant'
 
 const CATEGORIES = {
   notifications: {
@@ -32,11 +33,11 @@ const CATEGORIES = {
   }
 }
 
-export function RecordDeleteButton({ all = false, label, disabled = false, onClick }) {
+export function RecordDeleteButton({ all = false, primary = false, label, disabled = false, onClick }) {
   return (
     <button
       className={
-        all ? 'btn report-clear-button' : 'report-icon-button is-danger record-delete-button'
+        all ? 'btn report-clear-button' : primary ? 'btn report-icon-button' : 'report-icon-button is-danger record-delete-button'
       }
       type="button"
       title={label}
@@ -53,6 +54,7 @@ export function RecordDeleteButton({ all = false, label, disabled = false, onCli
 
 export default function RecordDeleteDialog({ target, onClose, onChanged, onNotice }) {
   const { token } = useAuth()
+  const { notify } = useGorilla() || {}
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -104,9 +106,22 @@ export default function RecordDeleteDialog({ target, onClose, onChanged, onNotic
       onNotice(
         `${message} ${refreshed ? 'Records and totals refreshed.' : 'Refresh failed. Reload the page to see the latest records.'}`
       )
+      const notification = target.category === 'notifications'
+      notify?.({
+        type: 'success',
+        title: all ? 'Clear complete' : 'Record deleted',
+        message: notification
+          ? all
+            ? `All ${target.scopeLabel || 'notifications'} cleared.`
+            : 'Notification deleted successfully.'
+          : all ? message : 'Record deleted successfully.',
+        target: { section: notification ? 'Notifications' : target.category === 'equipment' ? 'Equipment' : 'Reports' }
+      })
       onClose()
     } catch (cause) {
-      setError(cause.message || 'Unable to delete records. Please try again.')
+      const message = cause.message || 'Unable to delete records. Please try again.'
+      setError(message)
+      notify?.({ type: 'error', title: all ? 'Clear failed' : 'Delete failed', message })
     } finally {
       actionLock.current = false
       setBusy(false)
@@ -121,11 +136,7 @@ export default function RecordDeleteDialog({ target, onClose, onChanged, onNotic
       busy={busy}
       onClose={onClose}
     >
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <RockyDeleteError message={error} />}
       <form className="mf" onSubmit={remove}>
         <p className="modal-copy">
           {all ? (

@@ -53,6 +53,29 @@ export function eventRoutes({
     })
   })
 
+  router.get('/events/history', authenticate, async (req, res, next) => {
+    if (!allowed(req.user.role)) return res.sendStatus(403)
+    const after = req.query.after === undefined ? 0 : Number(req.query.after)
+    if (!Number.isSafeInteger(after) || after < 0 || Array.isArray(req.query.after))
+      return res.status(400).json({ message: 'Invalid notification cursor.' })
+
+    let query = supabase.from('rocky_notifications')
+      .select('sequence_id,event_id,event,created_at')
+      .gt('sequence_id', after)
+      .order('sequence_id', { ascending: true })
+      .limit(100)
+    if (isEventStaff(req.user.role)) query = query.eq('staff_only', true)
+    else query = query.eq('staff_only', false).eq('user_id', req.user.id)
+    const { data, error } = await query
+    if (error) return next(error)
+    const rows = data || []
+    return res.set('Cache-Control', 'no-store').json({
+      next: rows.at(-1)?.sequence_id ?? after,
+      more: rows.length === 100,
+      alerts: rows.map((row) => ({ ...row.event, id: row.event_id, receivedAt: row.created_at }))
+    })
+  })
+
   // Read only confirmed mail deliveries. Apply ownership before querying with the server key.
   router.get('/events/reminders', authenticate, async (req, res, next) => {
     if (!allowed(req.user.role)) return res.sendStatus(403)

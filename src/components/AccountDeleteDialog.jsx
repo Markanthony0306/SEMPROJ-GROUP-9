@@ -3,9 +3,11 @@ import { useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
 import Dialog from './Dialog'
+import { gorillaEvents, RockyDeleteError, useGorilla } from './gorilla/GorillaAssistant'
 
 export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
   const { token } = useAuth()
+  const { notify } = useGorilla() || {}
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const actionLock = useRef(false)
@@ -26,7 +28,7 @@ export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
     setError('')
 
     try {
-      await apiRequest(`/admin/members/${account.id}`, {
+      const result = await apiRequest(`/admin/members/${account.id}`, {
         token,
         method: 'DELETE',
         body: JSON.stringify({
@@ -34,10 +36,11 @@ export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
           currentPassword: values.get('currentPassword')
         })
       })
+      notify?.(gorillaEvents.memberDeleted(), result.notificationId)
     } catch (cause) {
-      setError(
-        cause.message || 'Unable to delete the account. Please try again.'
-      )
+      const message = cause.message || 'Unable to delete the account. Please try again.'
+      setError(message)
+      notify?.({ type: 'error', title: 'Member deletion failed', message })
       actionLock.current = false
       setBusy(false)
       return
@@ -84,11 +87,7 @@ export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
           />
         </label>
 
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
+        {error && <RockyDeleteError message={error} />}
 
         <div className="ma">
           <button

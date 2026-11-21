@@ -235,15 +235,51 @@
   }
 }
 @media (max-width: 560px) {
-  .app:not(.admin-app) .activity-controls {
+  .app.fitpulse-mobile .activity-controls {
     gap: 8px;
   }
-  .app:not(.admin-app) .clay-segment button {
+  .app.fitpulse-mobile .clay-segment button {
     padding: 9px 11px;
   }
-  .app:not(.admin-app) .activity-plot {
-    height: 195px;
-    gap: 8px;
+}
+@media (max-width: 480px) {
+  .app.fitpulse-mobile .activity-plot {
+    display: grid;
+    height: auto;
+    padding: 0;
+    gap: 0.5rem;
+  }
+  .fitpulse-mobile .activity-grid {
+    display: none;
+  }
+  .fitpulse-mobile .activity-column {
+    display: grid;
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    gap: 0.5rem;
+    align-items: center;
+    text-align: left;
+  }
+  .fitpulse-mobile .activity-day {
+    grid-row: 1;
+    grid-column: 1;
+    margin: 0;
+    min-height: 0;
+  }
+  .fitpulse-mobile .activity-bar-space {
+    grid-row: 1;
+    grid-column: 2;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0;
+  }
+  .fitpulse-mobile .activity-bar {
+    width: var(--bar-height);
+    min-width: 4px;
+    height: 0.875rem;
+  }
+  .fitpulse-mobile .activity-tooltip {
+    left: 0;
+    transform: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {

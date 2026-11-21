@@ -150,8 +150,10 @@ export function memberIdVerificationRoutes({
     ...access,
     route(async (req, res) => {
       const row = await loadCase(req)
-      const { error } = await cases().delete().eq('id', row.id).is('member_id', null)
+      const { data, error } = await cases().delete().eq('id', row.id).is('member_id', null)
+        .select('id').maybeSingle()
       if (error) throw error
+      if (!data) throw new MemberIdError(409, 'The verification draft could not be discarded.')
       return res.sendStatus(204)
     })
   )

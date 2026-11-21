@@ -508,6 +508,20 @@ h2,
   width: 100%;
   margin-top: 12px;
 }
+
+@media (max-width: 768px) {
+  #login :is(.auth-field .inp, .lbtn, .cancel-button, .forgot-link) {
+    min-height: 44px;
+  }
+  #login .auth-field input {
+    min-width: 0;
+    font-size: 1rem;
+  }
+  #login .forgot-link {
+    display: inline-flex;
+    align-items: center;
+  }
+}
 .lfoot {
   text-align: center;
   color: var(--muted);
@@ -825,6 +839,25 @@ h2,
 #login .reset-page {
   width: min(480px, 100%);
 }
+/* The recovery routes have one card, including on short landscape screens. */
+#login.password-recovery {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100dvh;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+}
+#login.password-recovery > .reset-page {
+  margin-block: auto;
+  padding: clamp(20px, 5vw, 40px);
+  gap: clamp(16px, 3vw, 24px);
+  overflow-wrap: anywhere;
+}
+#login.password-recovery .btn {
+  min-height: 44px;
+  white-space: normal;
+}
 #login .field {
   min-width: 0;
 }
@@ -1066,6 +1099,25 @@ html:has(#login) {
   #login {
     padding: 54px 16px 12px;
     align-items: start;
+  }
+  /* Keep the theme control above the cards and balance the layout on tall screens. */
+  #login:has(> .lwrap) {
+    position: relative;
+    align-items: safe center;
+    padding: calc(max(16px, env(safe-area-inset-top)) + 54px)
+      max(16px, env(safe-area-inset-right))
+      max(24px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+  }
+  #login .theme-fab {
+    position: absolute;
+    top: max(16px, env(safe-area-inset-top));
+    right: max(16px, env(safe-area-inset-right));
+    width: 44px;
+    height: 44px;
+  }
+  html:has(#login) {
+    scrollbar-gutter: auto;
   }
   #login .lwrap {
     gap: 12px;

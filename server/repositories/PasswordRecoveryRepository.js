@@ -1,49 +1,64 @@
-/** Supabase access needed by existing password recovery API endpoints. */
+function checked({ data, error }) {
+  if (error) throw error
+  return data
+}
+
 export class PasswordRecoveryRepository {
-  constructor({ supabase, createAuthClient }) {
+  constructor({ supabase }) {
     this.supabase = supabase
-    this.createAuthClient = createAuthClient
   }
 
   async findProfileByEmail(email) {
-    return this.supabase
+    // The database enforces a unique lowercased email. Escape ILIKE wildcards
+    // and compare the result exactly before issuing a token.
+    const pattern = email.replace(/[\\%_]/g, '\\$&')
+    const profile = checked(await this.supabase
       .from('users')
-      .select('email, status')
-      .ilike('email', email)
-      .maybeSingle()
+      .select('id, email, name, status, auth_user_id, auth_version')
+      .ilike('email', pattern)
+      .maybeSingle())
+    return profile?.email.toLowerCase() === email ? profile : null
   }
 
-  async sendResetLink(email, redirectTo) {
-    return this.createAuthClient().auth.resetPasswordForEmail(email, { redirectTo })
+  async saveToken(profile, hash) {
+    checked(await this.supabase.from('password_recovery_tokens').upsert({
+      user_id: profile.id,
+      token_hash: hash,
+      auth_user_id: profile.auth_user_id,
+      auth_version: profile.auth_version,
+      email: profile.email,
+      expires_at: new Date(Date.now() + 30 * 60_000).toISOString()
+    }))
   }
 
-  async exchangeCode(code) {
-    return this.createAuthClient().auth.exchangeCodeForSession(code)
+  async removeToken(hash) {
+    checked(await this.supabase.from('password_recovery_tokens').delete().eq('token_hash', hash))
   }
 
-  async getAuthUser(accessToken) {
-    return this.createAuthClient().auth.getUser(accessToken)
+  async findToken(hash) {
+    return checked(await this.supabase.rpc('check_password_recovery_token', { p_hash: hash }))
   }
 
-  async findLinkedProfile(authUserId) {
-    return this.supabase
-      .from('users')
-      .select('id, auth_user_id, auth_version')
-      .eq('auth_user_id', authUserId)
-      .maybeSingle()
+  async consumeToken(hash) {
+    const profiles = checked(await this.supabase.rpc('consume_password_recovery_token', { p_hash: hash }))
+    return profiles?.[0]
   }
 
   async setAuthPassword(authUserId, password) {
-    return this.supabase.auth.admin.updateUserById(authUserId, { password })
+    checked(await this.supabase.auth.admin.updateUserById(authUserId, { password }))
   }
 
   async updatePasswordState(profile) {
-    return this.supabase
-      .from('users')
+    const updated = checked(await this.supabase.from('users')
       .update({
-        auth_version: Number(profile.auth_version || 0) + 1,
+        auth_version: profile.auth_version + 1,
         must_change_password: false
       })
       .eq('id', profile.id)
+      .eq('auth_user_id', profile.auth_user_id)
+      .eq('auth_version', profile.auth_version)
+      .select('id')
+      .maybeSingle())
+    if (!updated) throw new Error('The account changed during password recovery.')
   }
 }

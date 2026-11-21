@@ -1,11 +1,11 @@
 import crypto from 'node:crypto'
 import { expiryEmail } from './emailTemplates.js'
-import { gorillaEvents } from '../../shared/gorillaEvents.js'
 
 const DAY_MS = 86_400_000
-const CHECK_INTERVAL_MS = 60 * 60 * 1000
+const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000
+const MEMBER_LEAD_DAYS = 3
 const SETUP_CODES = new Set(['PGRST202', 'PGRST205', '42P01', '42703', '42501'])
-const MIGRATION_PATH = 'supabase/migrations/005_admin_notifications.sql'
+const MIGRATION_PATH = 'supabase/migrations/026_member_expiry_reminders.sql'
 
 function databaseCode(error) {
   return /^[A-Z0-9_]{2,40}$/.test(error?.code || '') ? error.code : 'DATABASE_ERROR'
@@ -51,14 +51,13 @@ export async function checkMembershipReminderSetup(supabase) {
   if (data !== false) throw new ReminderSetupError({ code: 'UNEXPECTED_CLAIM_RESULT' })
 }
 
-export function reminderType(member, reminderDays, now = Date.now()) {
+export function membershipAlertType(member, reminderDays, now = Date.now()) {
   const start = Date.parse(member.membershipStart)
   const end = Date.parse(member.membershipEnd)
   if (
     !['user', 'member'].includes(member.role) ||
     !['active', 'expired'].includes(member.status) ||
     !member.subscriptionId ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email || '') ||
     !Number.isFinite(start) ||
     !Number.isFinite(end) ||
     end <= start ||
@@ -73,13 +72,27 @@ export function reminderType(member, reminderDays, now = Date.now()) {
   return end <= now + reminderDays * DAY_MS ? 'upcoming' : null
 }
 
+const manilaDay = (time) => Math.floor((time + MANILA_OFFSET_MS) / DAY_MS)
+
+export function memberExpiryDue(member, now = Date.now()) {
+  const end = Date.parse(member.membershipEnd)
+  return member.status === 'active' &&
+    (member.subscriptionStatus == null || member.subscriptionStatus === 'active') &&
+    membershipAlertType(member, MEMBER_LEAD_DAYS + 1, now) === 'upcoming' &&
+    manilaDay(end) - manilaDay(now) === MEMBER_LEAD_DAYS
+}
+
+export function reminderType(member, now = Date.now()) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email || '')) return null
+  return memberExpiryDue(member, now) ? 'upcoming' : null
+}
+
 export function createMembershipReminderService({
   supabase,
   loadDatabase,
   mailer,
   from,
   loginUrl,
-  emitEvent,
   logger = console,
   now = Date.now
 }) {
@@ -90,7 +103,7 @@ export function createMembershipReminderService({
 
   async function sendReminder(member, settings) {
     if (!mailer || !settings.emailOn) return false
-    const type = reminderType(member, settings.remind, now())
+    const type = reminderType(member, now())
     if (!type) return false
 
     const claimToken = crypto.randomUUID()
@@ -128,7 +141,7 @@ export function createMembershipReminderService({
         supabase.from('membership_reminders').update({ claimed_until: new Date(0).toISOString() })
       )
       throw new Error(
-        'Reminder tracking is unavailable. Apply migration 005_admin_notifications.sql.'
+        `Reminder tracking is unavailable. Apply ${MIGRATION_PATH}.`
       )
     }
     let mailResult
@@ -146,7 +159,7 @@ export function createMembershipReminderService({
           name: member.name,
           plan: member.plan,
           expiryDate,
-          expired: type === 'expired',
+          daysLeft: MEMBER_LEAD_DAYS,
           loginUrl
         })
       })
@@ -160,17 +173,21 @@ export function createMembershipReminderService({
       }
     } catch (cause) {
       const code = /^[A-Z_]{2,40}$/.test(cause.code || '') ? cause.code : 'SMTP_ERROR'
-      // Only release a known delivery failure. An acknowledgement failure below
-      // must retain the lease because SMTP might already have accepted the email.
+      // A dropped connection can mean SMTP accepted the email before we lost the
+      // reply. Keep the recorded attempt reserved when the outcome is unknown.
+      const rejected = Number(cause.responseCode) >= 400 ||
+        ['ERECIPIENT', 'EAUTH', 'EDNS', 'ECONNREFUSED'].includes(code)
       const { error } = await ownedClaim(
         supabase.from('membership_reminders').update({
-          claimed_until: new Date(0).toISOString(),
-          last_error_code: code
+          last_error_code: code,
+          ...(rejected && { claimed_until: new Date(0).toISOString() })
         })
       )
       if (error) logger.error('Unable to release a failed membership reminder claim.')
       throw new Error(
-        `Membership reminder delivery failed (${code}); it will be retried on a later check.`
+        rejected
+          ? `Membership reminder was rejected (${code}). It can be retried today.`
+          : `Membership reminder delivery could not be confirmed (${code}). Check the mail provider before retrying.`
       )
     }
 
@@ -187,12 +204,6 @@ export function createMembershipReminderService({
       throw new Error(
         'A membership reminder was accepted by SMTP, but its delivery record could not be saved. Check membership_reminders before retrying.'
       )
-    }
-    // Announce only after acceptance is saved and the duplicate guard is in place.
-    const days = Math.max(1, Math.ceil((Date.parse(membershipEnd) - now()) / DAY_MS))
-    for (const to of ['admins', { userId: member.id }]) {
-      const name = to === 'admins' ? member.name : null
-      emitEvent?.({ to }, type === 'upcoming' ? gorillaEvents.expiring(name, days) : gorillaEvents.expired(name))
     }
     return true
   }
@@ -234,7 +245,7 @@ export function createMembershipReminderService({
           lastError =
             error instanceof ReminderSetupError
               ? error.message
-              : 'Reminder check failed. Check the database and migration 005_admin_notifications.sql.'
+              : `Reminder check failed. Check the database and ${MIGRATION_PATH}.`
           throw error
         })
         .finally(() => {
@@ -250,6 +261,7 @@ export function createMembershipReminderService({
 export function startMembershipReminders({
   runDue,
   logger = console,
+  now = Date.now,
   setTimer = setTimeout,
   clearTimer = clearTimeout
 }) {
@@ -265,11 +277,13 @@ export function startMembershipReminders({
       logger.error(
         error instanceof ReminderSetupError
           ? error.message
-          : 'Automatic membership reminder check failed. Check the database connection and migration 005_admin_notifications.sql.'
+          : `Automatic membership reminder check failed. Check the database connection and ${MIGRATION_PATH}.`
       )
     } finally {
       if (!stopped) {
-        timer = setTimer(tick, CHECK_INTERVAL_MS)
+        // Run at the next Manila midnight. The first check catches up on startup.
+        const delay = DAY_MS - ((now() + MANILA_OFFSET_MS) % DAY_MS)
+        timer = setTimer(tick, delay)
         timer.unref?.()
       }
     }

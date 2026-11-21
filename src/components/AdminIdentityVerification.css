@@ -31,7 +31,9 @@
 
 #login .admin-identity-steps {
   list-style: none;
-  padding: 0;
+  margin: 0;
+  padding: 16px 0 0;
+  border-top: 1px solid var(--id);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -87,6 +89,8 @@
   flex-direction: column;
   align-items: stretch;
   gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--id);
 }
 
 #login .admin-identity-actions .lbtn {

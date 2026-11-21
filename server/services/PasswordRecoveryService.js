@@ -1,3 +1,7 @@
+import { createHash, randomBytes } from 'node:crypto'
+
+export const invalidResetMessage = 'This reset link is invalid or expired. Request a new one.'
+
 export class PasswordRecoveryWorkflowError extends Error {
   constructor(message, status) {
     super(message)
@@ -6,7 +10,7 @@ export class PasswordRecoveryWorkflowError extends Error {
   }
 }
 
-/** Pure input rules for the three existing password-recovery routes. */
+/** Validates recovery inputs and keeps raw tokens out of the database. */
 export class PasswordRecoveryService {
   constructor({ emailPattern, passwordPolicy, passwordPolicyMessage }) {
     this.emailPattern = emailPattern
@@ -14,35 +18,30 @@ export class PasswordRecoveryService {
     this.passwordPolicyMessage = passwordPolicyMessage
   }
 
-  normalizedEmail(body) {
+  normalizedEmail(body = {}) {
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
     return this.emailPattern.test(email) ? email : null
   }
 
-  requireCode(body) {
-    const code = typeof body.code === 'string' ? body.code : ''
-    if (!code) {
-      throw new PasswordRecoveryWorkflowError('The reset authorization code is missing.', 400)
-    }
-    return code
+  newToken() {
+    return randomBytes(32).toString('base64url')
   }
 
-  requirePassword(body) {
+  tokenHash({ token } = {}) {
+    if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) {
+      throw new PasswordRecoveryWorkflowError(invalidResetMessage, 401)
+    }
+    return createHash('sha256').update(token).digest('hex')
+  }
+
+  requirePassword(body = {}) {
     const password = typeof body.password === 'string' ? body.password : ''
     if (!this.passwordPolicy(password)) {
       throw new PasswordRecoveryWorkflowError(this.passwordPolicyMessage, 400)
     }
-    return password
-  }
-
-  requireToken(authorization) {
-    const accessToken = authorization.replace(/^Bearer\s+/i, '')
-    if (!accessToken) {
-      throw new PasswordRecoveryWorkflowError(
-        'Your reset link is invalid or expired. Request a new one.',
-        401
-      )
+    if (password !== body.confirmPassword) {
+      throw new PasswordRecoveryWorkflowError('The passwords do not match.', 400)
     }
-    return accessToken
+    return password
   }
 }

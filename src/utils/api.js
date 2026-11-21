@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 // Resolve EventSource against the same API host as the authenticated ticket request.
 export const apiUrl = (path) => `${API_URL.replace(/\/$/, '')}${path}`

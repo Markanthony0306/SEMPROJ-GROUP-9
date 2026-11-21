@@ -61,6 +61,7 @@ function accountFromRow(row, roleById, subscription, planById) {
     membershipStart: subscription?.start_date || null,
     membershipEnd: subscription?.end_date || null,
     subscriptionId: subscription?.subscription_id || null,
+    subscriptionStatus: subscription?.status?.toLowerCase() || null,
     subscriptionCreatedAt: subscription?.created_at || null,
     planId: subscription?.plan_id || null,
     mustChangePassword: Boolean(row.must_change_password),

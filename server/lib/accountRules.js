@@ -1,12 +1,13 @@
 import { Membership } from '../models/Membership.js'
 import { isRetiredPlan } from '../../shared/membershipPlans.js'
+import { normalizeMemberEmail } from '../services/memberEmail.js'
 
 export const availablePlan =(plan, name) =>
   plan.is_active && !isRetiredPlan(plan.plan_name) &&
   String(plan.plan_name).toLowerCase() === name.toLowerCase()
 
 function publicAccount(account) {
-  const { authUserId, authVersion, subscriptionId, subscriptionCreatedAt, planId, ...safe } = account
+  const { authUserId, authVersion, subscriptionId, subscriptionStatus, subscriptionCreatedAt, planId, ...safe } = account
   return { ...safe, status: membershipStatus(account) }
 }
 
@@ -18,11 +19,11 @@ function addMembershipDays(date, durationDays = 30) {
 }
 function validAccountInput(body) {
   const name = typeof body.name === 'string' ? body.name.trim() : ''
-  const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+  const email = normalizeMemberEmail(body.email)
   const plan = typeof body.plan === 'string' ? body.plan.trim() : ''
   // Field names let the registration sheet focus the control the server rejected.
   if (!name || name.length > 100) return { error: 'Please enter a name of up to 100 characters.', field: 'name' }
-  if (!emailPattern.test(email)) return { error: 'Please enter a valid email address.', field: 'email' }
+  if (!email) return { error: 'Please enter a valid email address.', field: 'email' }
   if (!plan || plan.length > 100) return { error: 'Choose a valid membership plan.', field: 'plan' }
   return {
     name,

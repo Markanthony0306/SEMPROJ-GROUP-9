@@ -27,7 +27,7 @@ export default function ForgotPassword({ navigate }) {
     }
   }
   return (
-    <main id="login">
+    <main id="login" className="password-recovery">
       <section className="lform clay reset-page">
         <div className="fhead">
           <h2>Reset password</h2>
