@@ -1,6 +1,8 @@
-
 import { useState } from 'react'
 import { apiRequest } from '../utils/api'
+import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH, passwordPolicy, passwordPolicyMessage } from '../../shared/passwordPolicy'
+import PasswordToggle from '../components/PasswordToggle'
+import Spinner from '../components/Spinner'
 import './Login.css'
 
 export default function ResetPassword({ navigate }) {
@@ -9,6 +11,7 @@ export default function ResetPassword({ navigate }) {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
+  const [visible, setVisible] = useState({ password: false, confirmPassword: false })
 
   const submit = async (event) => {
     event.preventDefault()
@@ -17,8 +20,8 @@ export default function ResetPassword({ navigate }) {
     setError('')
     setMessage('')
 
-    if (password.length < 8) {
-      setError('Use at least 8 characters for your password.')
+    if (!passwordPolicy(password)) {
+      setError(passwordPolicyMessage)
       return
     }
 
@@ -51,15 +54,11 @@ export default function ResetPassword({ navigate }) {
 
       // Token-based recovery links must contain a recovery access token.
       if (!accessToken && refreshToken) {
-        throw new Error(
-          'Unable to read the recovery session. Please request a new reset link.'
-        )
+        throw new Error('Unable to read the recovery session. Please request a new reset link.')
       }
 
       if (!accessToken) {
-        throw new Error(
-          'This reset link is invalid or expired. Please request a new one.'
-        )
+        throw new Error('This reset link is invalid or expired. Please request a new one.')
       }
 
       const result = await apiRequest('/auth/reset-password', {
@@ -71,11 +70,7 @@ export default function ResetPassword({ navigate }) {
       })
 
       setMessage(result.message)
-      window.history.replaceState(
-        {},
-        document.title,
-        window.location.pathname
-      )
+      window.history.replaceState({}, document.title, window.location.pathname)
 
       setTimeout(() => navigate('login'), 1500)
     } catch (cause) {
@@ -90,7 +85,7 @@ export default function ResetPassword({ navigate }) {
       <section className="lform clay reset-page">
         <div className="fhead">
           <h2>Choose a new password</h2>
-          <p>Use at least eight characters.</p>
+          <p>{passwordPolicyMessage}</p>
         </div>
 
         <form onSubmit={submit} aria-busy={pending}>
@@ -100,13 +95,21 @@ export default function ResetPassword({ navigate }) {
               <input
                 aria-label="New password"
                 autoComplete="new-password"
-                type="password"
+                type={visible.password ? 'text' : 'password'}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                minLength={8}
-                maxLength={72}
+                minLength={MIN_PASSWORD_LENGTH}
+                maxLength={MAX_PASSWORD_LENGTH}
                 placeholder="New password"
                 required
+              />
+              <PasswordToggle
+                visible={visible.password}
+                label="new password"
+                disabled={pending}
+                onToggle={() =>
+                  setVisible((previous) => ({ ...previous, password: !previous.password }))
+                }
               />
             </span>
           </label>
@@ -117,13 +120,24 @@ export default function ResetPassword({ navigate }) {
               <input
                 aria-label="Confirm new password"
                 autoComplete="new-password"
-                type="password"
+                type={visible.confirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                minLength={8}
-                maxLength={72}
+                minLength={MIN_PASSWORD_LENGTH}
+                maxLength={MAX_PASSWORD_LENGTH}
                 placeholder="Confirm new password"
                 required
+              />
+              <PasswordToggle
+                visible={visible.confirmPassword}
+                label="confirm new password"
+                disabled={pending}
+                onToggle={() =>
+                  setVisible((previous) => ({
+                    ...previous,
+                    confirmPassword: !previous.confirmPassword
+                  }))
+                }
               />
             </span>
           </label>
@@ -136,10 +150,8 @@ export default function ResetPassword({ navigate }) {
 
           {message && <p role="status">{message}</p>}
 
-          <button
-            className="btn lbtn"
-            disabled={pending || Boolean(message)}
-          >
+          <button className="btn lbtn" disabled={pending || Boolean(message)}>
+            {pending && <Spinner />}
             {pending ? 'Updating...' : 'Update password'}
           </button>
         </form>

@@ -1,0 +1,27 @@
+.fitpulse-identity-camera { display: grid; gap: 12px; min-width: 0; }
+.fitpulse-identity-camera .fp-camera-preview { width: 100%; position: relative; overflow: hidden; isolation: isolate; aspect-ratio: 16 / 10; background: #0a1b30; border-radius: 19px; }
+.fitpulse-identity-camera video { width: 100%; height: 100%; display: block; object-fit: contain; }
+.fitpulse-identity-camera:not(.fp-camera-id):not(.fp-camera-face) .fp-camera-preview { aspect-ratio: 4 / 3; max-height: 300px; border-radius: 14px; }
+.fp-camera-guides { position: absolute; inset: 0; display: grid; justify-items: center; pointer-events: none; color: #fff; }
+.fp-camera-live { position: absolute; top: 13px; left: 16px; z-index: 1; color: #fff; font-size: 12px; font-weight: 800; border-radius: 40px; background: rgba(4, 20, 40, .7); padding: 6px 9px; }
+.fp-live-dot { display: inline-block; width: 8px; height: 8px; background: #fc635c; border-radius: 50%; margin-right: 4px; }
+.fp-camera-guides p { position: absolute; bottom: 12px; margin: 0 10px; text-align: center; color: #fff; font-weight: 750; font-size: 12px; line-height: 1.4; text-shadow: 1px 1px 5px #001226; }
+.fp-id-frame { position: absolute; inset: 14% 14% 17%; border: 3px solid #efb83e; border-radius: 12px; box-shadow: 0 0 0 999px rgba(5, 18, 35, .13); }
+.fp-face-oval { position: absolute; left: 30%; right: 30%; top: 9%; bottom: 9%; border: 3px dashed #f4b840; border-radius: 50%; box-shadow: 0 0 0 999px rgba(5, 18, 35, .1); }
+.fitpulse-identity-camera .btn { justify-self: end; }
+.fitpulse-identity-camera .field { width: 100%; }
+@media (max-width: 500px) {
+ .fitpulse-identity-camera .fp-camera-preview { aspect-ratio: 4 / 3; }
+ .fp-id-frame { inset: 17% 9% 20%; }
+ .fp-face-oval { left: 21%; right: 21%; }
+ .fp-camera-live { font-size: 10px; top: 8px; left: 8px; }
+ .fp-camera-guides p { font-size: 11px; }
+ .fitpulse-identity-camera .btn { justify-self: stretch; }
+}
+/* Live guidance is text-based and remains visible even without color perception. */
+.fp-live-feedback { display: flex; align-items: center; gap: 9px; min-height: 39px; padding: 10px 12px; border: 1px solid #e7c7a4; border-radius: 12px; background: #fff8eb; color: #723d0c; font-size: 12px; font-weight: 750; line-height: 1.45; }
+.fp-live-feedback.is-ready { background: #edfbf4; border-color: #b5e3c7; color: #17643e; }
+.fp-live-pulse { width: 9px; height: 9px; background: #e77c21; border-radius: 50%; flex: 0 0 9px; }
+.fp-live-feedback.is-ready .fp-live-pulse { background: #218e55; }
+
+.fp-auto-capture-status { justify-self: stretch; margin: 0; padding: 9px 12px; border-radius: 10px; background: #eaf3fb; color: #244a6e; font-size: 12px; font-weight: 700; text-align: center; }

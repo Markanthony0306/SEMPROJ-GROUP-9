@@ -1,0 +1,305 @@
+
+import crypto from 'node:crypto'
+import { Router } from 'express'
+
+import {
+  MemberRegistrationError
+} from '../services/MemberRegistrationService.js'
+
+export function memberRegistrationRoutes({
+  authenticate,
+  requireRole,
+  loadDatabase,
+  saveDatabase,
+  supabase,
+  getRoleId,
+  validAccountInput,
+  paymentMethod,
+  registrationService,
+  generateTemporaryPassword,
+  addMembershipDays,
+  publicAccount
+}) {
+  const router = Router()
+
+  router.post(
+    '/admin/members',
+    authenticate,
+    requireRole('admin'),
+
+    async (req, res) => {
+      let authUserId = null
+      let profileId = null
+
+      try {
+        const body = req.body || {}
+
+        // 1. Validate basic information before database access.
+        // This preserves the existing early validation behavior.
+        const preliminaryInput = validAccountInput(body)
+
+        if (preliminaryInput.error) {
+          return res.status(400).json({
+            message: preliminaryInput.error
+          })
+        }
+
+        const preliminaryMethod = paymentMethod(body)
+
+        if (body.recordPayment === true && !preliminaryMethod) {
+          return res.status(400).json({
+            message: 'Choose Cash or GCash for a recorded payment.'
+          })
+        }
+
+        // 2. Load the required Supabase-backed data.
+        const database = await loadDatabase([
+          'accounts',
+          'payments'
+        ])
+
+        // 3. Apply our OOP registration validation rules.
+        let prepared
+
+        try {
+          prepared = registrationService.prepare({
+            body,
+            database
+          })
+        } catch (error) {
+          if (error instanceof MemberRegistrationError) {
+            return res.status(error.status).json({
+              message: error.message
+            })
+          }
+
+          throw error
+        }
+
+        const {
+          input,
+          method,
+          recordPayment,
+          planRecord
+        } = prepared
+
+        // 4. Check Supabase directly for an existing profile.
+        const { data: existingProfile, error: lookupError } =
+          await supabase
+            .from('users')
+            .select('id')
+            .eq('email', input.email)
+            .maybeSingle()
+
+        if (lookupError) {
+          console.error(
+            'Supabase email lookup failed:',
+            lookupError.message
+          )
+
+          return res.status(500).json({
+            message: 'Unable to check the member account.'
+          })
+        }
+
+        if (existingProfile) {
+          return res.status(409).json({
+            message: 'An account with this email already exists.'
+          })
+        }
+
+        // 5. Generate a temporary password.
+        const temporaryPassword = generateTemporaryPassword()
+
+        // 6. Create the Supabase Auth user.
+        const { data: authData, error: authError } =
+          await supabase.auth.admin.createUser({
+            email: input.email,
+            password: temporaryPassword,
+            email_confirm: true,
+            user_metadata: {
+              name: input.name
+            }
+          })
+
+        if (authError || !authData?.user) {
+          console.error(
+            'Supabase Auth account creation failed:',
+            authError?.message
+          )
+
+          return res.status(400).json({
+            message:
+              'Unable to create the member login. Check whether the email is already registered.'
+          })
+        }
+
+        authUserId = authData.user.id
+
+        // 7. Create the member profile.
+        const memberId = crypto.randomUUID()
+        const now = new Date().toISOString()
+        const roleId = await getRoleId('member')
+
+        const { data: profile, error: profileError } =
+          await supabase
+            .from('users')
+            .insert({
+              id: memberId,
+              auth_user_id: authUserId,
+              role_id: roleId,
+              name: input.name,
+              email: input.email,
+              phone_number: input.phone || null,
+              status: 'active',
+              must_change_password: true,
+              created_at: now
+            })
+            .select(
+              'id, member_code, name, email, phone_number, status, created_at'
+            )
+            .single()
+
+        if (profileError || !profile) {
+          console.error(
+            'Supabase member profile creation failed:',
+            profileError?.message
+          )
+
+          // Preserve the existing Auth cleanup behavior.
+          const { error: rollbackError } =
+            await supabase.auth.admin.deleteUser(authUserId)
+
+          if (rollbackError) {
+            console.error(
+              'Supabase Auth rollback failed:',
+              rollbackError.message
+            )
+          } else {
+            authUserId = null
+          }
+
+          return res.status(500).json({
+            message: 'Unable to create the member profile.'
+          })
+        }
+
+        profileId = profile.id
+
+        // 8. Prepare the member's initial subscription.
+        const member = {
+          id: profile.id,
+          authUserId,
+          memberCode: profile.member_code || '',
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone_number || '',
+          role: 'user',
+          plan: planRecord.plan_name,
+          status: 'active',
+          joined: now,
+          membershipStart: now,
+          membershipEnd: addMembershipDays(
+            now,
+            planRecord.duration_days
+          ),
+          subscriptionId: crypto.randomUUID(),
+          subscriptionCreatedAt: now,
+          planId: planRecord.plan_id,
+          mustChangePassword: true,
+          authVersion: 0
+        }
+
+        database.accounts.push(member)
+
+        // 9. Record the initial payment if requested.
+        if (recordPayment) {
+          database.payments.push({
+            id: crypto.randomUUID(),
+            memberId: member.id,
+            memberName: member.name,
+            amount: Number(planRecord.price),
+            method,
+            plan: planRecord.plan_name,
+            type: 'New',
+            date: now,
+            subscriptionId: member.subscriptionId,
+            processedByUserId: req.user.id
+          })
+        }
+
+        // 10. Save the application records.
+        await saveDatabase(database)
+
+        // 11. Return the registration response.
+        res.set('Cache-Control', 'no-store')
+
+        return res.status(201).json({
+          temporaryPassword,
+          message: 'Member account created.',
+          member: {
+            ...publicAccount(member),
+            memberCode: profile.member_code,
+            accountStatus: profile.status,
+            createdAt: profile.created_at
+          }
+        })
+
+      } catch (error) {
+        console.error(
+          'Unable to create member:',
+          error.message
+        )
+
+        // Try to clean up the profile after a failure.
+        if (profileId) {
+          try {
+            const { error: rollbackError } =
+              await supabase
+                .from('users')
+                .delete()
+                .eq('id', profileId)
+
+            if (rollbackError) {
+              console.error(
+                'Supabase profile rollback failed:',
+                rollbackError.message
+              )
+            }
+          } catch (cleanupError) {
+            console.error(
+              'Profile cleanup failed:',
+              cleanupError.message
+            )
+          }
+        }
+
+        // Try to clean up the linked Auth user.
+        if (authUserId) {
+          try {
+            const { error: rollbackError } =
+              await supabase.auth.admin.deleteUser(authUserId)
+
+            if (rollbackError) {
+              console.error(
+                'Supabase Auth rollback failed:',
+                rollbackError.message
+              )
+            }
+          } catch (cleanupError) {
+            console.error(
+              'Auth cleanup failed:',
+              cleanupError.message
+            )
+          }
+        }
+
+        return res.status(500).json({
+          message: 'Unable to create the member account.'
+        })
+      }
+    }
+  )
+
+  return router
+}

@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { createClient } from '@supabase/supabase-js'
+import { passwordPolicy, passwordPolicyMessage } from '../shared/passwordPolicy.js'
 
 const email = process.env.ADMIN_EMAIL || 'admin@fitpulse.com'
 const newPassword = process.env.ADMIN_PASSWORD
@@ -10,8 +11,8 @@ if (!url || !secretKey) {
   console.error('Set SUPABASE_URL and SUPABASE_SECRET_KEY in your .env file.')
   process.exit(1)
 }
-if (!newPassword || newPassword.length < 8 || Buffer.byteLength(newPassword, 'utf8') > 72) {
-  console.error('Set ADMIN_PASSWORD to a value at least 8 characters and no longer than 72 UTF-8 bytes.')
+if (!passwordPolicy(newPassword)) {
+  console.error('Set ADMIN_PASSWORD in your private environment. ' + passwordPolicyMessage)
   process.exit(1)
 }
 

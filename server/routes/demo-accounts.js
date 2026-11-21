@@ -2,13 +2,7 @@ import express from 'express'
 
 // These are public development defaults, never a way to recover saved passwords.
 const DEMO_ACCOUNTS = [
-  { label: 'Admin', email: 'admin@fitpulse.com', password: 'admin123', roles: ['admin'] },
-  {
-    label: 'Member',
-    email: 'member@fitpulse.com',
-    password: 'member123',
-    roles: ['user', 'member']
-  }
+  { label: 'Admin', email: 'admin@fitpulse.com', password: 'admin123', roles: ['admin'] }
 ]
 
 export function demoAccountRoutes({ isProduction, loadDatabase, rateLimit, verifyPassword }) {

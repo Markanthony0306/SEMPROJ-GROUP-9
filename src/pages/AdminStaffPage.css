@@ -1,11 +1,31 @@
 /* Match the member dashboard's restrained clay surfaces and spacing. */
-.admin-app {
+.app.admin-app {
+  --dashboard-gap: 16px;
+  --dashboard-padding: 16px;
+  min-width: 0;
   --admin-shadow: rgba(64, 92, 135, 0.18);
   --admin-highlight: rgba(255, 255, 255, 0.5);
   --admin-inset: rgba(64, 92, 135, 0.1);
   grid-template-columns: 232px minmax(0, 1fr);
-  gap: 28px;
-  padding: 24px;
+  align-items: start;
+  gap: var(--dashboard-gap);
+  padding: var(--dashboard-padding);
+}
+.admin-app .g2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.notification-list li {
+  align-items: flex-start;
+  gap: 18px;
+}
+.notification-list .record-delete-button {
+  margin-top: 2px;
+}
+.notification-row-actions {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 10px;
 }
 [data-theme='dark'] .admin-app {
   --admin-shadow: rgba(0, 0, 0, 0.3);
@@ -20,13 +40,22 @@
     inset 2px 2px 4px var(--admin-highlight),
     inset -2px -2px 6px var(--admin-inset);
 }
-.admin-app main {
+.app.admin-app main {
   width: 100%;
-  max-width: 1440px;
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
+  gap: var(--dashboard-gap);
 }
-.admin-app header {
+.app.admin-app aside {
+  top: var(--dashboard-padding);
+  height: calc(100svh - var(--dashboard-padding) - var(--dashboard-padding));
+}
+.app.admin-app header {
   min-height: 84px;
+  top: var(--dashboard-padding);
+}
+.admin-app .dashboard-stage {
+  min-height: 0;
 }
 .admin-app header h1 {
   min-width: 0;
@@ -48,7 +77,15 @@
 .admin-app #view {
   min-width: 0;
   grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
+  align-content: start;
+  gap: var(--dashboard-gap);
+}
+.admin-app #view > .dashboard-overview {
+  margin-bottom: 0;
+}
+.admin-app #view > .activity-chart + .g2 {
+  align-items: start;
+  gap: var(--dashboard-gap);
 }
 .admin-app .card {
   padding: 26px;
@@ -57,18 +94,83 @@
   font-size: 18px;
   margin-bottom: 16px;
 }
+.admin-app .data-table .table-actions-heading {
+  width: 1%;
+  min-width: 0;
+  padding-inline: 12px;
+  text-align: center;
+  white-space: nowrap;
+}
+.admin-app .data-table td.acts {
+  width: 1%;
+  min-width: 0;
+  max-width: none;
+  padding: 12px;
+  white-space: nowrap;
+}
+.admin-app .data-table .table-cell-actions {
+  width: max-content;
+  margin-inline: auto;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+.admin-app .data-table .table-cell-actions > button {
+  flex-shrink: 0;
+}
+.admin-app .member-record-actions .report-icon-button {
+  width: 44px;
+  height: 44px;
+}
+.admin-app .member-mail-button {
+  grid-column: 2;
+  grid-row: 2;
+}
+.admin-app .maintenance-log .data-table table {
+  table-layout: fixed;
+}
+.admin-app .maintenance-log .data-table th:first-child {
+  width: 24%;
+}
+.admin-app .maintenance-log .data-table th:nth-child(3) {
+  width: 148px;
+}
+.admin-app .maintenance-log .table-actions-heading {
+  width: 88px;
+  min-width: 0;
+  text-align: center;
+}
+.admin-app .maintenance-log .data-table td {
+  min-width: 0;
+  max-width: none;
+  padding: 12px 16px;
+}
 .admin-app .admin-stats {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-content: start;
+  gap: var(--dashboard-gap);
 }
 .admin-app .admin-stats .stat {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 22px;
+  container: admin-stat / inline-size;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  min-height: 90px;
+}
+.admin-app .admin-stats .stat > div {
+  flex: 1;
+}
+.admin-app .admin-stats .stat small {
+  margin-bottom: 4px;
 }
 .admin-app .admin-stats .stat b {
-  font-size: clamp(22px, 2vw, 30px);
+  font-size: 24px;
   line-height: 1.2;
+}
+.admin-app .admin-stats .bub {
+  width: 36px;
+  height: 36px;
 }
 .admin-app .bub {
   width: 46px;
@@ -138,6 +240,38 @@
 }
 .admin-app .admin-card-heading h2 {
   margin: 0;
+}
+.admin-app .record-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+  margin-bottom: 22px;
+}
+.admin-app .record-section-heading h2 {
+  margin: 0;
+}
+.record-section-heading > div:first-child {
+  min-width: 0;
+}
+.record-section-heading p {
+  max-width: 560px;
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.record-section-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: auto;
+}
+.record-section-heading > .report-clear-button {
+  margin-left: auto;
 }
 .admin-card-heading > svg {
   color: var(--orange);
@@ -266,6 +400,17 @@
   gap: 16px;
   flex-wrap: wrap;
 }
+.admin-app .membership-reminder-status {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--id);
+}
+.admin-app .membership-reminder-status .form-help {
+  margin: 0;
+  line-height: 1.6;
+}
 .admin-app .report-toolbar .field {
   flex: 1;
   max-width: 400px;
@@ -289,58 +434,132 @@
   overflow-wrap: anywhere;
   line-height: 1.5;
 }
+.admin-app .member-profile-dialog {
+  width: min(760px, 100%);
+}
+.member-profile-summary {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 22px;
+  border-radius: 20px;
+  background: var(--card2);
+}
+.member-profile-summary > div {
+  min-width: 0;
+}
+.member-profile-summary .profile-name {
+  display: block;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+.member-profile-code {
+  display: block;
+  margin: 5px 0 10px;
+  color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.member-profile-section {
+  margin-top: 26px;
+}
+.member-profile-section h3 {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+.admin-app .member-profile-section .member-record > div {
+  grid-template-columns: minmax(85px, 0.4fr) minmax(0, 1fr);
+  gap: 16px;
+  padding: 12px 0;
+}
+.admin-app .member-profile-section .member-record > div:last-child {
+  border: 0;
+}
+/* Use wide cards without scaling up their type or height. */
+@container admin-stat (min-width: 300px) {
+  .admin-app .admin-stats .stat > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .admin-app .admin-stats .stat small {
+    min-width: 0;
+    margin-bottom: 0;
+  }
+  .admin-app .admin-stats .stat b {
+    flex-shrink: 0;
+    max-width: 60%;
+    text-align: right;
+  }
+}
 @media (max-width: 1200px) {
   .admin-app .admin-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .admin-app .admin-stats .stat {
-    flex-direction: row;
-  }
 }
 @media (max-width: 1000px) {
-  .admin-app {
+  .app.admin-app {
     grid-template-columns: minmax(0, 1fr);
-    padding: 16px;
   }
-  .admin-app aside {
-    width: min(280px, calc(100vw - 32px));
+  .app.admin-app aside {
+    position: fixed;
+    left: var(--dashboard-padding);
+    bottom: var(--dashboard-padding);
+    width: min(280px, calc(100vw - var(--dashboard-padding) - var(--dashboard-padding)));
+    height: auto;
+    transform: translateX(-120%);
+    transition: transform 0.3s;
+  }
+  .app.admin-app aside.open {
+    transform: none;
+  }
+  .admin-app .ov.show {
+    display: block;
+  }
+  .admin-app #menuBtn {
+    display: grid;
   }
 }
 @media (max-width: 760px) {
   .admin-app .g2 {
     grid-template-columns: minmax(0, 1fr);
   }
-  .admin-list li {
-    flex-wrap: wrap;
-  }
 }
 @media (max-width: 560px) {
-  .admin-app {
+  .app.admin-app {
+    --dashboard-padding: 12px;
+  }
+  .app.admin-app header {
+    gap: 8px;
     padding: 12px;
   }
-  .admin-app header {
-    min-height: 72px;
-    top: 12px;
-    gap: 10px;
+  .admin-app .chip div {
+    display: none;
   }
-  .admin-app .card {
-    padding: 20px;
-    border-radius: 22px;
-  }
-  .admin-app .admin-stats .stat {
-    flex-direction: column;
-    padding: 16px;
-    border-radius: 20px;
-  }
-  .admin-app #view,
-  .admin-app .grid {
-    gap: 16px;
+  .admin-app .admin-stats {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .app.admin-app aside,
   .admin-app *,
   .admin-app *::after {
     animation: none;
     transition: none;
   }
+}
+.admin-app .webcam-qr {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.admin-app .webcam-qr video {
+  width: min(100%, 360px);
+  aspect-ratio: 4 / 3;
+  object-fit: contain;
+  background: var(--card2);
+  border-radius: 16px;
 }

@@ -8,18 +8,24 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "node server/server.js",
+    "check:services": "node scripts/check-services.mjs",
     "test:server": "node scripts/smoke-server.mjs",
+    "test:reminders": "node --test scripts/test-membership-reminders.mjs",
+    "test:accounts": "node --test scripts/test-account-deletion.mjs scripts/test-email-delivery.mjs",
+    "check:email": "node scripts/check-email.mjs",
+    "check:reminders": "node scripts/check-reminders.mjs",
     "admin:password": "node scripts/admin-password.mjs",
     "format": "prettier --write .",
     "migrate:json-data": "node scripts/migrate-json-data.mjs",
-    "migrate:demo-auth": "node scripts/migrate-demo-auth.mjs"
+    "migrate:demo-auth": "node scripts/migrate-demo-auth.mjs",
+    "test:models": "node --test server/models/Membership.test.js",
+    "test:services": "node --test server/services/MembershipService.test.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",
     "express": "^5.2.1",
-    "face-api.js": "^0.22.2",
     "jsonwebtoken": "^9.0.3",
     "nodemailer": "^10.0.15",
     "qrcode": "^1.5.4",
@@ -31,4 +37,5 @@
     "prettier": "^3.3.3",
     "vite": "^7.0.0"
   }
+  
 }

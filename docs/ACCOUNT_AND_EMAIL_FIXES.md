@@ -1,0 +1,171 @@
+# Account deletion and email delivery
+
+## Enable the database changes
+
+Apply `supabase/migrations/005_admin_notifications.sql` to enable the automatic
+reminder tables and delivery tracking if it has not been run yet. For account
+deletion, apply `supabase/migrations/013_member_id_account_deletion.sql` in the
+Supabase SQL Editor after migrations 001 and 011. It includes the setup from
+migration 006, gives the ID cleanup trigger the permissions it needs during
+Auth deletion, and refreshes the Data API schema cache. Then apply
+`supabase/migrations/015_audit_member_account_deletion.sql` and restart the API.
+
+Apply `supabase/migrations/007_admin_managed_accounts.sql` to keep account and
+membership writes behind the API's role checks, including databases with older
+permissive browser policies. Disable public signups in Supabase Auth; new accounts
+are created through the authenticated administrator API. The server's private
+`service_role` permissions are preserved.
+
+For the "Report clearing is unavailable" error, follow
+[CLEAR_REPORT_SETUP.md](CLEAR_REPORT_SETUP.md). Migration 004 installs the report
+clearing function and refreshes the Data API schema cache without clearing data.
+
+Migration 006 adds a private readiness check and a trigger (a function PostgreSQL
+runs when a profile is deleted). Supabase Auth deletes the login and cascades to
+the linked profile. The trigger removes that member's payments, subscriptions,
+and attendance, clears staff references, and removes legacy notifications and QR
+credentials. A database error rolls back those database changes. Existing
+row-level security stays enabled; browser clients cannot call the readiness check.
+
+No existing member is deleted by applying the migration. Do not test deletion on
+a real member. Use a dedicated test account and verify that its login, QR pass,
+and old session no longer work afterward.
+
+## Use account deletion
+
+- Members cannot delete their own accounts; the button is removed and the API
+  returns 403 for self-deletion.
+- Administrators: **Members → Delete account** in a member's Actions column.
+- With an active administrator session, typing `DELETE` starts deletion immediately.
+- Only administrators can create accounts. Staff cannot create or delete accounts.
+  Administrator and staff accounts cannot be
+  deleted through these member controls.
+
+The frontend sends the confirmation to Express. Express checks the session and
+admin role. The database rechecks the role and session version, then deletes the
+login and dependent rows and records the administrator ID, member ID, and time
+in the same transaction. Old FitPulse sessions and QR passes fail once the
+account is removed.
+
+Private avatars use Supabase Storage. The API removes the files after the database
+commits and marks the audit entry complete. A Storage failure keeps cleanup
+pending. Retrying the request or leaving the API running resumes photo cleanup.
+
+## Membership expiry keeps the account
+
+Membership expiry does not automatically delete accounts, including accounts that
+have been expired for 15 days or longer. The API no longer starts the expired-account
+cleanup worker. Expired members remain available in the admin/staff pages for
+review and renewal, and member notifications direct them to the front desk.
+Automatic membership reminder emails continue to use the existing email settings.
+
+Restart the API after updating the code to stop the old startup/hourly cleanup
+worker. No database migration is needed: migration 006 cleans up related records
+only when an account is explicitly deleted; it does not schedule expiry-based
+deletion. Account deletion remains an administrator-confirmed action.
+
+Deleting a member removes their payment and attendance history, so the gym's
+totals change. Export any records the gym needs to retain before confirming.
+A larger production system should define a retention policy and use a durable
+job for coordinating Storage cleanup and Auth deletion.
+
+## Email behavior
+
+The API and the SMTP diagnostic use the same sender, port, TLS (encrypted network
+connection), and timeout settings. Port 465 uses `SMTP_SECURE=true`; port 587 uses
+`false`. Set `SMTP_FROM` to a real address authorized by the provider. When empty,
+it uses the `SMTP_USER` email address. A `.local` sender is rejected.
+
+The API saves a new member and membership before sending the welcome email.
+An SMTP outage preserves the account and returns `emailSent: false` with an
+actionable message. Admin and staff can use **Members → Send sign-in link** to
+send a new, one-use Supabase password setup link without viewing the password.
+Rejected recipients are treated as failures, including on password recovery.
+Membership reminders keep their existing persisted retry and duplicate protection.
+
+Restart the API after changing its code or private `.env`. Keep it running for
+automatic reminders, and enable **Settings → Send automatic email reminders**.
+**Notifications → Check SMTP** checks the connection without emailing anyone.
+
+```powershell
+npm.cmd run check:email
+npm.cmd run check:reminders
+npm.cmd run test:accounts
+node --test scripts/test-login-reset.mjs scripts/test-membership-reminders.mjs
+node scripts/test-ui-render.mjs
+npm.cmd run build
+```
+
+The default SMTP diagnostic sends no message. To explicitly send one test to the
+configured `SMTP_USER` inbox, run `npm.cmd run check:email -- --send-test` and check
+Inbox and Spam. SMTP acceptance proves that the provider accepted a message;
+inbox delivery still needs recipient confirmation or provider delivery logs.
+Tests use isolated accounts and generate email locally; they send no real email.
+
+Verified on October 23, 2026: SMTP authenticated successfully, and the user
+confirmed that the single approved test email reached Inbox. The production build,
+46 isolated tests, and component render checks passed. Read-only checks found
+the two reminder tables missing (`404 PGRST205`). No live SQL migrations or account
+deletions were executed during this verification.
+
+### All-email test results — October 23, 2026
+
+Sent five clearly labeled samples using the real email templates, logo attachment,
+and shared SMTP configuration. The user confirmed that all five arrived in Inbox:
+
+| Test | Email flow | Result |
+| --- | --- | --- |
+| 1/5 | Welcome and temporary credentials | Inbox confirmed |
+| 2/5 | Password reset | Inbox confirmed |
+| 3/5 | Resent sign-in link | Inbox confirmed |
+| 4/5 | Upcoming membership expiry | Inbox confirmed |
+| 5/5 | Expired membership | Inbox confirmed |
+
+The samples use dummy credentials and example links. Actual one-use recovery,
+sign-in-link retries, scheduling, duplicate protection, and delivery failure paths
+passed in the isolated integration tests. All 58 checks passed across the email,
+account, login/reset, membership reminder, and report test suites. One older
+recovery test double was corrected to return an SMTP acceptance receipt; the
+production acceptance check remains strict. Expired-template MIME coverage was
+also added.
+
+The live reminder tables are still missing, and the legacy `email_notifications`
+preference is enabled. Apply migration 005 before relying on automatic reminders;
+these successful direct template sends do not verify the live scheduled worker.
+No real account, password, payment, membership, or reminder receipt was changed.
+
+To deliberately send another set of five samples to the configured `SMTP_USER`
+inbox, run:
+
+```powershell
+npm.cmd run check:email -- --send-all-tests
+```
+
+Running `npm.cmd run check:email` without either send flag sends no email.
+
+### Reminder claim failure diagnosis
+
+The reported three-subscription failure was traced to the live database missing
+`membership_reminders`, `admin_notification_dismissals`,
+`gym_settings.email_enabled`, and `claim_membership_reminder`. The new
+`npm.cmd run check:reminders` diagnostic reproduced the missing-table error
+(`PGRST205`) without sending email or changing member records.
+
+`server/services/membershipReminders.js` now validates the tracking schema and
+claim function once per batch. A shared setup failure stops that batch with one
+specific diagnostic, clears misleading counts, and is visible in Notifications.
+The next check retries setup. SMTP delivery failures still retry per member, and
+the existing duplicate-email protection remains in place.
+
+The migration now requests an API schema refresh after committing the repair.
+The no-email diagnostic is the final live check after migration 005 is applied;
+local code changes alone cannot create the missing Supabase objects. The expanded
+isolated test run passed 60 checks, including schema failures, permission errors,
+one error for three due members, and recovery after the missing setup is fixed.
+
+Suggested commit: `fix: validate reminder database setup before sending batches`.
+
+Suggested commit: `fix: add member account deletion and recoverable email delivery`.
+
+Provider references: [Supabase Auth account deletion](https://supabase.com/docs/reference/javascript/auth-admin-deleteuser)
+and [Nodemailer SMTP verification](https://nodemailer.com/smtp#verifying-the-connection).

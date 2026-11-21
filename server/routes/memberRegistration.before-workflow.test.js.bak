@@ -1,0 +1,441 @@
+
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import express from 'express'
+
+import { memberRegistrationRoutes } from './memberRegistration.js'
+import { MemberRegistrationService } from '../services/MemberRegistrationService.js'
+
+const AUTH_ID = '11111111-1111-4111-8111-111111111111'
+const TEMP_PASSWORD = 'TestTemporary!456'
+
+// Create an isolated application with fake Supabase functions.
+function createTestApp(options = {}) {
+  const calls = {
+    databaseLoads: 0,
+    saves: 0,
+    saved: null,
+    authCreated: [],
+    authDeleted: [],
+    profilesInserted: [],
+    profilesDeleted: []
+  }
+
+  const validAccountInput = (body) => {
+    const name =
+      typeof body.name === 'string' ? body.name.trim() : ''
+
+    const email =
+      typeof body.email === 'string'
+        ? body.email.trim().toLowerCase()
+        : ''
+
+    const plan =
+      typeof body.plan === 'string' ? body.plan.trim() : ''
+
+    if (!name || !email || !plan) {
+      return { error: 'Complete all required fields.' }
+    }
+
+    return {
+      name,
+      email,
+      plan,
+      phone: typeof body.phone === 'string' ? body.phone.trim() : ''
+    }
+  }
+
+  const paymentMethod = (body) => {
+    if (body.method === undefined) return 'Cash'
+
+    const method =
+      typeof body.method === 'string'
+        ? body.method.trim().toLowerCase()
+        : ''
+
+    return method === 'cash'
+      ? 'Cash'
+      : method === 'gcash'
+        ? 'GCash'
+        : null
+  }
+
+  const availablePlan = (plan, name) =>
+    plan.is_active &&
+    plan.plan_name.toLowerCase() === name.toLowerCase()
+
+  // Fake Supabase client
+  const supabase = {
+    from(table) {
+      assert.equal(table, 'users')
+
+      return {
+        select() {
+          return {
+            eq(field) {
+              assert.equal(field, 'email')
+
+              return {
+                async maybeSingle() {
+                  return {
+                    data: options.duplicateProfile
+                      ? { id: 'existing-id' }
+                      : null,
+                    error: null
+                  }
+                }
+              }
+            }
+          }
+        },
+
+        insert(record) {
+          calls.profilesInserted.push(record)
+
+          return {
+            select() {
+              return {
+                async single() {
+                  if (options.profileFailure) {
+                    return {
+                      data: null,
+                      error: {
+                        message: 'Simulated profile failure'
+                      }
+                    }
+                  }
+
+                  return {
+                    data: {
+                      ...record,
+                      member_code: 'FP-TEST01'
+                    },
+                    error: null
+                  }
+                }
+              }
+            }
+          }
+        },
+
+        delete() {
+          return {
+            async eq(field, id) {
+              calls.profilesDeleted.push({ field, id })
+              return { error: null }
+            }
+          }
+        }
+      }
+    },
+
+    auth: {
+      admin: {
+        async createUser(payload) {
+          calls.authCreated.push(payload)
+
+          if (options.authFailure) {
+            return {
+              data: { user: null },
+              error: {
+                message: 'Simulated Auth failure'
+              }
+            }
+          }
+
+          return {
+            data: {
+              user: { id: AUTH_ID }
+            },
+            error: null
+          }
+        },
+
+        async deleteUser(id) {
+          calls.authDeleted.push(id)
+          return { error: null }
+        }
+      }
+    }
+  }
+
+  // Use the real registration service with test helpers.
+  const registrationService = new MemberRegistrationService({
+    validAccountInput,
+    paymentMethod,
+    availablePlan
+  })
+
+  const app = express()
+  app.use(express.json())
+
+  app.use('/api', memberRegistrationRoutes({
+    authenticate(req, res, next) {
+      if (options.authenticated === false) {
+        return res.status(401).json({
+          message: 'Authentication is required.'
+        })
+      }
+
+      req.user = {
+        id: 'admin-1',
+        role: options.role || 'admin'
+      }
+
+      next()
+    },
+
+    requireRole: (...allowed) => (req, res, next) =>
+      allowed.includes(req.user.role)
+        ? next()
+        : res.status(403).json({
+            message: 'Access denied.'
+          }),
+
+    async loadDatabase() {
+      calls.databaseLoads++
+
+      return {
+        accounts: options.duplicateLoadedEmail
+          ? [{
+              id: 'existing-member',
+              email: 'mia@example.test'
+            }]
+          : [],
+
+        payments: [],
+
+        membershipPlans: [{
+          plan_id: 2,
+          plan_name: 'Monthly',
+          duration_days: 30,
+          price: 600,
+          is_active: true
+        }],
+
+        paymentMethods: [
+          { method_name: 'Cash' },
+          { method_name: 'GCash' }
+        ]
+      }
+    },
+
+    async saveDatabase(database) {
+      calls.saves++
+
+      if (options.saveFailure) {
+        throw new Error('Simulated save failure')
+      }
+
+      calls.saved = structuredClone(database)
+    },
+
+    supabase,
+
+    getRoleId: async () => 2,
+
+    validAccountInput,
+    paymentMethod,
+    registrationService,
+
+    generateTemporaryPassword: () => TEMP_PASSWORD,
+
+    addMembershipDays: (date, days) =>
+      new Date(
+        Date.parse(date) + days * 86400000
+      ).toISOString(),
+
+    publicAccount(member) {
+      const {
+        authUserId,
+        authVersion,
+        subscriptionId,
+        subscriptionCreatedAt,
+        planId,
+        ...publicMember
+      } = member
+
+      return publicMember
+    }
+  }))
+
+  return { app, calls }
+}
+
+// Make an HTTP request to our temporary local server.
+async function postRegistration(app, body = {}) {
+  const server = app.listen(0, '127.0.0.1')
+
+  try {
+    await new Promise((resolve, reject) => {
+      server.once('listening', resolve)
+      server.once('error', reject)
+    })
+
+    const response = await fetch(
+      `http://127.0.0.1:${server.address().port}/api/admin/members`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: 'Mia Cruz',
+          email: 'mia@example.test',
+          plan: 'Monthly',
+          recordPayment: false,
+          ...body
+        })
+      }
+    )
+
+    return {
+      status: response.status,
+      headers: response.headers,
+      body: await response.json()
+    }
+  } finally {
+    await new Promise((resolve, reject) =>
+      server.close((error) =>
+        error ? reject(error) : resolve()
+      )
+    )
+  }
+}
+
+// TEST 1: Registration without payment
+test('registers a member without payment and returns a temporary password', async () => {
+  const { app, calls } = createTestApp()
+
+  const response = await postRegistration(app)
+
+  assert.equal(response.status, 201)
+  assert.equal(response.body.temporaryPassword, TEMP_PASSWORD)
+  assert.equal(response.headers.get('cache-control'), 'no-store')
+
+  assert.equal(response.body.member.memberCode, 'FP-TEST01')
+  assert.equal(response.body.member.authUserId, undefined)
+  assert.equal(response.body.member.mustChangePassword, true)
+
+  assert.equal(calls.saved.accounts.length, 1)
+  assert.equal(calls.saved.payments.length, 0)
+
+  assert.equal(
+    calls.profilesInserted[0].must_change_password,
+    true
+  )
+
+  assert.equal(calls.authCreated.length, 1)
+})
+
+// TEST 2: Registration with payment
+test('registers a member with linked GCash payment', async () => {
+  const { app, calls } = createTestApp()
+
+  const response = await postRegistration(app, {
+    recordPayment: true,
+    method: 'gcash'
+  })
+
+  assert.equal(response.status, 201)
+
+  const payment = calls.saved.payments[0]
+  const member = calls.saved.accounts[0]
+
+  assert.equal(payment.amount, 600)
+  assert.equal(payment.method, 'GCash')
+  assert.equal(payment.type, 'New')
+  assert.equal(payment.memberId, member.id)
+  assert.equal(payment.subscriptionId, member.subscriptionId)
+  assert.equal(payment.processedByUserId, 'admin-1')
+})
+
+// TEST 3: Missing authentication
+test('rejects unauthenticated requests before database access', async () => {
+  const { app, calls } = createTestApp({
+    authenticated: false
+  })
+
+  const response = await postRegistration(app)
+
+  assert.equal(response.status, 401)
+  assert.equal(calls.databaseLoads, 0)
+  assert.equal(calls.authCreated.length, 0)
+})
+
+// TEST 4: Unauthorized role
+test('rejects staff without admin registration permission', async () => {
+  const { app, calls } = createTestApp({
+    role: 'staff'
+  })
+
+  const response = await postRegistration(app)
+
+  assert.equal(response.status, 403)
+  assert.equal(calls.databaseLoads, 0)
+  assert.equal(calls.authCreated.length, 0)
+})
+
+// TEST 5: Invalid membership plan
+test('rejects invalid plan before creating an Auth user', async () => {
+  const { app, calls } = createTestApp()
+
+  const response = await postRegistration(app, {
+    plan: 'Unknown'
+  })
+
+  assert.equal(response.status, 400)
+  assert.equal(calls.authCreated.length, 0)
+})
+
+// TEST 6: Duplicate email in loaded accounts
+test('rejects duplicate email from loaded accounts', async () => {
+  const { app, calls } = createTestApp({
+    duplicateLoadedEmail: true
+  })
+
+  const response = await postRegistration(app)
+
+  assert.equal(response.status, 409)
+  assert.equal(calls.authCreated.length, 0)
+})
+
+// TEST 7: Duplicate email in Supabase
+test('rejects duplicate email found directly in Supabase', async () => {
+  const { app, calls } = createTestApp({
+    duplicateProfile: true
+  })
+
+  const response = await postRegistration(app)
+
+  assert.equal(response.status, 409)
+  assert.equal(calls.authCreated.length, 0)
+})
+
+// TEST 8: Profile creation failure
+test('cleans up Auth account if profile insertion fails', async () => {
+  const { app, calls } = createTestApp({
+    profileFailure: true
+  })
+
+  const response = await postRegistration(app)
+
+  assert.equal(response.status, 500)
+  assert.deepEqual(calls.authDeleted, [AUTH_ID])
+  assert.equal(calls.saves, 0)
+})
+
+// TEST 9: Database saving failure
+test('attempts profile and Auth cleanup after saving fails', async () => {
+  const { app, calls } = createTestApp({
+    saveFailure: true
+  })
+
+  const response = await postRegistration(app)
+
+  assert.equal(response.status, 500)
+  assert.equal(calls.saves, 1)
+  assert.equal(calls.profilesDeleted.length, 1)
+  assert.equal(calls.profilesDeleted[0].field, 'id')
+  assert.deepEqual(calls.authDeleted, [AUTH_ID])
+})

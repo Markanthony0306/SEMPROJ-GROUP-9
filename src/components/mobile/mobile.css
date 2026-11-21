@@ -1,0 +1,472 @@
+/* Mobile layout uses the dashboard theme for surfaces, text, and controls. */
+@media (max-width: 768px) {
+  .app.fitpulse-mobile:is(.admin-app, .member-app) {
+    --line: var(--id);
+    --accent: var(--orange);
+    --out: 5px 6px 14px var(--sd), -4px -4px 12px var(--sl), inset 1px 1px 2px var(--il);
+    --in: inset 2px 3px 7px var(--id), inset -2px -2px 6px var(--sl);
+    --bar-height: calc(66px + env(safe-area-inset-bottom));
+    --edge: clamp(12px, 4vw, 24px);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    align-items: stretch;
+    height: 100dvh;
+    min-height: 0;
+    gap: 0;
+    overflow: hidden;
+    padding: 0;
+    color: var(--text);
+    background: var(--bg);
+  }
+
+  .app.fitpulse-mobile > .fitpulse-mobile-header {
+    min-height: 0;
+    position: relative;
+    top: auto;
+    display: flex;
+    justify-content: space-between;
+    margin-inline: max(var(--edge), env(safe-area-inset-left))
+      max(var(--edge), env(safe-area-inset-right));
+    padding: 9px 0;
+    padding-top: max(9px, env(safe-area-inset-top));
+    border-bottom: 1px solid var(--line);
+    z-index: 1;
+  }
+
+  .fitpulse-mobile-header .brand {
+    gap: 5px;
+  }
+  .fitpulse-mobile button:focus-visible,
+  dialog.fitpulse-bottom-sheet button:focus-visible,
+  dialog.fitpulse-bottom-sheet input:focus-visible,
+  dialog.fitpulse-bottom-sheet select:focus-visible,
+  .fitpulse-mobile input:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+  }
+
+  .fitpulse-icon-button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .fitpulse-secondary[aria-pressed='true'] {
+    outline: 1px solid var(--accent);
+    outline-offset: -1px;
+  }
+
+  .app.fitpulse-mobile > .fitpulse-mobile-scroll {
+    min-height: 0;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 0 max(var(--edge), env(safe-area-inset-right))
+      calc(130px + env(safe-area-inset-bottom)) max(var(--edge), env(safe-area-inset-left));
+  }
+
+  .fitpulse-mobile-content {
+    display: grid;
+    gap: 16px;
+    padding: 15px 1px 4px;
+    min-width: 0;
+  }
+  .fitpulse-mobile-content h1 {
+    color: var(--text);
+    font-family: 'Fredoka', 'Nunito', sans-serif;
+    font-size: clamp(26px, 6vw, 34px);
+    font-weight: 600;
+    line-height: 1.1;
+  }
+  .fitpulse-mobile-content .g2,
+  .fitpulse-mobile-content .member-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .fitpulse-mobile-content > .card,
+  .fitpulse-mobile-content .g2 > .card {
+    padding: 14px;
+  }
+  .fitpulse-mobile-content .data-table {
+    max-width: 100%;
+  }
+
+  .fitpulse-bottom-nav {
+    position: fixed;
+    z-index: 40;
+    inset: auto 0 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    min-height: var(--bar-height);
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    border-radius: 26px 26px 0 0;
+    background: var(--card);
+    box-shadow:
+      0 -5px 20px var(--sd),
+      inset 0 1px 1px var(--il);
+  }
+  .fitpulse-bottom-nav button {
+    position: relative;
+    display: grid;
+    grid-template-rows: 23px 14px;
+    align-content: end;
+    justify-items: center;
+    align-items: center;
+    gap: 3px;
+    min-height: 66px;
+    padding: 8px 1px 9px;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .fitpulse-bottom-nav [aria-current='page'] {
+    color: var(--text);
+  }
+  .fitpulse-bottom-nav [aria-current='page']::before {
+    content: '';
+    position: absolute;
+    top: 7px;
+    width: 20px;
+    height: 3px;
+    border-radius: 99px;
+    background: var(--accent);
+  }
+  .fitpulse-bottom-nav .fitpulse-nav-primary {
+    color: var(--text);
+  }
+  .fitpulse-nav-primary-icon {
+    position: absolute;
+    top: -39px;
+    left: 50%;
+    display: grid;
+    place-items: center;
+    width: 62px;
+    height: 62px;
+    translate: -50% 0;
+    border: 5px solid var(--card);
+    border-radius: 50%;
+    background: var(--ui-action-gradient);
+    color: #fff;
+    box-shadow:
+      0 6px 10px var(--sd),
+      inset 1px 2px 3px var(--il);
+    transition: transform 160ms ease;
+  }
+  .fitpulse-nav-primary > :last-child {
+    grid-row: 2;
+  }
+  .fitpulse-nav-primary:hover .fitpulse-nav-primary-icon {
+    transform: translateY(-3px);
+  }
+  .fitpulse-nav-primary:active .fitpulse-nav-primary-icon {
+    transform: scale(0.92);
+  }
+
+  .fitpulse-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .fitpulse-stat {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: clamp(7px, 2vw, 12px);
+    min-height: 84px;
+    padding: 11px;
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    background: var(--card);
+    box-shadow: var(--out);
+  }
+  .fitpulse-stat p {
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 750;
+  }
+  .fitpulse-stat strong {
+    display: block;
+    font-family: 'Fredoka', 'Nunito', sans-serif;
+    font-size: clamp(17px, 4vw, 25px);
+    line-height: 1.08;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+  .fitpulse-icon-chip,
+  .fitpulse-initials {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 13px;
+    background: var(--gold);
+    color: var(--navy);
+    box-shadow: inset 1px 1px 2px #ffffff71;
+    font-weight: 800;
+    font-size: 13px;
+  }
+  .fitpulse-icon-chip[data-kind='dumbbell'],
+  .fitpulse-icon-chip[data-kind='mail'] {
+    background: var(--orange);
+  }
+  .fitpulse-icon-chip[data-kind='qr'] {
+    background: var(--navy);
+    color: #fffbf2;
+  }
+  .fitpulse-initials[data-palette='0'] {
+    background: var(--navy);
+    color: #fffbf2;
+  }
+  .fitpulse-initials[data-palette='1'] {
+    background: var(--red);
+    color: #fffbf2;
+  }
+  .fitpulse-initials[data-palette='2'] {
+    background: var(--orange);
+  }
+
+  .fitpulse-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .fitpulse-section-header h2 {
+    font-size: clamp(16px, 3.8vw, 20px);
+  }
+  .fitpulse-text-button {
+    width: fit-content;
+    min-height: 44px;
+    padding: 3px 6px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: color-mix(in srgb, var(--orange), var(--navy) 48%);
+    font-size: 13px;
+    font-weight: 850;
+    cursor: pointer;
+  }
+  [data-theme='dark'] .fitpulse-mobile .fitpulse-text-button {
+    color: var(--orange);
+  }
+  .fitpulse-mobile .fitpulse-text-button:hover,
+  .fitpulse-mobile .fitpulse-more-row:hover {
+    color: var(--red);
+  }
+  [data-theme='dark'] .fitpulse-mobile .fitpulse-text-button:hover {
+    color: var(--red);
+  }
+
+  .fitpulse-rows,
+  .fitpulse-more-list {
+    display: grid;
+    gap: 9px;
+    list-style: none;
+    padding: 0;
+  }
+  .fitpulse-rows > li {
+    min-width: 0;
+  }
+  .fitpulse-member-row,
+  .fitpulse-activity-row,
+  .fitpulse-more-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    min-height: 60px;
+    padding: 9px 11px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--card);
+    color: var(--text);
+    text-align: left;
+    box-shadow: var(--out);
+  }
+  .fitpulse-member-row,
+  .fitpulse-more-row {
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 800;
+    transition: transform 140ms ease;
+  }
+  .fitpulse-member-row:hover,
+  .fitpulse-more-row:hover {
+    transform: translateY(-2px);
+  }
+  .fitpulse-more-trailing {
+    color: var(--muted);
+  }
+  .fitpulse-row-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .fitpulse-row-copy strong {
+    font-size: 14px;
+  }
+  .fitpulse-row-copy small,
+  .fitpulse-activity-row time,
+  .fitpulse-empty {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .fitpulse-activity-row time {
+    display: grid;
+    gap: 2px;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .fitpulse-status {
+    padding: 3px 7px;
+    border-radius: 99px;
+    background: var(--card2);
+    color: var(--text);
+    font-size: 10px;
+    font-weight: 850;
+  }
+  .fitpulse-status.is-active {
+    background: #2e9e5b;
+    color: #061d11;
+  }
+  .fitpulse-status.is-expiring {
+    background: var(--orange);
+    color: var(--navy);
+  }
+  .fitpulse-status.is-expired {
+    background: var(--red);
+    color: #fff8ef;
+  }
+  .fitpulse-empty {
+    padding: 7px 4px;
+  }
+  .fitpulse-screen-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .fitpulse-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    border-radius: 14px;
+    background: var(--card);
+    color: var(--muted);
+    box-shadow: var(--in);
+  }
+  .fitpulse-search input {
+    min-height: 46px;
+    min-width: 0;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: 16px;
+  }
+  .fitpulse-search input::placeholder {
+    color: var(--muted);
+  }
+  .fitpulse-search:focus-within {
+    outline: 2px solid var(--orange);
+  }
+
+  dialog.fitpulse-bottom-sheet.experience-modal[open] {
+    align-items: end;
+    padding: 0;
+    overflow: hidden;
+  }
+  dialog.fitpulse-bottom-sheet::backdrop {
+    backdrop-filter: blur(8px);
+  }
+  dialog.fitpulse-bottom-sheet > .experience-dialog.clay {
+    position: relative;
+    width: min(640px, 100%);
+    max-width: 100%;
+    max-height: min(92%, calc(100dvh - env(safe-area-inset-top)));
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding: 23px max(16px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom))
+      max(16px, env(safe-area-inset-left));
+    border-radius: 28px 28px 0 0;
+    background: var(--card);
+    color: var(--text);
+    box-shadow: var(--out);
+    animation: fitpulse-sheet-in 240ms ease-out both;
+  }
+  dialog.fitpulse-bottom-sheet > .experience-dialog::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 38px;
+    height: 4px;
+    translate: -50% 0;
+    border-radius: 99px;
+    background: var(--muted);
+    opacity: 0.55;
+  }
+  dialog.fitpulse-bottom-sheet .mh {
+    gap: 8px;
+  }
+  dialog.fitpulse-bottom-sheet .btn,
+  dialog.fitpulse-bottom-sheet .dialog-close {
+    min-height: 44px;
+  }
+  dialog.fitpulse-bottom-sheet .btn.ghost,
+  dialog.fitpulse-bottom-sheet .dialog-close {
+    min-width: 44px;
+  }
+  dialog.fitpulse-bottom-sheet .btn.ghost:hover,
+  dialog.fitpulse-bottom-sheet .dialog-close:hover {
+    color: var(--red);
+  }
+  dialog.fitpulse-bottom-sheet .field {
+    min-width: 0;
+  }
+  dialog.fitpulse-bottom-sheet .field input,
+  dialog.fitpulse-bottom-sheet .field select {
+    min-height: 44px;
+    font-size: 16px;
+    background: var(--bg);
+    box-shadow: var(--in);
+  }
+  dialog.fitpulse-bottom-sheet :is(input, select):focus {
+    outline: 2px solid var(--orange);
+  }
+  dialog.fitpulse-bottom-sheet :is(input, select)[aria-invalid='true'] {
+    outline: 2px solid var(--red);
+  }
+  dialog.fitpulse-bottom-sheet .created-credentials code {
+    user-select: all;
+  }
+  dialog.fitpulse-bottom-sheet .member-qr-card {
+    margin-inline: auto;
+  }
+}
+
+@keyframes fitpulse-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@media (max-width: 360px) {
+  .fitpulse-stat {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fitpulse-mobile *,
+  dialog.fitpulse-bottom-sheet > .experience-dialog.clay {
+    animation: none !important;
+    transition: none !important;
+  }
+}

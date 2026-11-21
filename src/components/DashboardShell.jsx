@@ -1,12 +1,23 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useTheme } from './brand/useTheme'
 import ProfileAvatar from './ProfileAvatar'
+import Dialog from './Dialog'
+import dayBanner from '../assets/db-day-v.jpg'
+import nightBanner from '../assets/db-night-v.jpg'
 import '../styles/dashboard-features.css'
+import './DashboardShell.css'
+import MobileLayout from './mobile/MobileLayout'
+import useIsMobile from './mobile/useIsMobile'
+import { useGorilla } from './gorilla/GorillaAssistant'
+
+const bannerStyles = {
+  '--dashboard-day-image': `url("${dayBanner}")`,
+  '--dashboard-night-image': `url("${nightBanner}")`
+}
 
 const ADMIN_NAVIGATION = [
   ['Dashboard', 'home'],
   ['Members', 'users'],
-  ['Memberships', 'card'],
   ['Equipment', 'dumbbell'],
   ['Attendance', 'qr'],
   ['Payments', 'wallet'],
@@ -23,6 +34,54 @@ const MEMBER_NAVIGATION = [
   ['Settings', 'sliders']
 ]
 const PATHS = {
+  mail: (
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 6 9 7 9-7" />
+    </>
+  ),
+  eye: (
+    <>
+      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  camera: (
+    <>
+      <path d="M3 6h4l2-3h6l2 3h4v14H3z" />
+      <circle cx="12" cy="13" r="3" />
+    </>
+  ),
+  edit: (
+    <>
+      <path d="m16 3 5 5-12 12-6 1 1-6L16 3Z" />
+      <path d="m14 5 5 5" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7" />
+    </>
+  ),
+  'delete-data': (
+    <>
+      <path d="M4 6h16M9 6V3h6v3M6 6l1 15h10l1-15" />
+      <path d="m10 11 4 5m0-5-4 5" strokeWidth="1.7" />
+    </>
+  ),
+  'clear-data': (
+    <>
+      <path d="M10 20H3V3h18v8M3 6h18M8 10h9M8 13h5M8 16h3" strokeWidth="1.5" />
+      <path d="M3 3h18v3H3z" fill="currentColor" stroke="none" />
+      <path d="M5.5 10h.1m-.1 3h.1m-.1 3h.1" />
+      <path
+        d="M23.5 18a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0Z M16 15l2 2 2-2 1 1-2 2 2 2-1 1-2-2-2 2-1-1 2-2-2-2Z"
+        fill="currentColor"
+        fillRule="evenodd"
+        stroke="none"
+      />
+    </>
+  ),
   file: (
     <>
       <path d="M4 3h11l5 5v13H4zM14 3v6h6M8 13h8M8 17h5" />
@@ -76,10 +135,12 @@ const PATHS = {
   ),
   moon: <path d="M21 13A9 9 0 1 1 11 3a7 7 0 0 0 10 10z" />,
   menu: <path d="M3 6h18M3 12h18M3 18h18" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  search: <path d="m21 21-5-5m2-5a7 7 0 1 1-14 0 7 7 0 0 1 14 0Z" />,
   x: <path d="M6 6l12 12M18 6 6 18" />
 }
 
-export function Icon({ name, size = 20 }) {
+export function Icon({ name, size = 20, strokeWidth = 2 }) {
   return (
     <svg
       width={size}
@@ -87,7 +148,7 @@ export function Icon({ name, size = 20 }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth={strokeWidth}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -123,20 +184,55 @@ export default function DashboardShell({
   onSignOut,
   activeSection,
   onSectionChange,
+  onMemberAlert,
+  notificationCount = 0,
+  loading = false,
   children,
-  className = ''
+  content,
+  dialogs,
+  mobileViews = {},
+  mobileQr,
+  onCreateMember,
+  className = '',
+  profileLoading = false,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [modal, setModal] = useState('')
   const { dark, toggle } = useTheme()
-  const isAdmin = ['admin', 'staff'].includes(role)
+  const isMobile = useIsMobile()
+  const registerNavigation = useGorilla()?.registerNavigation
+  const isAdmin = role === 'admin'
   const navigation = isAdmin ? ADMIN_NAVIGATION : MEMBER_NAVIGATION
+  useEffect(() => registerNavigation?.(({ section, memberId }) => {
+    if (!navigation.some(([label]) => label === section)) return
+    setSidebarOpen(false)
+    onSectionChange(section)
+    if (isAdmin && section === 'Members' && typeof memberId === 'string')
+      onMemberAlert?.(memberId)
+  }), [isAdmin, navigation, onMemberAlert, onSectionChange, registerNavigation])
+  useEffect(() => {
+    // A tab without a desktop counterpart falls back to its existing desktop screen.
+    if (!isMobile && Object.hasOwn({ More: true, Membership: true, Activities: true }, activeSection)) {
+      onSectionChange(activeSection === 'Activities' ? 'Attendance' : activeSection === 'More' ? 'Settings' : 'Dashboard')
+    }
+  }, [activeSection, isMobile, onSectionChange])
   const select = (section) => {
     setSidebarOpen(false)
     onSectionChange(section)
   }
+  if (isMobile) {
+    return (
+      <MobileLayout activeSection={activeSection} onSectionChange={onSectionChange}
+        onSignOut={onSignOut} onCreateMember={onCreateMember} role={role} className={className}
+        loading={loading} Brand={Brand} Icon={Icon} dark={dark} toggle={toggle}
+        content={mobileViews[activeSection] ?? content} dialogs={dialogs} qr={mobileQr}
+      >
+        {children}
+      </MobileLayout>
+    )
+  }
   return (
-    <div className={`app ${className}`}>
+    <div className={`app ${className}`} style={bannerStyles}>
       <aside className={`clay${sidebarOpen ? ' open' : ''}`}>
         <div className="logo brand">
           <Brand />
@@ -152,6 +248,14 @@ export default function DashboardShell({
             >
               <Icon name={icon} />
               <span>{label}</span>
+              {label === 'Notifications' && notificationCount > 0 && (
+                <span
+                  className="nav-notification-count"
+                  aria-label={`${notificationCount} notifications`}
+                >
+                  {notificationCount > 99 ? '99+' : notificationCount}
+                </span>
+              )}
             </button>
           ))}
         </div>
@@ -183,102 +287,113 @@ export default function DashboardShell({
           >
             <Icon name={dark ? 'sun' : 'moon'} />
           </button>
-          <button className="chip" type="button" onClick={() => setModal('profile')}>
+
+          <button
+            className="chip"
+            type="button"
+            onClick={() => setModal('profile')}
+            disabled={profileLoading}
+          >
             <div>
-              <b>{user?.name || 'FitPulse User'}</b>
-              <small>{isAdmin ? 'Administrator' : 'FitPulse member'}</small>
+              <b>
+                {profileLoading
+                  ? 'Loading profile...'
+                  : user?.name || 'FitPulse User'}
+              </b>
+
+              <small>
+                {isAdmin ? 'Administrator' : 'FitPulse member'}
+              </small>
             </div>
-            <ProfileAvatar user={user} />
+
+            {profileLoading ? (
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-block',
+                  width: 42,
+                  height: 42,
+                  borderRadius: '50%',
+                  background: 'rgba(255,255,255,0.12)'
+                }}
+              />
+            ) : (
+              <ProfileAvatar user={user} />
+            )}
           </button>
+
         </header>
-        <section id="view" className="grid">
-          {children}
-        </section>
+        <div className="dashboard-stage">
+          <section
+            id="view"
+            key={activeSection}
+            className="grid dashboard-content is-ready"
+            aria-busy={loading}
+          >
+            {children}
+            {content}
+            {dialogs}
+          </section>
+        </div>
       </main>
       {modal && (
-        <div
-          className="modal show"
-          role="dialog"
-          aria-modal="true"
-          onMouseDown={(event) => event.target === event.currentTarget && setModal('')}
+        <Dialog
+          title={modal === 'logout' ? 'Sign out?' : 'Profile Details'}
+          onClose={() => setModal('')}
         >
-          <div className="clay" id="mbody">
-            {modal === 'logout' ? (
-              <>
-                <div className="mh">
-                  <h2>Sign out?</h2>
-                  <button
-                    className="ib sm"
-                    type="button"
-                    onClick={() => setModal('')}
-                    aria-label="Close"
-                  >
-                    <Icon name="x" size={16} />
-                  </button>
-                </div>
-                <p className="modal-copy">Are you sure you want to sign out of FitPulse?</p>
-                <div className="ma">
-                  <button className="btn ghost" type="button" onClick={() => setModal('')}>
-                    Cancel
-                  </button>
-                  <button className="btn" type="button" onClick={onSignOut}>
-                    <Icon name="out" size={16} />
-                    Sign out
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="mh">
-                  <h2>Profile Details</h2>
-                  <button
-                    className="ib sm"
-                    type="button"
-                    onClick={() => setModal('')}
-                    aria-label="Close"
-                  >
-                    <Icon name="x" size={16} />
-                  </button>
-                </div>
-                <div className="center">
-                  <ProfileAvatar user={user} large />
-                  <b className="profile-name">{user?.name || 'FitPulse User'}</b>
-                  <span className={`pill ${isAdmin ? 'p-warn' : 'p-ok'}`}>
-                    {isAdmin ? 'Administrator' : 'Member'}
-                  </span>
-                </div>
-                <div className="info">
-                  <span>Email</span>
-                  {user?.email || 'Not available'}
-                  {!isAdmin && (
-                    <>
-                      <span>Member ID</span>
-                      {user?.id || 'Not available'}
-                      <span>Plan</span>
-                      {user?.plan || 'Not available'}
-                    </>
-                  )}
-                </div>
-                <div className="ma">
-                  <button className="btn ghost" type="button" onClick={() => setModal('')}>
-                    Cancel
-                  </button>
-                  <button
-                    className="btn"
-                    type="button"
-                    onClick={() => {
-                      setModal('')
-                      select('Settings')
-                    }}
-                  >
-                    <Icon name="sliders" size={16} />
-                    Settings
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+          {modal === 'logout' ? (
+            <>
+              <p className="modal-copy">Are you sure you want to sign out of FitPulse?</p>
+              <div className="ma">
+                <button className="btn ghost cancel-button" type="button" onClick={() => setModal('')}>
+                  Cancel
+                </button>
+                <button className="btn" type="button" onClick={onSignOut}>
+                  <Icon name="out" size={16} />
+                  Sign out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="center">
+                <ProfileAvatar user={user} large />
+                <b className="profile-name">{user?.name || 'FitPulse User'}</b>
+                <span className={`pill ${isAdmin ? 'p-warn' : 'p-ok'}`}>
+                  {isAdmin ? 'Administrator' : 'Member'}
+                </span>
+              </div>
+              <div className="info">
+                <span>Email</span>
+                {user?.email || 'Not available'}
+                {!isAdmin && (
+                  <>
+                    <span>Member ID</span>
+                    {user?.memberCode || user?.id || 'Not available'}
+                    <span>Plan</span>
+                    {user?.plan || 'Not available'}
+                  </>
+                )}
+              </div>
+              <div className="ma">
+                <button className="btn ghost cancel-button" type="button" onClick={() => setModal('')}>
+                  Cancel
+                </button>
+                <button
+                  className="btn"
+                  type="button"
+                  onClick={() => {
+                    setModal('')
+                    select('Settings')
+                  }}
+                >
+                  <Icon name="sliders" size={16} />
+                  Settings
+                </button>
+              </div>
+            </>
+          )}
+        </Dialog>
       )}
     </div>
   )

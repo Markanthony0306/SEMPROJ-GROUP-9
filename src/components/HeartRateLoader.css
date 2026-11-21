@@ -1,0 +1,39 @@
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg);
+  color: var(--text);
+}
+.loading-card {
+  display: grid;
+  justify-items: center;
+  gap: 16px;
+  width: min(390px, 100%);
+  padding: 40px 28px;
+  text-align: center;
+}
+.loading-brand {
+  display: flex;
+  align-items: center;
+  font-size: 30px;
+  font-weight: 850;
+  letter-spacing: -1px;
+}
+.loading-brand span {
+  color: var(--orange);
+}
+.loading-brand i {
+  width: 8px;
+  height: 8px;
+  margin-left: 7px;
+  border-radius: 50%;
+  background: #2a9d5c;
+}
+.loading-card small {
+  color: var(--muted);
+  font-size: 13px;
+}

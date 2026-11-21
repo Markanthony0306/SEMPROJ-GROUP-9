@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { getMemberQr, readCachedMemberQr } from '../utils/memberQr'
 
-export default function MemberQr({ member }) {
+export default function MemberQr({ member, viewOnly = false }) {
   const { token } = useAuth()
   const [qr, setQr] = useState(() => readCachedMemberQr(member))
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
+  const [expiredCode, setExpiredCode] = useState(null)
   const qrImageRef = useRef(null)
   useEffect(() => {
     let active = true
@@ -24,15 +25,29 @@ export default function MemberQr({ member }) {
       .finally(() => { if (active) setPending(false) })
     return () => { active = false }
   }, [token, member?.id, member?.membershipStart, member?.membershipEnd, member?.joined, member?.status])
+  // Repaint an open pass at the exact membership cutoff, even on a long plan.
+  useEffect(() => {
+    if (!qr?.expiresAt) return
+    let timer
+    const expire = () => {
+      const remaining = qr.expiresAt - Date.now()
+      if (remaining <= 0) setExpiredCode(qr)
+      else timer = window.setTimeout(expire, Math.min(remaining, 2_147_483_647))
+    }
+    expire()
+    return () => window.clearTimeout(timer)
+  }, [qr])
   const daysLeft = qr ? Math.max(0, Math.ceil((qr.expiresAt - Date.now()) / 86400000)) : 0
-  const expiryDate = qr ? new Date(qr.expiresAt).toLocaleDateString() : ''
+  const expiryDate = qr ? new Date(qr.expiresAt).toLocaleDateString(
+    viewOnly ? 'en-PH' : undefined, viewOnly ? { timeZone: 'Asia/Manila' } : undefined
+  ) : ''
 
   const downloadQrCard = () => {
     if (!qr) return
 
     const canvas = document.createElement('canvas')
     canvas.width = 720
-    canvas.height = 1126
+    canvas.height = 1050
     const context = canvas.getContext('2d')
     if (!context) return
 
@@ -92,12 +107,6 @@ export default function MemberQr({ member }) {
     context.font = '700 20px Arial, sans-serif'
     context.fillText('Download QR code', canvas.width / 2, 982)
 
-    context.fillStyle = 'rgba(255,255,255,0.9)'
-    context.font = '800 16px Arial, sans-serif'
-    context.letterSpacing = '2px'
-    context.fillText('SHOW AT THE GYM ENTRANCE', canvas.width / 2, 1081)
-    context.letterSpacing = '0px'
-
     const link = document.createElement('a')
     link.download = 'fitpulse-membership-qr.png'
     link.href = canvas.toDataURL('image/png')
@@ -106,7 +115,7 @@ export default function MemberQr({ member }) {
 
   return (
     <div className="member-qr-content">
-      {qr && daysLeft > 0 ? (
+      {qr && qr !== expiredCode && daysLeft > 0 ? (
         <section className="member-qr-card" aria-label="FitPulse member pass">
           <header className="member-qr-card-header">
             <strong>FITPULSE</strong>
@@ -124,17 +133,16 @@ export default function MemberQr({ member }) {
             <p className="member-qr-card-expiry">
               Expires {expiryDate} - {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left
             </p>
-            <button className="btn" type="button" onClick={downloadQrCard}>
+            {!viewOnly && <button className="btn" type="button" onClick={downloadQrCard}>
               Download QR code
-            </button>
+            </button>}
           </div>
-          <footer className="member-qr-card-footer">SHOW AT THE GYM ENTRANCE</footer>
         </section>
       ) : (
         <p>
           {qr
             ? 'This code expired. Renew your membership to get a new code.'
-            : pending ? 'Generating your member QR code...' : 'Your QR code is unavailable.'}
+            : pending ? 'Loading your member QR code...' : 'Your QR code is unavailable.'}
         </p>
       )}
       {error && (
@@ -143,7 +151,7 @@ export default function MemberQr({ member }) {
         </p>
       )}
       <p className="member-caption">
-        Hold the code in front of the ESP32-CAM entrance scanner. This code can be used for check-in during your membership.
+        Show this code at check-in during your membership.
       </p>
     </div>
   )

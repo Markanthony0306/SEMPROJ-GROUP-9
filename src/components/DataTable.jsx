@@ -9,12 +9,18 @@ function textContent(node) {
   return ''
 }
 
-export default function DataTable({ headings, children, empty, caption = 'Records' }) {
+export default function DataTable({
+  headings,
+  children,
+  empty,
+  caption = 'Records',
+  searchable = true
+}) {
   const searchId = useId()
+  const sortFieldId = useId()
+  const sortOrderId = useId()
   const [query, setQuery] = useState('')
-  const [page, setPage] = useState(0)
   const [sort, setSort] = useState({ index: null, ascending: true })
-  const pageSize = 10
   const rows = useMemo(() => {
     const result = empty
       ? []
@@ -40,64 +46,77 @@ export default function DataTable({ headings, children, empty, caption = 'Record
       })
     return result
   }, [children, empty, headings, query, sort])
-  const pageCount = Math.max(1, Math.ceil(rows.length / pageSize))
-  const currentPage = Math.min(page, pageCount - 1)
-  const visibleRows = rows.slice(currentPage * pageSize, (currentPage + 1) * pageSize)
   return (
     <div className="data-table">
       <div className="table-toolbar">
-        <label htmlFor={searchId}>
-          Search records
-          <input
-            id={searchId}
-            type="search"
-            value={query}
-            placeholder="Type to filter..."
-            onChange={(event) => {
-              setQuery(event.target.value)
-              setPage(0)
-            }}
-          />
-        </label>
-        <label className="table-sort">
-          Sort records
+        {searchable && (
+          <label htmlFor={searchId}>
+            Search records
+            <input
+              id={searchId}
+              type="search"
+              value={query}
+              placeholder="Type to filter..."
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+        )}
+        <label className="table-sort table-sort-field" htmlFor={sortFieldId}>
+          Records
           <select
-            value={sort.index === null ? 'original' : `${sort.index}:${sort.ascending}`}
+            id={sortFieldId}
+            value={sort.index === null ? 'original' : sort.index}
             onChange={(event) => {
-              const [index, ascending] = event.target.value.split(':')
               setSort({
-                index: index === 'original' ? null : Number(index),
-                ascending: ascending !== 'false'
+                index: event.target.value === 'original' ? null : Number(event.target.value),
+                ascending: sort.ascending
               })
-              setPage(0)
             }}
           >
             <option value="original">Original order</option>
-            {headings.flatMap((heading, index) =>
-              /^actions?$/i.test(heading)
-                ? []
-                : [
-                    <option key={`${index}-asc`} value={`${index}:true`}>
-                      {heading}: ascending
-                    </option>,
-                    <option key={`${index}-desc`} value={`${index}:false`}>
-                      {heading}: descending
-                    </option>
-                  ]
+            {headings.map((heading, index) =>
+              /^actions?$/i.test(heading) ? null : (
+                <option key={index} value={index}>
+                  {heading}
+                </option>
+              )
             )}
           </select>
         </label>
-        <span>
+        <label className="table-sort table-sort-order" htmlFor={sortOrderId}>
+          Sort by:
+          <select
+            id={sortOrderId}
+            value={sort.ascending ? 'ascending' : 'descending'}
+            onChange={(event) => {
+              setSort((current) => ({
+                ...current,
+                ascending: event.target.value === 'ascending'
+              }))
+            }}
+          >
+            <option value="ascending">Ascending</option>
+            <option value="descending">Descending</option>
+          </select>
+        </label>
+        <span className="table-record-count" role="status">
           {rows.length} record{rows.length === 1 ? '' : 's'}
         </span>
       </div>
-      <div className="table-wrap">
+      <div className="table-wrap" role="region" aria-label={caption} tabIndex={0}>
         <table role="table">
           <caption className="sr-only">{caption}</caption>
           <thead>
             <tr role="row">
               {headings.map((heading, index) => (
                 <th
+                  className={
+                    /amount/i.test(heading)
+                      ? 'table-number'
+                      : /^actions?$/i.test(heading)
+                        ? 'table-actions-heading'
+                        : undefined
+                  }
                   role="columnheader"
                   scope="col"
                   key={heading}
@@ -112,7 +131,6 @@ export default function DataTable({ headings, children, empty, caption = 'Record
                       type="button"
                       onClick={() => {
                         setSort({ index, ascending: sort.index === index ? !sort.ascending : true })
-                        setPage(0)
                       }}
                     >
                       {heading}
@@ -126,8 +144,8 @@ export default function DataTable({ headings, children, empty, caption = 'Record
             </tr>
           </thead>
           <tbody>
-            {visibleRows.length ? (
-              visibleRows.map((row) =>
+            {rows.length ? (
+              rows.map((row) =>
                 cloneElement(
                   row,
                   { role: 'row' },
@@ -135,7 +153,16 @@ export default function DataTable({ headings, children, empty, caption = 'Record
                     isValidElement(cell)
                       ? cloneElement(
                           cell,
-                          { role: 'cell', 'data-label': headings[index] },
+                          {
+                            role: 'cell',
+                            'data-label': headings[index],
+                            className: [
+                              cell.props.className,
+                              /amount/i.test(headings[index]) ? 'table-number' : ''
+                            ]
+                              .filter(Boolean)
+                              .join(' ')
+                          },
                           cell.props.className?.split(' ').includes('acts') ? (
                             <div className="table-cell-actions">{cell.props.children}</div>
                           ) : (
@@ -155,27 +182,6 @@ export default function DataTable({ headings, children, empty, caption = 'Record
             )}
           </tbody>
         </table>
-      </div>
-      <div className="table-pagination">
-        <span aria-live="polite">
-          Page {currentPage + 1} of {pageCount}
-        </span>
-        <div>
-          <button
-            type="button"
-            disabled={currentPage === 0}
-            onClick={() => setPage(currentPage - 1)}
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            disabled={currentPage + 1 >= pageCount}
-            onClick={() => setPage(currentPage + 1)}
-          >
-            Next
-          </button>
-        </div>
       </div>
     </div>
   )

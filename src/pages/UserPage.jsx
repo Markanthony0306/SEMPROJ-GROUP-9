@@ -7,31 +7,37 @@ import DataTable from '../components/DataTable'
 import MemberQr from '../components/MemberQr'
 import ProfilePhoto from '../components/ProfilePhoto'
 import FitnessSculpture from '../components/FitnessSculpture'
+import ActivityChart from '../components/ActivityChart'
+import Spinner from '../components/Spinner'
 import { downloadPayments } from '../utils/paymentExport'
 import { getMemberQr } from '../utils/memberQr'
 import PasswordChangeForm from '../components/PasswordChangeForm'
 import { membershipState } from '../utils/membership'
+import { useGorilla } from '../components/gorilla/GorillaAssistant'
+import { MobileActivities, MobileOverview } from '../components/mobile/MobileScreens'
+import { activityRows, useReminderActivity } from '../components/mobile/activity'
+import useIsMobile from '../components/mobile/useIsMobile'
 
 const validDate = (value) => value && !Number.isNaN(new Date(value).getTime())
 const date = (value) =>
   validDate(value)
     ? new Date(value).toLocaleDateString('en-PH', {
-        timeZone: 'Asia/Manila',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      })
+      timeZone: 'Asia/Manila',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    })
     : 'Not set'
 const time = (value) =>
   validDate(value)
     ? new Date(value).toLocaleString('en-PH', {
-        timeZone: 'Asia/Manila',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-        year: 'numeric'
-      })
+      timeZone: 'Asia/Manila',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      year: 'numeric'
+    })
     : 'Date unavailable'
 const money = (value) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(value || 0))
@@ -46,7 +52,7 @@ function StatCard({ label, value, hint, icon }) {
       <div>
         <small>{label}</small>
         <b>{value}</b>
-        <p>{hint}</p>
+        {hint && <p>{hint}</p>}
       </div>
     </article>
   )
@@ -54,29 +60,30 @@ function StatCard({ label, value, hint, icon }) {
 
 export default function UserPage({ user, onSignOut }) {
   const { token } = useAuth()
+  const { latestEvent } = useGorilla() || {}
+  const mobile = useIsMobile()
   const [section, setSection] = useState('Dashboard')
+  const [notificationsRead, setNotificationsRead] = useState(false)
   const [attendance, setAttendance] = useState([])
   const [payments, setPayments] = useState([])
-  const [faceEnrolled, setFaceEnrolled] = useState(false)
   const [currentUser, setCurrentUser] = useState(user)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(true)
   const [actionPending, setActionPending] = useState(false)
+  const reminderActivity = useReminderActivity(token, mobile, latestEvent)
   const load = useCallback(
     async (signal) => {
       try {
-        const [profile, attendanceResult, paymentResult, faceStatus] = await Promise.all([
+        const [profile, attendanceResult, paymentResult] = await Promise.all([
           apiRequest('/me', { token, signal }),
           apiRequest('/attendance', { token, signal }),
-          apiRequest('/payments', { token, signal }),
-          apiRequest('/profile/face-enrollment', { token, signal }).catch(() => ({ enrolled: false }))
+          apiRequest('/payments', { token, signal })
         ])
         if (signal?.aborted) return
         setCurrentUser(profile.user)
         setAttendance(latestFirst(attendanceResult.attendance))
         setPayments(latestFirst(paymentResult.payments))
-        setFaceEnrolled(Boolean(faceStatus.enrolled))
         setError('')
       } catch (cause) {
         if (!signal?.aborted) setError(cause.message)
@@ -86,14 +93,29 @@ export default function UserPage({ user, onSignOut }) {
     },
     [token]
   )
+  const refreshAttendance = useCallback(
+    async (signal) => {
+      try {
+        const result = await apiRequest('/attendance', { token, signal })
+        if (!signal?.aborted) setAttendance(latestFirst(result.attendance))
+      } catch (cause) {
+        if (!signal?.aborted) setError(cause.message)
+      }
+    },
+    [token]
+  )
   useEffect(() => {
     const controller = new AbortController()
     load(controller.signal)
     return () => controller.abort()
-  }, [load])
+  }, [load, latestEvent])
+  const selectSection = useCallback((nextSection) => {
+    if (nextSection === 'Notifications') setNotificationsRead(true)
+    setSection(nextSection)
+  }, [])
   useEffect(() => {
     if (!['user', 'member'].includes(currentUser?.role) || !currentUser?.membershipEnd) return
-    getMemberQr(currentUser, token).catch(() => {})
+    getMemberQr(currentUser, token).catch(() => { })
   }, [
     currentUser?.id,
     currentUser?.membershipStart,
@@ -103,23 +125,37 @@ export default function UserPage({ user, onSignOut }) {
     token
   ])
   useEffect(() => {
-    if (section !== 'My QR') return
     const controller = new AbortController()
-    const timer = window.setInterval(() => load(controller.signal), 10000)
+    if (!['Dashboard', 'Attendance'].includes(section)) return () => controller.abort()
+    const refresh = () => {
+      if (document.visibilityState === 'visible') refreshAttendance(controller.signal)
+    }
+    const timer = window.setInterval(refresh, 5000)
+    window.addEventListener('focus', refresh)
     return () => {
       window.clearInterval(timer)
+      window.removeEventListener('focus', refresh)
       controller.abort()
     }
-  }, [section, load])
+  }, [section, refreshAttendance])
   const action = async (path, options, message) => {
     if (actionPending) return false
     setActionPending(true)
     setNotice('')
     setError('')
     try {
-      await apiRequest(path, { token, ...options })
+
+      const result = await apiRequest(path, { token, ...options })
+
+      // Immediately display the updated profile.
+      if (path === '/profile' && result?.user) {
+        setCurrentUser(result.user)
+      }
+
       setNotice(message)
       await load()
+
+
       return true
     } catch (cause) {
       setError(cause.message)
@@ -141,8 +177,10 @@ export default function UserPage({ user, onSignOut }) {
         : expiry <= 7
           ? `Your membership expires in ${expiry} day(s). Visit the front desk to renew.`
           : `Your membership is valid until ${date(currentUser.membershipEnd)}.`
+  const notifications = currentUser ? [{ id: 'membership', message: membershipNote }] : []
+  const unreadNotificationCount = notificationsRead ? 0 : notifications.length
   const settings = (
-    <section className="grid g2">
+    <section className="grid g2 settings-cards">
       <article className="card clay">
         <h2>Profile</h2>
         <ProfilePhoto user={currentUser} onSaved={setCurrentUser} />
@@ -187,40 +225,37 @@ export default function UserPage({ user, onSignOut }) {
         <h2>Change Password</h2>
         <PasswordChangeForm />
       </article>
-      <article className="card clay">
-        <h2>Face sign-in</h2>
-        <p>
-          {faceEnrolled
-            ? 'An encrypted face template is enrolled for an extra login check.'
-            : 'No face template is enrolled. Ask the front desk if you want to set this up.'}
-        </p>
-        {faceEnrolled && (
-          <button
-            className="btn ghost"
-            type="button"
-            disabled={actionPending}
-            onClick={() => action('/profile/face-enrollment', { method: 'DELETE' }, 'Face sign-in disabled.')}
-          >
-            {actionPending ? 'Disabling…' : 'Disable face sign-in'}
-          </button>
-        )}
-      </article>
     </section>
   )
   const views = {
     Dashboard: (
       <>
+        <section className="card clay dashboard-welcome member-welcome dashboard-overview">
+          <div>
+            <span className="dashboard-eyebrow">A LITTLE STRONGER, EVERY DAY</span>
+            <h2>Good to see you, {currentUser?.name?.split(' ')[0] || 'member'}.</h2>
+            <p>Your next great session is waiting. Let’s make it count.</p>
+            <div className="dashboard-quick-actions">
+              <button className="btn" type="button" onClick={() => setSection('My QR')}>
+                <Icon name="qr" size={16} />
+                Open my gym pass
+              </button>
+              <button className="btn ghost" type="button" onClick={() => setSection('Attendance')}>
+                View my visits
+              </button>
+            </div>
+          </div>
+        </section>
         <section className="grid member-stats" aria-label="Membership overview">
           <StatCard
-            label="Membership plan"
+            label="Membership"
             value={currentUser?.plan || 'Not set'}
-            hint="Your current gym plan"
             icon="card"
           />
           <StatCard
-            label="Membership status"
+            label="Status"
             value={status}
-            hint={expired ? 'Renew at the front desk' : 'Current membership status'}
+            hint={expired ? 'Renew at the front desk' : null}
             icon="bell"
           />
           <StatCard
@@ -236,10 +271,10 @@ export default function UserPage({ user, onSignOut }) {
           <StatCard
             label="Total check-ins"
             value={loading ? 'Loading...' : attendance.length}
-            hint="Recorded gym visits"
             icon="dumbbell"
           />
         </section>
+        <ActivityChart attendance={attendance} loading={loading} />
         <section className="grid member-overview">
           <article className="card clay">
             <div className="illustrated-heading">
@@ -257,7 +292,9 @@ export default function UserPage({ user, onSignOut }) {
             <dl className="member-details">
               <div>
                 <dt>Member ID</dt>
-                <dd className="member-id">{currentUser?.id || 'Unavailable'}</dd>
+                <dd className="member-id">
+                  {currentUser?.memberCode || currentUser?.id || 'Unavailable'}
+                </dd>
               </div>
               <div>
                 <dt>Plan</dt>
@@ -301,7 +338,9 @@ export default function UserPage({ user, onSignOut }) {
         <dl className="member-details">
           <div>
             <dt>Member ID</dt>
-            <dd className="member-id">{currentUser?.id || 'Unavailable'}</dd>
+            <dd className="member-id">
+              {currentUser?.memberCode || currentUser?.id || 'Unavailable'}
+            </dd>
           </div>
         </dl>
       </article>
@@ -358,28 +397,59 @@ export default function UserPage({ user, onSignOut }) {
     Notifications: (
       <article className="card clay">
         <h2>Notifications</h2>
-        <div className="item clay-in">{membershipNote}</div>
+        {notifications.map((notification) => (
+          <div className="item clay-in" key={notification.id}>
+            {notification.message}
+          </div>
+        ))}
       </article>
     ),
     Settings: settings
   }
+  // All member views use records already scoped to this account by the API.
+  const activity = mobile ? activityRows({ attendance, payments, reminders: reminderActivity.reminders, money }) : []
+  const mobileViews = mobile ? {
+    Dashboard: <MobileOverview stats={[
+      ['Membership', currentUser?.plan || 'Not set', 'card'],
+      ['Status', status, 'bell'],
+      ['Days remaining', expiry ?? '—', 'chart'],
+      ['Total check-ins', attendance.length, 'qr']
+    ]} rows={activity} onActivities={() => selectSection('Activities')} loading={loading} />,
+    Membership: views.Dashboard,
+    Activities: <MobileActivities rows={activity} loading={loading} select={selectSection} reminderError={reminderActivity.error} />
+  } : {}
   return (
     <DashboardShell
+      profileLoading={loading}
       className="member-app"
       role={currentUser?.role || 'user'}
       user={currentUser}
       onSignOut={onSignOut}
       activeSection={section}
-      onSectionChange={setSection}
+      onSectionChange={selectSection}
+      content={views[section]}
+      mobileViews={mobileViews}
+      mobileQr={<MemberQr member={currentUser} viewOnly />}
+      notificationCount={loading ? 0 : unreadNotificationCount}
+      loading={loading}
     >
       {loading && (
         <p className="member-feedback" role="status">
-          Loading your membership...
+          <span className="loading-inline"><Spinner /> Loading your membership…</span>
         </p>
       )}
       {error && (
         <p className="member-feedback is-error" role="alert">
           {error}
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true)
+              load()
+            }}
+          >
+            Retry
+          </button>
         </p>
       )}
       {notice && (
@@ -390,7 +460,6 @@ export default function UserPage({ user, onSignOut }) {
           </button>
         </div>
       )}
-      {views[section]}
     </DashboardShell>
   )
 }

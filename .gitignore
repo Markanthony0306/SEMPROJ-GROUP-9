@@ -3,11 +3,14 @@ dist/
 server/data.json
 .env
 .env.*
-!.env.example
+.env.example
+.env.fitpulse-test
 server/uploads/
 hardware/**/secrets.h
 hardware/**/.pio/
-vendor/face-api.js/
 *.password-backup-*
 # Local account and activity data
 data.json
+supabase/.temp/
+# Downloaded, licensed OpenCV face models (see server/biometrics/README.md)
+server/biometrics/models/*.onnx
