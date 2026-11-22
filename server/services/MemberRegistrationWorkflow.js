@@ -36,6 +36,9 @@ export async function cleanupRejectedAuthUser(authAdmin, authUserId) {
 function isConfirmedRollback(error) {
   const pg = error?.cause
 
+  // A missing RPC never started a transaction, so its new Auth user can be removed.
+  if (error?.code === 'REGISTRATION_SAVE_FAILED' && pg?.code === 'PGRST202') return true
+
   if (
     error?.code === 'REGISTRATION_CONFLICT' &&
     pg?.code === '23505'
@@ -80,7 +83,8 @@ export class MemberRegistrationWorkflow {
         email: input.email,
         password: temporaryPassword,
         email_confirm: true,
-        user_metadata: { name: input.name }
+        user_metadata: { name: input.name },
+        app_metadata: { fitpulse_member_signup: true }
       })
 
       if (error || !data?.user?.id) {
@@ -138,6 +142,14 @@ export class MemberRegistrationWorkflow {
       // PostgreSQL definitely rejected the transaction.
       // Clean up only the Auth account created by this workflow.
       await cleanupRejectedAuthUser(this.authAdmin, authUserId)
+
+      if (error.cause?.code === 'PGRST202') {
+        throw new MemberRegistrationWorkflowError(
+          'REGISTRATION_SCHEMA_MISSING',
+          'Apply migration 027_member_verification_testing.sql before creating testing members.',
+          { status: 503, cause: error }
+        )
+      }
 
       const conflict = error.code === 'REGISTRATION_CONFLICT'
 

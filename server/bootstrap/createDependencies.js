@@ -18,7 +18,7 @@ import { passwordPolicy, passwordPolicyMessage } from '../../shared/passwordPoli
 import { isRetiredPlan } from '../../shared/membershipPlans.js'
 import { availablePlan, publicAccount, membershipStatus, addMembershipDays, validAccountInput, paymentMethod, emailPattern } from '../lib/accountRules.js'
 
-export function createDependencies({ supabase, jwtSecret, identityVerificationEnabled = false }) {
+export function createDependencies({ supabase, jwtSecret, identityVerificationEnabled = true }) {
   const databaseGateway = new SupabaseDatabaseGateway(supabase)
   const loadDatabase = (sections) => databaseGateway.loadDatabase(sections)
   const loadAccount = (id) => databaseGateway.loadAccount(id)

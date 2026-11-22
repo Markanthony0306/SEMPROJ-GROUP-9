@@ -31,7 +31,9 @@ export default function AdminStaffDialogs({
   recordPayment
 }) {
   const { token } = useAuth()
-  const idVerificationEnabled = import.meta.env.VITE_ID_VERIFICATION_ENABLED === 'true'
+  // Production builds keep verification on; only the exact "false" opts out in development.
+  const idVerificationEnabled =
+    import.meta.env.PROD || import.meta.env.VITE_ID_VERIFICATION_ENABLED !== 'false'
   return (
     <>
       {modal?.kind === 'deactivate-account' && currentUser?.role === 'admin' && (
@@ -73,7 +75,6 @@ export default function AdminStaffDialogs({
         />
       )}
       <AdminMemberDialogs
-        idVerificationEnabled={idVerificationEnabled}
         modal={modal}
         setModal={setModal}
         pending={pending}

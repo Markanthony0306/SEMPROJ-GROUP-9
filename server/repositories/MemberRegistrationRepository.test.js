@@ -54,7 +54,7 @@ test('sends the correct registration parameters to Supabase', async () => {
 
   assert.equal(
     calledName,
-    'register_fitpulse_member_atomic'
+    'register_fitpulse_test_member_atomic'
   )
 
   assert.deepEqual(calledPayload, {

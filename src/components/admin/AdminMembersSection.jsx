@@ -55,6 +55,11 @@ export default function AdminMembersSection({ query, setQuery, currentUser, setM
                   <td>{date(member.membershipEnd)}</td>
                   <td>
                     <Pill status={membershipStatus} />
+                    {member.verificationStatus === 'skipped' && (
+                      <small className="table-secondary">
+                        <span className="pill p-warn">Verification skipped</span>
+                      </small>
+                    )}
                     {showAccountStatus && (
                       <small className="table-secondary">Account {member.status}</small>
                     )}

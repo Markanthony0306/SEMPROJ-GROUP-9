@@ -66,6 +66,7 @@ function accountFromRow(row, roleById, subscription, planById) {
     planId: subscription?.plan_id || null,
     mustChangePassword: Boolean(row.must_change_password),
     idVerified: Boolean(row.id_verification_id),
+    verificationStatus: row.verification_status || (row.id_verification_id ? 'verified' : 'unverified'),
     authVersion: Number(row.auth_version || 0),
     avatarId: row.avatar_path || ''
   }

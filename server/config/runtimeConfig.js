@@ -45,7 +45,13 @@ export function createRuntimeConfig() {
   }
 
   const faceLoginEnabled = process.env.FACE_LOGIN_ENABLED === 'true'
-  const identityVerificationEnabled = process.env.ID_VERIFICATION_ENABLED === 'true'
+  // Fail closed: only the exact value "false" can disable development enrollment checks.
+  const identityVerificationEnabled = isProduction || process.env.ID_VERIFICATION_ENABLED !== 'false'
+  if (isProduction && process.env.ID_VERIFICATION_ENABLED === 'false') {
+    console.error('ERROR: ID_VERIFICATION_ENABLED=false is forbidden in production. ID verification is forced ON.')
+  } else if (!identityVerificationEnabled) {
+    console.warn('WARNING: ID verification is DISABLED. For testing only.')
+  }
   const faceEncryptionKey = parseFaceEncryptionKey()
   const memberIdKey = parseFaceEncryptionKey(process.env.ID_VERIFICATION_KEY || process.env.FACE_ENCRYPTION_KEY)
   if (identityVerificationEnabled && (!faceEncryptionKey || !memberIdKey)) {

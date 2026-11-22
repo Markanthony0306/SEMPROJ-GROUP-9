@@ -26,12 +26,14 @@ export function memberRegistrationRoutes({
   registrationWorkflow,
   verifiedRegistrationWorkflow,
   emitEvent,
-  identityVerificationEnabled = false,
+  identityVerificationEnabled = true,
   faceKey,
   publicAccount,
   checkEmailDomain = validateMemberEmail
 }) {
   const router = Router()
+  // Enforce the server policy even when a client sends forged verification fields.
+  const verificationRequired = process.env.NODE_ENV === 'production' || identityVerificationEnabled !== false
 
   // This check reads DNS only. It never creates an Auth user or reserves an email.
   router.post('/admin/members/validate-email', authenticate, requireRole('admin'),
@@ -54,13 +56,6 @@ export function memberRegistrationRoutes({
       try {
         const body = req.body || {}
 
-        if (!identityVerificationEnabled) {
-          return res.status(503).json({
-            code: 'ID_VERIFICATION_UNAVAILABLE',
-            message: 'Member creation requires ID and face verification. Ask the administrator to configure it.'
-          })
-        }
-
         // 1. Reject invalid input before querying Supabase.
         const preliminaryInput = validAccountInput(body)
 
@@ -71,7 +66,7 @@ export function memberRegistrationRoutes({
           })
         }
 
-        if (typeof body.verificationId !== 'string' || !body.verificationId.trim()) {
+        if (verificationRequired && (typeof body.verificationId !== 'string' || !body.verificationId.trim())) {
           return res.status(409).json({
             code: 'ID_VERIFICATION_REQUIRED',
             message: 'Complete ID and face verification before creating this account.'
@@ -134,7 +129,7 @@ export function memberRegistrationRoutes({
 
         // 5. Use the staged, ID-verified enrollment transaction when enabled.
         let persisted, authUserId, temporaryPassword, member
-        if (identityVerificationEnabled) {
+        if (verificationRequired) {
           const result = await verifiedRegistrationWorkflow.execute({
             actor: req.user, prepared, verificationId: body.verificationId, faceKey
           })
@@ -175,7 +170,8 @@ export function memberRegistrationRoutes({
           planId: persisted.plan_id,
           mustChangePassword: true,
           authVersion: 0,
-          idVerified: identityVerificationEnabled
+          idVerified: verificationRequired,
+          verificationStatus: verificationRequired ? 'verified' : 'skipped'
         }
 
         // Notify after commit. The opaque ID also deduplicates the creator's local alert.

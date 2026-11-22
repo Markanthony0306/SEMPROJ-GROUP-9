@@ -23,6 +23,7 @@ function createTestApp(options = {}) {
     databaseLoads: 0,
     profileLookups: 0,
     workflowCalls: [],
+    verifiedWorkflowCalls: [],
     events: []
   }
 
@@ -217,7 +218,9 @@ function createTestApp(options = {}) {
     paymentMethod,
     registrationService,
     registrationWorkflow,
-    identityVerificationEnabled: true,
+    ...(options.omitVerificationFlag ? {} : {
+      identityVerificationEnabled: options.identityVerificationEnabled ?? true
+    }),
     checkEmailDomain: async (email) => {
       if (options.domainRejected) {
         throw new MemberRegistrationError('This email domain cannot receive email.', 400, 'email')
@@ -225,7 +228,8 @@ function createTestApp(options = {}) {
       return email
     },
     verifiedRegistrationWorkflow: {
-      async execute({ actor, prepared }) {
+      async execute({ actor, prepared, ...proof }) {
+        calls.verifiedWorkflowCalls.push({ ...proof, actor, prepared })
         const result = await registrationWorkflow.execute({ actorId: actor.id, prepared })
         return {
           authUserId: result.authUserId,
@@ -317,6 +321,7 @@ test('returns HTTP 201 and a temporary password without exposing internal fields
   assert.equal(response.body.member.id, MEMBER_ID)
   assert.equal(response.body.member.memberCode, 'FP-TEST1234')
   assert.equal(response.body.member.mustChangePassword, true)
+  assert.equal(response.body.member.verificationStatus, 'verified')
   assert.equal(response.body.member.accountStatus, 'active')
   assert.equal(response.body.member.createdAt, DATE)
   assert.equal(response.body.member.membershipEnd, END_DATE)
@@ -544,4 +549,85 @@ test('hides unexpected internal errors from the client', async () => {
     JSON.stringify(response.body),
     /Secret SQL connection information/
   )
+})
+
+test('testing mode skips all verification calls and ignores client verification claims', async () => {
+  const { app, calls } = createTestApp({ identityVerificationEnabled: false })
+  const response = await postRegistration(app, {
+    verificationId: undefined,
+    verificationStatus: 'verified',
+    verification_status: 'verified',
+    idVerified: true,
+    face: { invalid: true }
+  })
+  assert.equal(response.status, 201)
+  assert.equal(response.body.member.verificationStatus, 'skipped')
+  assert.equal(response.body.member.idVerified, false)
+  assert.equal(response.body.member.mustChangePassword, true)
+  assert.equal(response.body.member.membershipEnd, END_DATE)
+  assert.equal(response.body.temporaryPassword, TEMP_PASSWORD)
+  assert.equal(calls.workflowCalls.length, 1)
+  assert.equal(calls.verifiedWorkflowCalls.length, 0)
+})
+
+test('testing mode retains required fields, duplicates, plans, payment and admin checks', async () => {
+  for (const [options, body, expectedStatus] of [
+    [{ authenticated: false }, {}, 401],
+    [{ role: 'staff' }, {}, 403],
+    [{ role: 'user' }, {}, 403],
+    [{}, { name: '' }, 400],
+    [{}, { plan: 'Unknown' }, 400],
+    [{}, { recordPayment: true, method: 'Card' }, 400],
+    [{ duplicateLoadedEmail: true }, {}, 409],
+    [{ duplicateProfile: true }, {}, 409],
+    [{ domainRejected: true }, {}, 400]
+  ]) {
+    const { app, calls } = createTestApp({ ...options, identityVerificationEnabled: false })
+    const response = await postRegistration(app, { verificationId: undefined, ...body })
+    assert.equal(response.status, expectedStatus)
+    assert.equal(calls.workflowCalls.length, 0)
+    assert.equal(calls.verifiedWorkflowCalls.length, 0)
+  }
+})
+
+test('testing mode still records an optional payment', async () => {
+  const { app, calls } = createTestApp({ identityVerificationEnabled: false })
+  const response = await postRegistration(app, {
+    verificationId: undefined, recordPayment: true, method: 'GCash'
+  })
+  assert.equal(response.status, 201)
+  assert.equal(calls.workflowCalls[0].prepared.recordPayment, true)
+  assert.equal(calls.workflowCalls[0].prepared.method, 'GCash')
+  assert.ok(calls.events.some(({ recipient }) => recipient.to?.userId === MEMBER_ID))
+  assert.ok(calls.events.some(({ alert }) => alert.title === 'New member created'))
+})
+
+test('enabled, omitted and invalid server flags reject a client-only bypass', async () => {
+  for (const options of [
+    {}, { omitVerificationFlag: true }, { identityVerificationEnabled: 'false' }
+  ]) {
+    const { app, calls } = createTestApp(options)
+    const response = await postRegistration(app, {
+      verificationId: undefined, idVerificationEnabled: false, verificationStatus: 'skipped'
+    })
+    assert.equal(response.status, 409)
+    assert.equal(response.body.code, 'ID_VERIFICATION_REQUIRED')
+    assert.equal(calls.databaseLoads, 0)
+    assert.equal(calls.workflowCalls.length, 0)
+  }
+})
+
+test('production refuses the bypass even if route dependencies try to disable it', async () => {
+  const originalNodeEnv = process.env.NODE_ENV
+  try {
+    process.env.NODE_ENV = 'production'
+    const { app, calls } = createTestApp({ identityVerificationEnabled: false })
+    const response = await postRegistration(app, { verificationId: undefined })
+    assert.equal(response.status, 409)
+    assert.equal(response.body.code, 'ID_VERIFICATION_REQUIRED')
+    assert.equal(calls.workflowCalls.length, 0)
+  } finally {
+    if (originalNodeEnv === undefined) delete process.env.NODE_ENV
+    else process.env.NODE_ENV = originalNodeEnv
+  }
 })

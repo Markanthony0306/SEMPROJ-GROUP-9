@@ -5,7 +5,7 @@ import { DashboardSheetContext } from '../Dialog'
 
 // Keep both feature-flag paths on the same existing registration workflow.
 export default function CreateMemberSheet({
-  verifyIdentity,
+  verifyIdentity = true,
   token,
   plans,
   planOptionLabel,
@@ -16,18 +16,6 @@ export default function CreateMemberSheet({
   onCreate
 }) {
   const mobile = useContext(DashboardSheetContext)
-  if (!verifyIdentity) {
-    return (
-      <Modal title="Create Member Account" onClose={onClose}>
-        <p className="form-error" role="alert">
-          Member creation requires ID and face verification. Ask the administrator to configure it.
-        </p>
-        <div className="ma">
-          <button className="btn ghost" type="button" onClick={onClose}>Close</button>
-        </div>
-      </Modal>
-    )
-  }
   if (verifyIdentity) {
     return (
       <MemberIdWizard
@@ -50,6 +38,9 @@ export default function CreateMemberSheet({
       title="Create Member Account"
       onClose={onClose}
     >
+      <p className="clay-in form-success" role="status">
+        Testing mode: ID and face verification disabled
+      </p>
       <form onSubmit={onCreate} className="mf">
         <label className="field">
           Full name

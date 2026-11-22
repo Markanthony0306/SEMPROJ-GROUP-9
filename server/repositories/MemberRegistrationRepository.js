@@ -39,9 +39,10 @@ export class MemberRegistrationRepository {
       p_method_name: recordPayment === true ? method : null
     }
 
-    // 2. Execute the atomic PostgreSQL registration function.
+    // 2. This workflow is used only by the server-controlled testing bypass.
+    // The RPC saves "skipped" with the profile, subscription and optional payment.
     const { data, error } = await this.supabase.rpc(
-      'register_fitpulse_member_atomic',
+      'register_fitpulse_test_member_atomic',
       payload
     )
 

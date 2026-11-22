@@ -84,6 +84,8 @@ export function memberExpiryDue(member, now = Date.now()) {
 
 export function reminderType(member, now = Date.now()) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email || '')) return null
+  // Chart-demo identities use a reserved, non-deliverable domain; never email them.
+  if (member.email.toLowerCase().endsWith('@demo.fitpulse.invalid')) return null
   return memberExpiryDue(member, now) ? 'upcoming' : null
 }
 

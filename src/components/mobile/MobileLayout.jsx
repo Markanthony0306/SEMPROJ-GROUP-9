@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { DashboardSheetContext } from '../Dialog'
-import { RockyNotificationButton } from '../gorilla/GorillaAssistant'
 import BottomNav from './BottomNav'
 import BottomSheet from './BottomSheet'
 import MoreRow from './MoreRow'
@@ -63,7 +62,6 @@ export default function MobileLayout({
             <Brand />
           </div>
           <div className="fitpulse-mobile-header-actions">
-            <RockyNotificationButton Icon={Icon} />
             <button
               type="button"
               className="ib fitpulse-icon-button"

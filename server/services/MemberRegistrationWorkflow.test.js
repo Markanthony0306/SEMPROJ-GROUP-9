@@ -92,6 +92,7 @@ test('creates Auth and saves member without payment', async () => {
   assert.equal(result.temporaryPassword, 'Temp!1234')
 
   assert.equal(calls.created.length, 1)
+  assert.deepEqual(calls.created[0].app_metadata, { fitpulse_member_signup: true })
   assert.equal(calls.registered.length, 1)
   assert.equal(calls.registered[0].authUserId, AUTH_ID)
   assert.equal(calls.registered[0].recordPayment, false)
@@ -237,5 +238,23 @@ test('reports a failure when Auth cleanup cannot be confirmed', async () => {
     }
   )
 
+  assert.deepEqual(calls.deleted, [AUTH_ID])
+})
+
+test('cleans up the new Auth user and explains a missing testing migration', async () => {
+  const { workflow, calls } = makeWorkflow({
+    dbError: Object.assign(new Error('Missing RPC'), {
+      code: 'REGISTRATION_SAVE_FAILED', cause: { code: 'PGRST202' }
+    })
+  })
+  await assert.rejects(
+    () => workflow.execute({ actorId: ACTOR_ID, prepared }),
+    (error) => {
+      assert.equal(error.code, 'REGISTRATION_SCHEMA_MISSING')
+      assert.equal(error.status, 503)
+      assert.match(error.message, /027_member_verification_testing.sql/)
+      return true
+    }
+  )
   assert.deepEqual(calls.deleted, [AUTH_ID])
 })

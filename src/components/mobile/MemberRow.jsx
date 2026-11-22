@@ -23,6 +23,11 @@ export default function MemberRow({ member, expiring, date, onSelect }) {
           <small>
             {member.plan} · Until {date(member.membershipEnd)}
           </small>
+          {member.verificationStatus === 'skipped' && (
+            <small>
+              <span className="pill p-warn">Verification skipped</span>
+            </small>
+          )}
         </span>
         <span className={`fitpulse-status is-${status}`}>
           {expiring ? 'Expiring' : state.label}

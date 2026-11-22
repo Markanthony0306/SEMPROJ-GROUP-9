@@ -8,7 +8,7 @@ import '../styles/dashboard-features.css'
 import './DashboardShell.css'
 import MobileLayout from './mobile/MobileLayout'
 import useIsMobile from './mobile/useIsMobile'
-import { RockyNotificationButton, useGorilla } from './gorilla/GorillaAssistant'
+import { useGorilla } from './gorilla/GorillaAssistant'
 
 const bannerStyles = {
   '--dashboard-day-image': `url("${dayBanner}")`,
@@ -290,7 +290,6 @@ export default function DashboardShell({
             <Icon name="menu" />
           </button>
           <h1>{activeSection}</h1>
-          <RockyNotificationButton Icon={Icon} />
           <button
             className="ib"
             type="button"

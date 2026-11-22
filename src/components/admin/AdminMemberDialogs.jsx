@@ -7,7 +7,7 @@ import { Pill, memberBadge } from './AdminStatus'
 import { Modal } from './AdminDialogParts'
 import { DashboardSheetContext } from '../Dialog'
 
-export default function AdminMemberDialogs({ modal, setModal, pending, error, renewals, money, date, updateMember, data, planOptionLabel, recordPayment, members, currentUser, act, idVerificationEnabled = false }) {
+export default function AdminMemberDialogs({ modal, setModal, pending, error, renewals, money, date, updateMember, data, planOptionLabel, recordPayment, members, currentUser, act }) {
   // Mobile rows expose the existing record actions inside the member profile.
   const mobile = useContext(DashboardSheetContext)
   return (
@@ -29,6 +29,9 @@ export default function AdminMemberDialogs({ modal, setModal, pending, error, re
               </span>
               <Pill status={memberBadge(modal.member)} />
               {modal.member.idVerified && <span className="pill p-ok">ID verified</span>}
+              {modal.member.verificationStatus === 'skipped' && (
+                <span className="pill p-warn">Verification skipped</span>
+              )}
             </div>
           </div>
           <section className="member-profile-section" aria-label="Contact details">
@@ -136,13 +139,17 @@ export default function AdminMemberDialogs({ modal, setModal, pending, error, re
         </Modal>
       )}
       {modal?.kind === 'credentials' && (
-        <Modal title={mobile ? 'Successful creation of a new member' : 'Member sign-in details'} onClose={() => setModal(null)}>
+        <Modal
+          title={mobile || modal.member.verificationStatus === 'skipped'
+            ? 'Successful creation of a new member'
+            : 'Member sign-in details'}
+          onClose={() => setModal(null)}
+        >
           <CreatedMemberCredentials
             member={modal.member}
             temporaryPassword={modal.temporaryPassword}
             date={mobile ? date : undefined}
-            onDismiss={() => mobile || idVerificationEnabled ? setModal(null) : setModal({ kind: 'face', member: modal.member })}
-            onFaceSetup={mobile && !idVerificationEnabled ? () => setModal({ kind: 'face', member: modal.member }) : undefined}
+            onDismiss={() => setModal(null)}
           />
         </Modal>
       )}
