@@ -15,6 +15,8 @@ To import records from an older `server/data.json`, run `npm run migrate:json-da
 
 Apply `migrations/005_admin_notifications.sql` after migration 001 to enable private notification dismissals. Set the expiry window in **Settings → Gym Preferences**.
 
+Apply `migrations/029_rocky_notifications.sql` to persist Rocky's inbox and enable member expiry alerts. The admin analytics dashboard reads attendance, membership, revenue, and payment-method totals from the existing tables; it does not need another SQL migration.
+
 FitPulse hands the one-time password to the administrator when a member is created. **Forgot password** uses Supabase Auth recovery and requires the frontend reset URL in the project's redirect allow list.
 
 Migration 009 retires Unlimited Monthly for new memberships. Historical subscriptions and payments keep their original plan.

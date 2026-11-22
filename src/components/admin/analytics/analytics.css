@@ -1,0 +1,193 @@
+.admin-analytics {
+  --analytics-navy: var(--navy);
+  --analytics-muted-navy: #547386;
+  --analytics-fill: rgba(247, 127, 0, 0.12);
+  --analytics-grid: rgba(0, 48, 73, 0.09);
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+[data-theme='dark'] .admin-analytics {
+  --analytics-navy: #6e9ab4;
+  --analytics-muted-navy: #63869b;
+  --analytics-fill: rgba(247, 127, 0, 0.16);
+  --analytics-grid: rgba(146, 171, 187, 0.14);
+}
+
+.analytics-stats,
+.analytics-grid {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.analytics-stats {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.analytics-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-analytics .clay {
+  border: 1px solid var(--id);
+  box-shadow:
+    6px 6px 18px var(--admin-shadow, var(--sd)),
+    -3px -3px 10px var(--admin-highlight, var(--sl)),
+    inset 2px 2px 4px var(--admin-highlight, var(--il)),
+    inset -2px -2px 6px var(--admin-inset, var(--id));
+}
+
+.analytics-stat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 100px;
+  padding: 16px;
+}
+
+.analytics-stat > div {
+  min-width: 0;
+}
+.admin-analytics .analytics-stat h2,
+.app.fitpulse-mobile .admin-analytics .analytics-stat h2 {
+  margin: 0 0 6px;
+  color: var(--muted);
+  font:
+    700 12px/1.4 'Nunito',
+    sans-serif;
+}
+.analytics-stat strong {
+  display: block;
+  color: var(--text);
+  font-size: clamp(19px, 1.7vw, 26px);
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.analytics-stat-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--card2);
+  color: var(--analytics-navy);
+}
+.admin-analytics .analytics-stat.analytics-stat-danger {
+  border-inline-start: 4px solid var(--red);
+}
+.analytics-stat-danger .analytics-stat-icon {
+  color: var(--red);
+}
+
+.admin-analytics .analytics-chart-card {
+  min-width: 0;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+}
+.analytics-chart-heading {
+  min-height: 72px;
+  margin-bottom: 16px;
+}
+.admin-analytics .analytics-chart-heading h2,
+.app.fitpulse-mobile .admin-analytics .analytics-chart-heading h2 {
+  margin: 0 0 6px;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.3;
+}
+.analytics-chart-heading p,
+.app.fitpulse-mobile .admin-analytics .analytics-chart-card .analytics-chart-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.analytics-canvas,
+.analytics-chart-state {
+  position: relative;
+  min-width: 0;
+  width: 100%;
+  height: 280px;
+}
+.analytics-canvas[hidden] {
+  display: none;
+}
+.analytics-chart-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  color: var(--muted);
+}
+.analytics-chart-state p,
+.analytics-chart-error {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.analytics-chart-error {
+  min-height: 280px;
+  color: var(--muted);
+}
+.analytics-skeleton {
+  display: block;
+  border-radius: 12px;
+  background: var(--card2);
+  animation: analytics-pulse 1.6s ease-in-out infinite alternate;
+}
+.analytics-value-skeleton {
+  width: 80px;
+  height: 28px;
+}
+.analytics-chart-skeleton {
+  width: 100%;
+  height: 240px;
+}
+.analytics-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@keyframes analytics-pulse {
+  to {
+    opacity: 0.45;
+  }
+}
+@media (max-width: 1024px) {
+  .analytics-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .analytics-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 480px) {
+  .analytics-stat {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .admin-analytics .analytics-chart-card {
+    padding: 20px;
+  }
+  .analytics-canvas,
+  .analytics-chart-state {
+    height: 260px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .analytics-skeleton {
+    animation: none;
+  }
+}

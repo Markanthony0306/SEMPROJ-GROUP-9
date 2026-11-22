@@ -3,6 +3,7 @@ import { useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
 import Dialog from './Dialog'
+import { RockyDeleteError } from './gorilla/GorillaAssistant'
 
 export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
   const { token } = useAuth()
@@ -84,11 +85,7 @@ export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
           />
         </label>
 
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
+        {error && <RockyDeleteError message={error} />}
 
         <div className="ma">
           <button

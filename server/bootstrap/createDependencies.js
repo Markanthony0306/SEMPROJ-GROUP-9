@@ -38,7 +38,7 @@ export function createDependencies({ supabase, jwtSecret, isProduction }) {
     generateTemporaryPassword
   })
   const adminNotifications = createAdminNotificationService({ supabase, loadDatabase })
-  const events = createFitPulseEvents()
+  const events = createFitPulseEvents(supabase)
   const { createSession, authenticate, authenticateEventStream, requireRole, rateLimit } = createSessionAuth({
     jwtSecret, loadAccount, membershipStatus
   })

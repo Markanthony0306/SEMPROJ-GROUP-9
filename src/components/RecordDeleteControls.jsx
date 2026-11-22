@@ -3,6 +3,7 @@ import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
 import Dialog from './Dialog'
 import { Icon } from './DashboardShell'
+import { RockyDeleteError } from './gorilla/GorillaAssistant'
 
 const CATEGORIES = {
   notifications: {
@@ -121,11 +122,7 @@ export default function RecordDeleteDialog({ target, onClose, onChanged, onNotic
       busy={busy}
       onClose={onClose}
     >
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
+      {error && <RockyDeleteError message={error} />}
       <form className="mf" onSubmit={remove}>
         <p className="modal-copy">
           {all ? (

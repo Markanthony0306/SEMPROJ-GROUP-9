@@ -1,4 +1,5 @@
 import AdminDashboardSection from '../components/admin/AdminDashboardSection'
+import AdminAnalytics from '../components/admin/analytics/AdminAnalytics'
 import AdminMembersSection from '../components/admin/AdminMembersSection'
 import AdminEquipmentSection from '../components/admin/AdminEquipmentSection'
 import AdminAttendanceSection from '../components/admin/AdminAttendanceSection'
@@ -462,7 +463,8 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
         ['Expiring soon', expiring.length, 'bell'],
         ['Check-ins today', data.attendance.filter(onManilaDay).length, 'qr'],
         ['Revenue today', money(data.payments.filter(onManilaDay).reduce((sum, item) => sum + Number(item.amount || 0), 0)), 'wallet']
-      ]} expiring={expiring} date={date} onMember={showMember} loading={loading} rows={activity}
+      ]} summary={currentUser?.role === 'admin' ? <AdminAnalytics refreshKey={data} /> : null}
+        expiring={expiring} date={date} onMember={showMember} loading={loading} rows={activity}
         onExpiring={() => { setOnlyExpiring(true); setQuery(''); setSection('Members') }}
         onActivities={() => setSection('Activities')} />
     ),

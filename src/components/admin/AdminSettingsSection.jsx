@@ -1,5 +1,6 @@
 import ProfilePhoto from '../ProfilePhoto'
 import PasswordChangeForm from '../PasswordChangeForm'
+import { RockyPreference } from '../gorilla/GorillaAssistant'
 import { useContext } from 'react'
 import { DashboardSheetContext } from '../Dialog'
 
@@ -42,6 +43,7 @@ export default function AdminSettingsSection({ currentUser, setCurrentUser, prof
           <h2>Change Password</h2>
           <PasswordChangeForm />
         </article>
+        <RockyPreference />
         <article className="card clay">
           <h2>Gym Preferences</h2>
           <form onSubmit={settings} className="mf">

@@ -3,9 +3,12 @@ import { expiryEmail } from './emailTemplates.js'
 import { gorillaEvents } from '../../shared/gorillaEvents.js'
 
 const DAY_MS = 86_400_000
+const MANILA_OFFSET_MS = 8 * 60 * 60 * 1000
+const MEMBER_LEAD_DAYS = 3
 const CHECK_INTERVAL_MS = 60 * 60 * 1000
 const SETUP_CODES = new Set(['PGRST202', 'PGRST205', '42P01', '42703', '42501'])
 const MIGRATION_PATH = 'supabase/migrations/005_admin_notifications.sql'
+const eventHash = (value) => crypto.createHash('sha256').update(value).digest('hex')
 
 function databaseCode(error) {
   return /^[A-Z0-9_]{2,40}$/.test(error?.code || '') ? error.code : 'DATABASE_ERROR'
@@ -51,14 +54,13 @@ export async function checkMembershipReminderSetup(supabase) {
   if (data !== false) throw new ReminderSetupError({ code: 'UNEXPECTED_CLAIM_RESULT' })
 }
 
-export function reminderType(member, reminderDays, now = Date.now()) {
+export function membershipAlertType(member, reminderDays, now = Date.now()) {
   const start = Date.parse(member.membershipStart)
   const end = Date.parse(member.membershipEnd)
   if (
     !['user', 'member'].includes(member.role) ||
     !['active', 'expired'].includes(member.status) ||
     !member.subscriptionId ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email || '') ||
     !Number.isFinite(start) ||
     !Number.isFinite(end) ||
     end <= start ||
@@ -71,6 +73,21 @@ export function reminderType(member, reminderDays, now = Date.now()) {
 
   if (end <= now) return 'expired'
   return end <= now + reminderDays * DAY_MS ? 'upcoming' : null
+}
+
+const manilaDay = (time) => Math.floor((time + MANILA_OFFSET_MS) / DAY_MS)
+
+export function memberExpiryDue(member, now = Date.now()) {
+  const end = Date.parse(member.membershipEnd)
+  return member.status === 'active' &&
+    (member.subscriptionStatus == null || member.subscriptionStatus === 'active') &&
+    membershipAlertType(member, MEMBER_LEAD_DAYS + 1, now) === 'upcoming' &&
+    manilaDay(end) - manilaDay(now) === MEMBER_LEAD_DAYS
+}
+
+export function reminderType(member, reminderDays, now = Date.now()) {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(member.email || '')) return null
+  return membershipAlertType(member, reminderDays, now)
 }
 
 export function createMembershipReminderService({
@@ -191,8 +208,27 @@ export function createMembershipReminderService({
     // Announce only after acceptance is saved and the duplicate guard is in place.
     const days = Math.max(1, Math.ceil((Date.parse(membershipEnd) - now()) / DAY_MS))
     for (const to of ['admins', { userId: member.id }]) {
-      const name = to === 'admins' ? member.name : null
-      emitEvent?.({ to }, type === 'upcoming' ? gorillaEvents.expiring(name, days) : gorillaEvents.expired(name))
+      const staff = to === 'admins'
+      const event = type === 'upcoming'
+        ? gorillaEvents.expiring(staff ? member.name : null, days)
+        : gorillaEvents.expired(staff ? member.name : null)
+      const end = Date.parse(membershipEnd)
+      const key = eventHash(`${member.subscriptionId}:${end}:${type}`)
+      const eventId = staff
+        ? `membership-staff:${key}`
+        : type === 'expired'
+          ? `membership-user:${key}`
+          : memberExpiryDue(member, now())
+            ? `membership-user-early:${eventHash(`${member.subscriptionId}:${end}`)}`
+            : `membership-email-user:${key}`
+      emitEvent?.(
+        { to },
+        {
+          ...event,
+          target: staff ? { section: 'Members', memberId: member.id } : { section: 'Membership' }
+        },
+        eventId
+      )
     }
     return true
   }

@@ -14,7 +14,8 @@ export function MobileOverview({
   onExpiring,
   rows,
   onActivities,
-  loading
+  loading,
+  summary
 }) {
   return (
     <>
@@ -28,6 +29,7 @@ export function MobileOverview({
           />
         ))}
       </section>
+      {summary && <div className="mobile-overview-summary">{summary}</div>}
       {expiring && (
         <section>
           <SectionHeader title="Expiring soon" onViewAll={onExpiring} />

@@ -1,11 +1,12 @@
 import { createFitPulseApp } from './bootstrap/createFitPulseApp.js'
 
-const { app, port, accountSeedWorkflow, startReminders } = createFitPulseApp()
+const { app, port, accountSeedWorkflow, startReminders, startRockyAlerts } = createFitPulseApp()
 
 export const serverReady = accountSeedWorkflow.run()
   .then(() => {
     const server = app.listen(port, () => {
       console.log(`FitPulse API listening on ${port}`)
+      server.once('close', startRockyAlerts())
       try {
         server.once('close', startReminders())
       } catch (error) {

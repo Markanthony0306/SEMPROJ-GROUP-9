@@ -20,6 +20,7 @@ import { passwordLoginHandler } from '../routes/passwordLogin.js'
 import { membershipRenewalRoutes } from '../routes/membershipRenewal.js'
 import { memberRegistrationRoutes } from '../routes/memberRegistration.js'
 import { eventRoutes } from '../routes/events.js'
+import { analyticsRoutes } from '../routes/analytics.js'
 import { identityVerificationRoutes } from '../routes/identityVerification.js'
 
 /** Route registration order is intentionally identical to the original server.js. */
@@ -43,6 +44,7 @@ export function registerApiRoutes(app, dependencies, config) {
     createAuthClient: createSupabaseAuthClient
   }))
   app.use('/api', reportRoutes({ authenticate, requireRole, loadDatabase, supabase, rateLimit, emitEvent }))
+  app.use('/api', analyticsRoutes({ authenticate, requireRole, supabase }))
   app.use('/api', notificationRoutes({
     authenticate, requireRole, rateLimit, notifications: adminNotifications
   }))

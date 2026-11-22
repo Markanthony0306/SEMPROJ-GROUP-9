@@ -7,6 +7,7 @@ import { registerApiRoutes } from './registerApiRoutes.js'
 import { httpErrorHandler } from '../middleware/httpErrorHandler.js'
 import { createEmailDelivery, emailConfiguration } from '../services/emailDelivery.js'
 import { createMembershipReminderService, startMembershipReminders } from '../services/membershipReminders.js'
+import { startRockyMembershipAlerts } from '../services/rockyMembershipAlerts.js'
 
 /** Creates the app without listening; startup seeding is still done by server.js. */
 export function createFitPulseApp({ supabaseClient = supabase } = {}) {
@@ -48,6 +49,9 @@ export function createFitPulseApp({ supabaseClient = supabase } = {}) {
   }
 
   return {
-    app, port: config.port, accountSeedWorkflow: dependencies.accountSeedWorkflow, startReminders
+    app, port: config.port, accountSeedWorkflow: dependencies.accountSeedWorkflow, startReminders,
+    startRockyAlerts: () => startRockyMembershipAlerts({
+      loadDatabase: dependencies.loadDatabase, emitEvent: dependencies.events.emitEvent
+    })
   }
 }

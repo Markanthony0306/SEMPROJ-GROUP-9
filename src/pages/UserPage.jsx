@@ -13,7 +13,7 @@ import { downloadPayments } from '../utils/paymentExport'
 import { getMemberQr } from '../utils/memberQr'
 import PasswordChangeForm from '../components/PasswordChangeForm'
 import { membershipState } from '../utils/membership'
-import { useGorilla } from '../components/gorilla/GorillaAssistant'
+import { RockyPreference, useGorilla } from '../components/gorilla/GorillaAssistant'
 import { MobileActivities, MobileOverview } from '../components/mobile/MobileScreens'
 import { activityRows, useReminderActivity } from '../components/mobile/activity'
 import useIsMobile from '../components/mobile/useIsMobile'
@@ -225,6 +225,7 @@ export default function UserPage({ user, onSignOut }) {
         <h2>Change Password</h2>
         <PasswordChangeForm />
       </article>
+      <RockyPreference />
     </section>
   )
   const views = {

@@ -1,5 +1,6 @@
 import { Icon } from '../DashboardShell'
 import ActivityChart from '../ActivityChart'
+import AdminAnalytics from './analytics/AdminAnalytics'
 import { membershipState } from '../../utils/membership'
 
 export default function AdminDashboardSection({ currentUser, setModal, setSection, members, active, data, today, money, revenue, loading, expiredMembers, renewals, reminderList, date }) {
@@ -27,39 +28,45 @@ export default function AdminDashboardSection({ currentUser, setModal, setSectio
             </div>
           </div>
         </section>
-        <section className="grid admin-stats">
-          {[
-            ['Total Members', members.length, 'users', 'b1'],
-            ['Active Memberships', active, 'card', 'b2'],
-            [
-              "Today's Check-ins",
-              data.attendance.filter(
-                (item) =>
-                  new Date(item.date).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }) ===
-                  today
-              ).length,
-              'qr',
-              'b3'
-            ],
-            ['Payments recorded', money(revenue), 'wallet', 'b4']
-          ].map(([label, value, icon, color]) => (
-            <article className="stat clay" key={label}>
-              <span className={`bub ${color}`}>
-                <Icon name={icon} />
-              </span>
-              <div>
-                <small>{label}</small>
-                <b>{value}</b>
-              </div>
-            </article>
-          ))}
-        </section>
-        <ActivityChart
-          attendance={data.attendance}
-          payments={data.payments}
-          admin
-          loading={loading}
-        />
+        {currentUser?.role === 'admin' ? (
+          <AdminAnalytics refreshKey={data} />
+        ) : (
+          <>
+            <section className="grid admin-stats">
+              {[
+                ['Total Members', members.length, 'users', 'b1'],
+                ['Active Memberships', active, 'card', 'b2'],
+                [
+                  "Today's Check-ins",
+                  data.attendance.filter(
+                    (item) =>
+                      new Date(item.date).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }) ===
+                      today
+                  ).length,
+                  'qr',
+                  'b3'
+                ],
+                ['Payments recorded', money(revenue), 'wallet', 'b4']
+              ].map(([label, value, icon, color]) => (
+                <article className="stat clay" key={label}>
+                  <span className={`bub ${color}`}>
+                    <Icon name={icon} />
+                  </span>
+                  <div>
+                    <small>{label}</small>
+                    <b>{value}</b>
+                  </div>
+                </article>
+              ))}
+            </section>
+            <ActivityChart
+              attendance={data.attendance}
+              payments={data.payments}
+              admin
+              loading={loading}
+            />
+          </>
+        )}
         <section className="grid g2">
           <article className="card clay">
             <div className="admin-card-heading">
