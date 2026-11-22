@@ -24,6 +24,7 @@ const STORAGE_KEY = 'fitpulse-rocky-position'
 const TYPES = { info: 'i', success: '✓', warning: '!', error: '×' }
 const DESTINATIONS = {
   [gorillaTitles.memberCreated]: 'Members',
+  [gorillaTitles.memberDeleted]: 'Members',
   [gorillaTitles.payment]: 'Payments',
   [gorillaTitles.qrCheckIn]: 'Attendance',
   [gorillaTitles.expiring]: 'Notifications',
@@ -32,9 +33,11 @@ const DESTINATIONS = {
   [gorillaTitles.equipmentAdded]: 'Equipment',
   [gorillaTitles.equipmentUpdated]: 'Equipment'
 }
-const ALERT_SECTIONS = new Set(Object.values(DESTINATIONS))
+const ALERT_SECTIONS = new Set([...Object.values(DESTINATIONS), 'Membership', 'Reports'])
 const timeFormat = new Intl.DateTimeFormat('en-PH', {
   timeZone: 'Asia/Manila',
+  month: 'short',
+  day: 'numeric',
   hour: 'numeric',
   minute: '2-digit',
   hour12: true
@@ -42,6 +45,58 @@ const timeFormat = new Intl.DateTimeFormat('en-PH', {
 
 export function useGorilla() {
   return useContext(GorillaContext)
+}
+
+export function RockyNotificationButton({ Icon }) {
+  const rocky = useGorilla()
+  if (!rocky) return null
+  return (
+    <button
+      ref={rocky.bell}
+      type="button"
+      className="ib rocky-notification-button"
+      aria-label={rocky.unread ? `Notifications, ${rocky.unread} unread` : 'Notifications'}
+      aria-expanded={rocky.listOpen}
+      aria-controls={rocky.listOpen ? rocky.bubbleId : undefined}
+      onClick={rocky.toggleList}
+    >
+      <Icon name="bell" />
+      {rocky.unread > 0 && (
+        <span className="rocky-unread" aria-hidden="true">
+          {rocky.unread > 99 ? '99+' : rocky.unread}
+        </span>
+      )}
+    </button>
+  )
+}
+
+export function RockyDeleteError({ message }) {
+  const rocky = useGorilla()
+  return (
+    <div className="form-error rocky-delete-error" role="alert">
+      {rocky?.enabled && <GorillaArt mood="angry" />}
+      <span>{message}</span>
+    </div>
+  )
+}
+
+export function RockyPreference() {
+  const rocky = useGorilla()
+  if (!rocky) return null
+  return (
+    <article className="card clay rocky-preference">
+      <h2>Notifications</h2>
+      <label className="set">
+        <span>Show Rocky</span>
+        <input
+          type="checkbox"
+          checked={rocky.enabled}
+          onChange={(event) => rocky.setEnabled(event.target.checked)}
+        />
+      </label>
+      <p>When Rocky is hidden, FitPulse still shows every notification.</p>
+    </article>
+  )
 }
 
 function readPosition() {
@@ -54,10 +109,28 @@ function readPosition() {
   return null
 }
 
+function readPreferences(key) {
+  try {
+    return JSON.parse(localStorage.getItem(key)) || {}
+  } catch {
+    return {}
+  }
+}
+
+function storePreferences(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {
+    // Notifications still work for this session if browser storage is full or blocked.
+  }
+}
+
 function viewport() {
   return {
     width: document.documentElement.clientWidth,
     height: window.innerHeight,
+    mobile: window.matchMedia('(max-width: 768px)').matches,
+    header: document.querySelector('.fitpulse-mobile-header')?.getBoundingClientRect(),
     bar: document.querySelector('.fitpulse-bottom-nav')?.getBoundingClientRect(),
     raised: document.querySelector('.fitpulse-nav-primary-icon')?.getBoundingClientRect()
   }
@@ -70,7 +143,33 @@ function constrain(position, view) {
   const overlapsCenter =
     view.raised && x < view.raised.right + MARGIN && x + SIZE > view.raised.left - MARGIN
   const bottom = overlapsCenter ? view.raised.top : (view.bar?.top ?? view.height)
-  return { x, y: clamp(position.y, MARGIN, bottom - SIZE - MARGIN) }
+  const lastRow = Math.max(MARGIN, bottom - SIZE - MARGIN)
+  const firstRow = Math.min(lastRow, (view.header?.bottom ?? 0) + MARGIN)
+  return { x, y: clamp(position.y, firstRow, lastRow) }
+}
+
+function avoidMobileActions(position, view) {
+  const bounded = constrain(position, view)
+  if (!view.mobile) return bounded
+  const controls = Array.from(document.querySelectorAll(
+    '.fitpulse-mobile-scroll :is(button.btn, a.btn, [data-rocky-avoid])'
+  ), (control) => control.getBoundingClientRect()).filter((rect) =>
+    rect.width > 0 && rect.height > 0 && rect.bottom > (view.header?.bottom ?? 0) &&
+    rect.top < (view.bar?.top ?? view.height)
+  )
+  const overlaps = ({ x, y }) => controls.some((rect) =>
+    x < rect.right && x + SIZE > rect.left && y < rect.bottom && y + SIZE > rect.top
+  )
+  if (!overlaps(bounded)) return bounded
+
+  const choices = controls.flatMap((rect) => [
+    { x: rect.left - SIZE - MARGIN, y: bounded.y },
+    { x: rect.right + MARGIN, y: bounded.y },
+    { x: bounded.x, y: rect.top - SIZE - MARGIN },
+    { x: bounded.x, y: rect.bottom + MARGIN }
+  ]).map((choice) => constrain(choice, view)).filter((choice) => !overlaps(choice))
+  const distance = (choice) => Math.hypot(choice.x - bounded.x, choice.y - bounded.y)
+  return choices.sort((a, b) => distance(a) - distance(b))[0] || bounded
 }
 
 function bubblePosition(position, view) {
@@ -113,14 +212,38 @@ function bubblePosition(position, view) {
   }
 }
 
-function useEventStream(eventsUrl, notify) {
+function useEventStream(eventsUrl, notify, cursor, saveCursor) {
   const { token } = useAuth()
   useEffect(() => {
-    if (!token || !eventsUrl || typeof EventSource === 'undefined') return
+    if (!token || !eventsUrl) return
     const controller = new AbortController()
     let retry
     let source
     const path = eventsUrl.replace(/^\/api(?=\/)/, '')
+    let syncing = false
+    async function syncHistory() {
+      if (syncing) return
+      syncing = true
+      try {
+        let more
+        let after = cursor.current
+        do {
+          const page = await apiRequest(`${path}/history?after=${after}`, {
+            token,
+            signal: controller.signal
+          })
+          if (controller.signal.aborted) return
+          for (const alert of page.alerts) notify(alert, alert.id)
+          more = page.more && page.next > after
+          after = page.next
+        } while (more)
+        saveCursor(after)
+      } catch {
+        // The live stream still delivers alerts when history is unavailable.
+      } finally {
+        syncing = false
+      }
+    }
     const connect = async () => {
       try {
         const { ticket, expiresAt } = await apiRequest(`${path}/ticket`, {
@@ -132,15 +255,10 @@ function useEventStream(eventsUrl, notify) {
         const url = new URL(apiUrl(path), window.location.origin)
         url.searchParams.set('ticket', ticket)
         source = new EventSource(url.href)
+        source.onopen = syncHistory
         source.onmessage = (event) => {
           try {
-            const { type, title, message, target } = JSON.parse(event.data)
-            if (
-              typeof title === 'string' &&
-              typeof message === 'string' &&
-              Object.hasOwn(TYPES, type)
-            )
-              notify({ type, title, message, target }, event.lastEventId)
+            notify(JSON.parse(event.data), event.lastEventId)
           } catch {
             // The next valid event can still be displayed.
           }
@@ -156,43 +274,54 @@ function useEventStream(eventsUrl, notify) {
           retry = window.setTimeout(connect, 5000)
       }
     }
-    void connect()
+    if (typeof EventSource !== 'undefined') void connect()
+    void syncHistory()
+    const historyTimer = window.setInterval(syncHistory, 30_000)
     return () => {
       controller.abort()
       window.clearTimeout(retry)
+      window.clearInterval(historyTimer)
       source?.close()
     }
-  }, [eventsUrl, notify, token])
+  }, [eventsUrl, notify, token, cursor, saveCursor])
 }
 
 export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', children }) {
-  const [alerts, setAlerts] = useState([])
-  const [unread, setUnread] = useState(0)
+  const { user } = useAuth()
+  const preferenceKey = `fitpulse-rocky:${user?.id}`
+  const [inbox, setInbox] = useState(() => readPreferences(preferenceKey))
+  const alerts = Array.isArray(inbox.alerts) ? inbox.alerts : []
+  const enabled = inbox.enabled !== false
+  const [queue, setQueue] = useState([])
+  const [latestEvent, setLatestEvent] = useState(null)
   const [mode, setMode] = useState('')
   const [sheetOpen, setSheetOpen] = useState(false)
   const [dragging, setDragging] = useState(false)
   const [stored, setStored] = useState(readPosition)
   const [view, setView] = useState(viewport)
-  const [focused, setFocused] = useState(false)
+  const [clearOfControls, setClearOfControls] = useState(null)
   const root = useRef(null)
   const trigger = useRef(null)
+  const bell = useRef(null)
   const drag = useRef(null)
   const ignoreClick = useRef(false)
-  const pendingAuto = useRef(null)
-  const autoTimer = useRef(null)
   const hoverTimer = useRef(null)
   const seen = useRef(new Set())
-  const nextLocalId = useRef(0)
+  const delivered = useRef(new Set(Array.isArray(inbox.delivered) ? inbox.delivered : []))
+  const read = useRef(new Set(Array.isArray(inbox.read) ? inbox.read : []))
+  const cursor = useRef(0)
   const navigate = useRef(null)
   const bubbleId = useId()
-  const latestEvent = alerts[0]
-  const position = constrain(
+  const unread = alerts.filter((alert) => !alert.read).length
+  const activePopup = queue.length ? alerts.find((alert) => alert.id === queue[0]) : null
+  const desired = constrain(
     stored ?? {
       x: side === 'left' ? 16 : view.width - SIZE - 16,
       y: (view.bar?.top ?? view.height) - SIZE - 16
     },
     view
   )
+  const position = !dragging && clearOfControls ? constrain(clearOfControls, view) : desired
 
   const registerNavigation = useCallback((handler) => {
     navigate.current = handler
@@ -202,17 +331,50 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
   }, [])
 
   const notify = useCallback((alert, eventId) => {
-    const id = eventId || `rocky-local-${++nextLocalId.current}`
+    if (
+      !alert ||
+      !Object.hasOwn(TYPES, alert.type) ||
+      typeof alert.title !== 'string' ||
+      typeof alert.message !== 'string'
+    )
+      return
+    const id = typeof eventId === 'string' && eventId
+      ? eventId
+      : Array.from(crypto.getRandomValues(new Uint32Array(4))).join('-')
     if (seen.current.has(id)) return
     seen.current.add(id)
-    if (seen.current.size > 64) seen.current.delete(seen.current.values().next().value)
-    const item = { ...alert, id, receivedAt: new Date() }
-    setAlerts((previous) => [item, ...previous].slice(0, 8))
-    pendingAuto.current = item
-    setUnread((previous) => previous + 1)
+    const receivedAt = Number.isFinite(Date.parse(alert.receivedAt))
+      ? new Date(alert.receivedAt).toISOString()
+      : new Date().toISOString()
+    const item = { ...alert, id, receivedAt, read: read.current.has(id) }
+    setInbox((previous) => ({
+      ...previous,
+      alerts: [item, ...(previous.alerts || [])].sort((a, b) =>
+        b.receivedAt.localeCompare(a.receivedAt)
+      )
+    }))
+    if (!delivered.current.has(id)) {
+      delivered.current.add(id)
+      setQueue((previous) => [...previous, id])
+      setLatestEvent(item)
+    }
   }, [])
 
-  useEventStream(eventsUrl, notify)
+  const saveCursor = useCallback((next) => {
+    if (!Number.isSafeInteger(next) || next <= cursor.current) return
+    cursor.current = next
+  }, [])
+
+  useEventStream(eventsUrl, notify, cursor, saveCursor)
+  useEffect(() => {
+    // The account-scoped API keeps alert text and member names. Browser storage
+    // holds only the mascot preference and IDs used for read and popup state.
+    storePreferences(preferenceKey, {
+      enabled,
+      delivered: [...delivered.current],
+      read: [...read.current]
+    })
+  }, [preferenceKey, enabled, inbox])
 
   useEffect(() => {
     const read = () => setView(viewport())
@@ -220,6 +382,8 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
     observer.observe(document.documentElement)
     const bar = document.querySelector('.fitpulse-bottom-nav')
     if (bar) observer.observe(bar)
+    const header = document.querySelector('.fitpulse-mobile-header')
+    if (header) observer.observe(header)
     const mobile = window.matchMedia('(max-width: 768px)')
     const frame = () => window.requestAnimationFrame(read)
     const initial = frame()
@@ -234,6 +398,36 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
   }, [view.bar != null])
 
   useEffect(() => {
+    if (!view.mobile || !enabled || dragging) {
+      setClearOfControls(null)
+      return
+    }
+    const scroller = document.querySelector('.fitpulse-mobile-scroll')
+    const content = scroller?.querySelector('.fitpulse-mobile-content')
+    if (!content) return
+
+    let frame
+    const update = () => {
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(() => {
+        const next = avoidMobileActions({ x: desired.x, y: desired.y }, view)
+        setClearOfControls((previous) =>
+          previous?.x === next.x && previous?.y === next.y ? previous : next
+        )
+      })
+    }
+    const observer = new ResizeObserver(update)
+    observer.observe(content)
+    scroller.addEventListener('scroll', update, { passive: true })
+    update()
+    return () => {
+      window.cancelAnimationFrame(frame)
+      observer.disconnect()
+      scroller.removeEventListener('scroll', update)
+    }
+  }, [desired.x, desired.y, dragging, enabled, view])
+
+  useEffect(() => {
     const read = () => {
       const open = Boolean(document.querySelector('dialog.experience-modal[open]'))
       setSheetOpen(open)
@@ -244,45 +438,39 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
     return () => window.removeEventListener('fitpulse:dialog-change', read)
   }, [])
 
+  const popupId = !mode && !dragging && !sheetOpen ? activePopup?.id : undefined
+  const dismissPopup = useCallback((id) => {
+    setQueue((previous) => previous.filter((item) => item !== id))
+  }, [])
+
   useEffect(() => {
-    if (dragging || sheetOpen) return
-    if (mode === 'hover' || mode === 'list') {
-      setUnread(0)
-      pendingAuto.current = null
-      return
-    }
-    if (!pendingAuto.current) return
-    const { duration } = pendingAuto.current
-    pendingAuto.current = null
-    window.clearTimeout(autoTimer.current)
-    setMode('auto')
-    autoTimer.current = window.setTimeout(
-      () => setMode((current) => (current === 'auto' ? '' : current)),
-      Number.isFinite(duration) ? Math.max(0, duration) : 7000
-    )
-  }, [latestEvent, mode, dragging, sheetOpen])
+    if (!popupId) return
+    const timer = window.setTimeout(() => dismissPopup(popupId), 7000)
+    return () => window.clearTimeout(timer)
+  }, [popupId, dismissPopup])
 
   useEffect(
     () => () => {
-      window.clearTimeout(autoTimer.current)
       window.clearTimeout(hoverTimer.current)
     },
     []
   )
 
   const close = useCallback(() => {
-    pendingAuto.current = null
-    setMode('')
-  }, [])
+    if (mode) setMode('')
+    else if (popupId) dismissPopup(popupId)
+  }, [mode, popupId, dismissPopup])
 
   useEffect(() => {
-    if (!mode || sheetOpen) return
+    if ((!mode && !popupId) || sheetOpen) return
     const outside = (event) => {
-      if (!root.current?.contains(event.target)) close()
+      if (mode && !root.current?.contains(event.target) && !bell.current?.contains(event.target))
+        close()
     }
     const onKey = (event) => {
       if (event.key === 'Escape' && !sheetOpen) {
-        if (root.current?.contains(document.activeElement)) trigger.current?.focus()
+        if (root.current?.contains(document.activeElement))
+          (trigger.current || bell.current)?.focus()
         close()
       }
     }
@@ -292,7 +480,7 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
       document.removeEventListener('pointerdown', outside)
       document.removeEventListener('keydown', onKey)
     }
-  }, [mode, close, sheetOpen])
+  }, [mode, popupId, close, sheetOpen])
 
   function startDrag(event) {
     if (!event.isPrimary || event.button !== 0) return
@@ -328,9 +516,12 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
     drag.current = null
     if (!start.moved) return
     ignoreClick.current = true
+    const next = avoidMobileActions(start.last, viewport())
+    setStored(next)
+    setClearOfControls(next)
     setDragging(false)
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(start.last))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
     } catch {
       /* optional */
     }
@@ -364,81 +555,145 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
     )
   }
 
+  const setEnabled = useCallback((value) => {
+    setInbox((previous) => ({ ...previous, enabled: value }))
+    setMode('')
+  }, [])
+  const toggleList = useCallback(() => {
+    setMode((current) => (current === 'list' ? '' : 'list'))
+  }, [])
+  useEffect(() => {
+    if (mode === 'list') root.current?.querySelector('.rocky-close')?.focus()
+  }, [mode])
+
+  const title = activePopup?.title
+  const mood = title === gorillaTitles.expired || activePopup?.type === 'error'
+    ? 'angry'
+    : activePopup?.type === 'warning'
+      ? 'worried'
+      : activePopup?.type === 'success' ? 'happy' : 'wink'
   const context = useMemo(
-    () => ({ notify, latestEvent, registerNavigation }),
-    [latestEvent, notify, registerNavigation]
+    () => ({
+      notify,
+      latestEvent,
+      registerNavigation,
+      enabled,
+      setEnabled,
+      unread,
+      bell,
+      bubbleId,
+      toggleList,
+      listOpen: mode === 'list'
+    }),
+    [
+      notify,
+      latestEvent,
+      registerNavigation,
+      enabled,
+      setEnabled,
+      unread,
+      bubbleId,
+      toggleList,
+      mode
+    ]
   )
+
+  const docked = !enabled
   const bubble = bubblePosition(position, view)
-  const shown = Boolean(mode && !dragging && !sheetOpen)
+  const shown = Boolean((mode || popupId) && !dragging && !sheetOpen)
+  const visibleAlerts = mode ? alerts : activePopup ? [activePopup] : []
 
   return (
     <GorillaContext.Provider value={context}>
       {children}
       <div
         ref={root}
-        className={`rocky${dragging ? ' is-dragging' : ''}`}
-        style={{ left: position.x, top: position.y }}
+        className={`rocky${docked ? ' rocky-docked' : ''}${dragging ? ' is-dragging' : ''}`}
+        style={docked ? undefined : { left: position.x, top: position.y }}
         hidden={sheetOpen}
-        onPointerEnter={hover}
-        onPointerLeave={leave}
+        onPointerEnter={docked ? undefined : () => window.clearTimeout(hoverTimer.current)}
+        onPointerLeave={docked ? undefined : leave}
       >
-        <button
-          ref={trigger}
-          type="button"
-          className="rocky-trigger"
-          aria-label="Open assistant"
-          aria-expanded={shown}
-          aria-controls={shown ? bubbleId : undefined}
-          onPointerDown={startDrag}
-          onPointerMove={moveDrag}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-          onLostPointerCapture={endDrag}
-          onClick={toggle}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
-        >
-          <span
-            key={latestEvent?.id}
-            className={`rocky-figure${latestEvent ? ` rocky-react rocky-${latestEvent.type}` : ''}`}
+        {!docked && (
+          <button
+            ref={trigger}
+            type="button"
+            className="rocky-trigger"
+            aria-label="Open Rocky’s notifications"
+            aria-expanded={shown}
+            aria-controls={shown ? bubbleId : undefined}
+            onPointerEnter={hover}
+            onPointerDown={startDrag}
+            onPointerMove={moveDrag}
+            onPointerUp={endDrag}
+            onPointerCancel={endDrag}
+            onLostPointerCapture={endDrag}
+            onClick={toggle}
           >
-            <GorillaArt mood={latestEvent?.type} />
-          </span>
-          {unread > 0 && (
-            <span className="rocky-unread" aria-label={`${unread} unread`}>
-              {Math.min(unread, 99)}
-              {unread > 99 ? '+' : ''}
+            <span className="rocky-figure">
+              <GorillaArt mood={mood} />
             </span>
-          )}
-        </button>
+            {unread > 0 && (
+              <span className="rocky-unread" aria-label={`${unread} unread`}>
+                {Math.min(unread, 99)}
+                {unread > 99 ? '+' : ''}
+              </span>
+            )}
+          </button>
+        )}
         {shown && (
-          <div id={bubbleId} className={`rocky-bubble ${bubble.className}`} style={bubble.style}>
+          <div
+            id={bubbleId}
+            className={`rocky-bubble ${docked ? '' : bubble.className}`}
+            style={docked ? undefined : bubble.style}
+          >
             <div className="rocky-bubble-header">
-              <strong>Rocky</strong>
+              <strong>{enabled ? 'Rocky' : 'Notifications'}</strong>
+              {mode && (
+                <button
+                  type="button"
+                  className="rocky-hide"
+                  aria-label={enabled ? 'Hide Rocky' : 'Show Rocky'}
+                  title={enabled ? 'Hide Rocky' : 'Show Rocky'}
+                  onClick={() => {
+                    setEnabled(!enabled)
+                    bell.current?.focus()
+                  }}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
+                    strokeLinejoin="round" aria-hidden="true">
+                    {enabled ? (
+                      <>
+                        <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </>
+                    ) : (
+                      <path d="m3 3 18 18M10 10a3 3 0 0 0 4 4M9 5.4a11 11 0 0 1 3-.4c6 0 10 7 10 7a16 16 0 0 1-3.2 3.9M6.1 6.1A19 19 0 0 0 2 12s4 7 10 7a10 10 0 0 0 4.2-.9" />
+                    )}
+                  </svg>
+                </button>
+              )}
               <button
                 type="button"
-                aria-label="Close"
+                className="rocky-close"
+                aria-label={mode ? 'Close notification history' : 'Close notification'}
                 onClick={() => {
-                  if (focused || root.current?.contains(document.activeElement))
-                    trigger.current?.focus()
+                  if (root.current?.contains(document.activeElement))
+                    (trigger.current || bell.current)?.focus()
                   close()
                 }}
               >
                 ×
               </button>
             </div>
-            <div className="rocky-list" role="status" aria-live="polite">
-              {!alerts.length && (
-                <p>
-                  Hi, I’m Rocky! I’ll let you know the moment something happens in the system. Drag
-                  me anywhere you like!
-                </p>
-              )}
-              {(mode === 'auto' ? alerts.slice(0, 1) : alerts).map((alert) => {
+            <div className="rocky-list" aria-live={mode ? 'off' : 'polite'}>
+              {!alerts.length && <p>No notifications yet.</p>}
+              {visibleAlerts.map((alert) => {
                 // Older events carry only a title. New events can identify a specific record.
                 const target = ALERT_SECTIONS.has(alert.target?.section)
                   ? alert.target
-                  : { section: DESTINATIONS[alert.title] }
+                  : { section: DESTINATIONS[alert.title] || 'Notifications' }
                 const action =
                   alert.onAction || (target.section && (() => navigate.current?.(target)))
                 return (
@@ -449,8 +704,9 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
                     <div>
                       <div className="rocky-alert-heading">
                         <strong>{alert.title}</strong>
-                        <time dateTime={alert.receivedAt.toISOString()}>
-                          {timeFormat.format(alert.receivedAt)}
+                        {!alert.read && <span className="rocky-new">Unread</span>}
+                        <time dateTime={alert.receivedAt}>
+                          {timeFormat.format(new Date(alert.receivedAt))}
                         </time>
                       </div>
                       <p>{alert.message}</p>
@@ -459,7 +715,16 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
                           type="button"
                           className="btn rocky-view"
                           onClick={() => {
-                            trigger.current?.focus()
+                            read.current.add(alert.id)
+                            setInbox((previous) => ({
+                              ...previous,
+                              alerts: previous.alerts.map((item) =>
+                                item.id === alert.id ? { ...item, read: true } : item
+                              )
+                            }))
+                            dismissPopup(alert.id)
+                            const control = trigger.current || bell.current
+                            control?.focus()
                             close()
                             action()
                           }}

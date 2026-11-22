@@ -1,66 +1,129 @@
-import { useId } from 'react'
+const expressions = {
+  wink: {
+    brows: 'M43 37q5-4 10-1m13 0q5-3 10 1',
+    eyes: 'M65 47q5-4 10 0',
+    mouth: 'M52 59q8 8 16-1'
+  },
+  happy: {
+    brows: 'M43 36q5-4 10-1m13 0q5-3 10 1',
+    eyes: 'M43 47q5-7 10 0m13 0q5-7 10 0',
+    mouth: 'M51 57q9 8 18 0-2 11-9 11t-9-11Z'
+  },
+  angry: { brows: 'm42 36 13 5m10 0 13-5', eyes: 'M44 47h8m15 0h8', mouth: 'M53 63q7-7 14 0' },
+  worried: {
+    brows: 'M42 40q6-1 11-6m13 0q5 5 11 6',
+    eyes: 'M48 46v3m23-3v3',
+    mouth: 'M55 62q5-4 10 0'
+  }
+}
 
-// The groups move independently so Rocky can keep both arms raised at rest.
-export default function GorillaArt({ mood }) {
-  const id = useId()
-  const brow =
-    mood === 'error'
-      ? 'M40 37l10 4m12 0 10-4'
-      : mood === 'warning'
-        ? 'M40 36q5-7 10-3m12 0q5-4 10 3'
-        : 'M40 37q5-4 10-1m12 0q5-3 10 1'
+// The face is a separate layer so the outfit and props stay in place.
+export default function GorillaArt({ mood = 'wink' }) {
   return (
-    <svg viewBox="0 0 112 106" aria-hidden="true" className="rocky-art">
-      <defs>
-        <linearGradient id={`${id}-fur`} x2="0.38" y2="1">
-          <stop stopColor="#5d6288" />
-          <stop offset="1" stopColor="#2b2d42" />
-        </linearGradient>
-        <linearGradient id={`${id}-muzzle`} x2="0" y2="1">
-          <stop stopColor="#f6cc9d" />
-          <stop offset="1" stopColor="#cc8d67" />
-        </linearGradient>
-      </defs>
-      <g fill={`url(#${id}-fur)`} stroke="#2b2d42" strokeWidth="2">
-        <path
-          className="rocky-arm rocky-arm-left"
-          d="M36 85C18 89 5 81 4 65 3 54 8 44 11 37 5 35 6 23 12 21c4-2 10 0 14 3 5 4 5 10 1 15l-3 14c8-4 17 0 19 8 4 9 1 18-7 24Z"
-        />
-        <path
-          className="rocky-arm rocky-arm-right"
-          d="M76 85c18 4 31-4 32-20 1-11-4-21-7-28 6-2 5-14-1-16-4-2-10 0-14 3-5 4-5 10-1 15l3 14c-8-4-17 0-19 8-4 9-1 18 7 24Z"
-        />
-        <path d="M39 67c-7 6-13 12-11 21 2 11 14 14 28 14s26-3 28-14c2-9-4-15-11-21Z" />
-        <circle cx="28" cy="52" r="8" />
-        <circle cx="84" cy="52" r="8" />
-        <path d="M29 49c0-25 9-40 27-40s27 15 27 40c0 21-10 34-27 34S29 70 29 49Z" />
-      </g>
-      <path fill="#82617a" opacity=".22" d="M36 89q20 11 40 0c-5 16-35 16-40 0Z" />
+    <svg viewBox="0 0 120 114" aria-hidden="true" className="rocky-art">
       <path
-        fill={`url(#${id}-muzzle)`}
-        d="M35 47c0-10 5-16 12-16 4 0 7 3 9 5 3-2 6-5 10-5 7 0 11 6 11 16 0 6-3 10-4 11 7 14-3 20-17 20s-24-6-17-20c-2-3-4-7-4-11Z"
-      />
-      <path fill="#D62828" d="M28 28c2-6 5-10 9-13 14 6 28 6 38 0 4 3 7 8 9 13-17 8-38 8-56 0Z" />
-      <path d="M29 25q28 12 54 0" fill="none" stroke="#FCBF49" strokeWidth="2.2" />
-      <path d={brow} fill="none" stroke="#392935" strokeWidth="2.5" strokeLinecap="round" />
-      <g className="rocky-eyes" fill="#251d2b">
-        <ellipse cx="46" cy="49" rx="5" ry="6" />
-        <ellipse cx="66" cy="49" rx="5" ry="6" />
-        <circle cx="44.5" cy="47" r="1.8" fill="#fff6e9" />
-        <circle cx="64.5" cy="47" r="1.8" fill="#fff6e9" />
-      </g>
-      <g fill="#D62828" opacity=".32">
-        <ellipse cx="40" cy="58" rx="4.5" ry="2.4" />
-        <ellipse cx="72" cy="58" rx="4.5" ry="2.4" />
-      </g>
-      <path d="M51 56q5-4 10 0l-3 3h-4Z" fill="#7c483d" />
-      <path
-        d={mood === 'error' ? 'M51 68q5-4 10 0' : 'M50 65q6 6 12 0'}
+        d="M86 91c24 11 34-5 25-14-4-4-10-1-10 4"
         fill="none"
-        stroke="#633b39"
-        strokeWidth="2"
+        stroke="#905538"
+        strokeWidth="7"
         strokeLinecap="round"
       />
+      <path
+        d="M40 69q20-13 41 0l10 27q-4 11-31 11t-31-11Z"
+        fill="var(--navy, #003049)"
+        stroke="#567284"
+        strokeWidth="2"
+      />
+      <path d="M44 72q15 14 31 0" fill="none" stroke="#7995a5" strokeWidth="2.5" />
+      <path
+        d="M36 84h5l3-4 3 8 3-4h6"
+        fill="none"
+        stroke="var(--orange, #f77f00)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <g fill="#a56b45" stroke="#683923" strokeWidth="2">
+        <circle cx="26" cy="43" r="13" />
+        <circle cx="94" cy="43" r="13" />
+        <path d="M31 44c0-20 10-33 22-34 4-7 14-8 19-5l-4 5c14 5 21 16 21 34 0 21-12 32-29 32S31 65 31 44Z" />
+        <path d="M33 75q-15 3-15 15 1 8 12 9l7-8q-13-4-4-9Z" />
+        <path d="M86 74q13 3 14 14 0 10-11 11l-4-9q8-2 1-9Z" />
+      </g>
+      <g fill="#db946c">
+        <circle cx="27" cy="43" r="7" />
+        <circle cx="93" cy="43" r="7" />
+      </g>
+      <path
+        d="M36 46c0-12 6-18 14-18 5 0 9 3 10 6 3-3 6-6 11-6 8 0 13 6 13 18 0 4-1 8-4 11 2 11-8 17-20 17s-22-6-20-17c-2-3-4-7-4-11Z"
+        fill="#f5c390"
+      />
+      <path
+        d="M31 24q28 10 57-1l3 11q-30 12-61 1Z"
+        fill="var(--orange, #f77f00)"
+        stroke="#a64c0a"
+        strokeWidth="1.5"
+      />
+      <path d="M33 27q28 10 54-1" fill="none" stroke="#ffd08a" strokeWidth="2" />
+      <path
+        d="M89 28l14-8-1 8 8 4-16 2 8 6-7 2-8-10Z"
+        fill="var(--orange, #f77f00)"
+        stroke="#a64c0a"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="M55 52q5-3 10 0l-2 3h-6Z" fill="#9f583a" />
+      {Object.entries(expressions).map(([name, face]) => (
+        <g
+          key={name}
+          className="rocky-expression"
+          data-active={mood === name}
+          fill="none"
+          stroke="#512d22"
+          strokeWidth="2.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d={face.brows} />
+          <g className="rocky-eyes">
+            <path d={face.eyes} />
+            {name === 'wink' && (
+              <ellipse cx="48" cy="47" rx="3.4" ry="4.2" fill="#512d22" stroke="none" />
+            )}
+          </g>
+          <path d={face.mouth} fill={name === 'happy' ? '#512d22' : 'none'} />
+        </g>
+      ))}
+      <g transform="rotate(9 75 96)">
+        <rect
+          x="59"
+          y="79"
+          width="34"
+          height="29"
+          rx="4"
+          fill="#fff3d9"
+          stroke="#b67541"
+          strokeWidth="2"
+        />
+        <path
+          d="M66 88h19m-19 6h16m-16 6h12"
+          fill="none"
+          stroke="#997457"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
+        <path d="M68 77h8v5h-8Z" fill="#f1bc60" />
+      </g>
+      <path
+        d="m27 94 20-16 4 4-19 17-7 2Z"
+        fill="#ffcf52"
+        stroke="#83441f"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="m46 79 4-3 4 4-4 3Z" fill="#f38470" stroke="#83441f" strokeWidth="1.2" />
+      <path d="M23 91q6-4 10 0t-1 7q-6 3-9-1Z" fill="#a56b45" stroke="#683923" strokeWidth="1.8" />
+      <path d="M89 88q8-3 10 3t-7 7q-5-1-3-10Z" fill="#a56b45" stroke="#683923" strokeWidth="1.8" />
     </svg>
   )
 }
