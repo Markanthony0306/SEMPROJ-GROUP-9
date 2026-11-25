@@ -1,5 +1,23 @@
 import { recoveryEmail } from './emailTemplates.js'
-import { assertEmailAccepted } from './emailDelivery.js'
+import { assertEmailAccepted, createEmailDelivery, emailConfiguration } from './emailDelivery.js'
+import { PasswordRecoveryWorkflowError, RESET_LINK_LIFETIME_SECONDS } from './PasswordRecoveryService.js'
+
+export async function sendFitPulseResetEmail({ email, name, recoveryUrl }) {
+  const config = emailConfiguration()
+  const mailer = createEmailDelivery(config)
+  if (!mailer) {
+    throw new PasswordRecoveryWorkflowError('Password reset email is unavailable. Contact the gym front desk.', 503)
+  }
+  try {
+    await mailer.sendMail({
+      from: config.from,
+      to: email,
+      ...recoveryEmail({ name, recoveryUrl, expiresInSeconds: RESET_LINK_LIFETIME_SECONDS })
+    })
+  } finally {
+    mailer.close()
+  }
+}
 
 export async function sendPasswordRecovery({
   supabaseAdmin,

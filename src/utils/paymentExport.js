@@ -1,3 +1,5 @@
+import { formatDateTime, manilaDateKey } from '../../shared/formatDate.js'
+
 function csvCell(value) {
   let text = String(value ?? '')
   // Spreadsheet applications execute formula-like cells even inside CSV quotes.
@@ -22,17 +24,7 @@ export function paymentsCsv(payments, { includeMember = false } = {}) {
     payment.plan,
     Number(payment.amount || 0).toFixed(2),
     payment.method,
-    payment.date
-      ? new Date(payment.date).toLocaleString('en-PH', {
-          timeZone: 'Asia/Manila',
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        })
-      : ''
+    formatDateTime(payment.date, '', { hour12: false })
   ])
   return '\uFEFF' + [headings, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n')
 }
@@ -51,7 +43,7 @@ function downloadCsv(name, csv) {
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `${name}-${new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })}.csv`
+  link.download = `${name}-${manilaDateKey(new Date())}.csv`
   document.body.append(link)
   link.click()
   link.remove()

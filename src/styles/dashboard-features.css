@@ -95,15 +95,15 @@
   object-fit: cover;
 }
 .app .data-table {
+  container: data-table / inline-size;
   min-width: 0;
-  margin-top: 18px;
+  margin-top: 16px;
 }
 .app .table-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.75fr) minmax(0, 0.65fr) auto;
+  align-items: end;
   gap: 16px;
-  flex-wrap: wrap;
   color: var(--muted);
   font-size: 12px;
 }
@@ -111,7 +111,8 @@
   display: grid;
   gap: 6px;
   font-weight: 700;
-  width: min(320px, 100%);
+  min-width: 0;
+  width: auto;
 }
 .app .table-toolbar input {
   width: 100%;
@@ -124,10 +125,7 @@
   padding: 10px 14px;
 }
 .app .table-toolbar .table-sort {
-  width: min(220px, 100%);
-}
-.app .table-toolbar .table-sort-order {
-  width: min(180px, 100%);
+  width: auto;
 }
 .app .table-toolbar select {
   min-height: 44px;
@@ -155,31 +153,39 @@
 }
 .app .data-table table {
   width: 100%;
-  table-layout: fixed;
+  table-layout: auto;
   border-collapse: collapse;
   font-size: 14px;
 }
 .app .data-table th,
 .app .data-table td {
-  padding: 16px 12px;
+  min-width: 112px;
+  padding: 16px;
   border-bottom: 1px solid var(--id);
   text-align: left;
   vertical-align: middle;
   overflow-wrap: anywhere;
 }
 .app .data-table th {
+  padding: 8px 16px;
   background: var(--card2);
   color: var(--muted);
   font-size: 12px;
 }
 .app .data-table th button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0;
   background: transparent;
   border: 0;
   color: inherit;
   font-weight: 800;
   cursor: pointer;
   text-align: left;
-  min-height: 32px;
+  white-space: nowrap;
 }
 .app .data-table tbody tr:nth-child(even) {
   background: var(--card2);
@@ -192,13 +198,43 @@
   text-align: center;
   color: var(--muted);
 }
+.app .data-table caption.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 .app .data-table .table-cell-actions {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
 }
 .app .data-table select {
   max-width: 100%;
+}
+.app .data-table td select {
+  min-width: 160px;
+  min-height: 44px;
+  padding: 10px 12px;
+}
+@container data-table (max-width: 760px) {
+  .app .table-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .app .table-toolbar > label:not(.table-sort) {
+    grid-column: 1 / -1;
+  }
+}
+@container data-table (max-width: 420px) {
+  .app .table-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .app .profile-photo {
   display: flex;

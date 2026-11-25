@@ -1,0 +1,15 @@
+2026/11/22-00:01:47.991 11564 Reusing MANIFEST C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/11/22-00:01:47.994 11564 Recovering log #29
+2026/11/22-00:01:47.995 11564 Reusing old log C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default\EdgeCoupons/coupons_data.db/000029.log 
+2026/11/22-00:01:48.736 10564 Level-0 table #33: started
+2026/11/22-00:01:48.742 10564 Level-0 table #33: 683376 bytes OK
+2026/11/22-00:01:48.745 10564 Delete type=0 #29
+2026/11/22-00:01:48.746 10564 Compacting 4@0 + 1@1 files
+2026/11/22-00:01:48.758 10564 Generated table #34@0: 3 keys, 683376 bytes
+2026/11/22-00:01:48.758 10564 Compacted 4@0 + 1@1 files => 683376 bytes
+2026/11/22-00:01:48.758 10564 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/11/22-00:01:48.760 10564 Delete type=2 #21
+2026/11/22-00:01:48.760 10564 Delete type=2 #24
+2026/11/22-00:01:48.760 10564 Delete type=2 #27
+2026/11/22-00:01:48.760 10564 Delete type=2 #30
+2026/11/22-00:01:48.760 10564 Delete type=2 #33

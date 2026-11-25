@@ -2,23 +2,79 @@ import {
   authenticatePassword,
   PasswordAuthenticationError
 } from '../services/passwordAuthentication.js'
-import { issueProof } from '../services/identityProof.js'
+import { consumeEnrollmentTicket, issueEnrollmentTicket, issueProof } from '../services/identityProof.js'
+import { BiometricError } from '../services/biometricEngine.js'
+import { MEMBER_TERMS_VERSION } from '../../shared/memberTerms.js'
+
+const FAILED_LOGIN_LIMIT = 5
+const LOGIN_LOCK_MS = 15 * 60_000
+const MAX_LOGIN_BUCKETS = 10_000
+
+export function acceptMemberTermsHandler({ jwtSecret }) {
+  return (req, res, next) => {
+    const { termsTicket, accepted, version } = req.body || {}
+    if (accepted !== true || version !== MEMBER_TERMS_VERSION)
+      return res.status(400).json({ message: 'Accept the current member terms to continue.' })
+    try {
+      const account = consumeEnrollmentTicket(termsTicket, 'member_login_terms')
+      res.set('Cache-Control', 'no-store')
+      return res.json({
+        challenge: issueProof({ purpose: 'face_login', ...account, termsVersion: version }, jwtSecret, '3m')
+      })
+    } catch (error) {
+      if (!(error instanceof BiometricError)) return next(error)
+      return res.status(error.status).json({ message: error.message, code: error.code })
+    }
+  }
+}
 
 export function passwordLoginHandler({
   createAuthClient,
   supabase,
   loadAccount,
-  createSession,
-  jwtSecret
+  createSession
 }) {
+  const attempts = new Map()
   return async (req, res) => {
     const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : ''
     // Passwords are exact values: never trim or change their case.
     const password = typeof req.body?.password === 'string' ? req.body.password : ''
     if (!email || !password)
       return res.status(400).json({ message: 'Email and password are required.' })
+    const key = `${req.ip}:${email}`
+    const now = Date.now()
+    if (attempts.size >= MAX_LOGIN_BUCKETS) {
+      for (const [id, bucket] of attempts) {
+        if (bucket.expiresAt <= now && !bucket.pending) attempts.delete(id)
+      }
+      if (!attempts.has(key) && attempts.size >= MAX_LOGIN_BUCKETS)
+        return res.status(429).json({ message: 'Sign-in is temporarily busy. Please try again shortly.' })
+    }
+    let bucket = attempts.get(key)
+    if (!bucket || (bucket.expiresAt <= now && !bucket.pending)) {
+      bucket = { failed: 0, pending: 0, expiresAt: now + LOGIN_LOCK_MS }
+      attempts.set(key, bucket)
+    }
+    const locked = () => {
+      const retryAfterSeconds = Math.max(1, Math.ceil((bucket.expiresAt - Date.now()) / 1000))
+      return res.set('Retry-After', String(retryAfterSeconds)).status(429).json({
+        code: 'LOGIN_LOCKED',
+        message: 'Too many failed sign-in attempts. Please wait up to 15 minutes and try again.',
+        retryAfterSeconds
+      })
+    }
+    if (bucket.failed >= FAILED_LOGIN_LIMIT) return locked()
+    // Reserve a slot while Supabase checks the password so concurrent requests share the limit.
+    if (bucket.failed + bucket.pending >= FAILED_LOGIN_LIMIT)
+      return res.status(429).json({ message: 'Sign-in is temporarily busy. Please try again shortly.' })
+    bucket.pending += 1
+    let checkingPassword = true
     try {
       const authUser = await authenticatePassword({ createAuthClient, email, password })
+      bucket.pending -= 1
+      checkingPassword = false
+      bucket.failed = 0
+      if (!bucket.pending) attempts.delete(key)
       const { data: profile, error: profileError } = await supabase
         .from('users')
         .select('id, auth_user_id, role_id, name, email, phone_number, status')
@@ -57,32 +113,21 @@ export function passwordLoginHandler({
             message: 'Your account profile is incomplete. Please contact the administrator.',
             code: 'PROFILE_LINK_INVALID'
           })
-      // Enrolled members cannot receive a session until live head turns and
-      // a face match have been verified on the server.
-      if (isMemberRole && jwtSecret) {
+      res.set('Cache-Control', 'no-store')
+      if (isMemberRole) {
         const { data: enrollment, error: faceError } = await supabase.from('fitpulse_face_templates')
           .select('user_id').eq('user_id', account.id).maybeSingle()
-        // Permit legacy members only when no biometric enrollment policy has
-        // been applied. Once deployed, a missing template must fail closed.
-        if (faceError && !['42P01', 'PGRST205'].includes(faceError.code))
-          throw new Error('Unable to check biometric enrollment.')
-        if (enrollment) {
-          res.set('Cache-Control', 'no-store')
-          return res.json({
-            requiresFace: true,
-            challenge: issueProof({ purpose: 'face_login', memberId: account.id, authVersion: account.authVersion || 0 }, jwtSecret, '3m'),
-            message: 'Facial Recognition Login Security required.'
+        if (faceError) throw new Error('Unable to check biometric enrollment.')
+        if (!enrollment)
+          return res.status(403).json({ message: 'Face enrollment is required for this member. Contact the gym administrator.', code: 'FACE_ENROLLMENT_REQUIRED' })
+        return res.json({
+          requiresTerms: true,
+          termsTicket: issueEnrollmentTicket('member_login_terms', {
+            memberId: account.id,
+            authVersion: account.authVersion || 0
           })
-        }
-        if (!faceError) {
-          const { data: policy, error: policyError } = await supabase.from('fitpulse_identity_policy')
-            .select('enforced_from').eq('id', 1).maybeSingle()
-          if (policyError) throw new Error('Unable to check biometric enrollment policy.')
-          if (!policy || !account.joined || new Date(account.joined) >= new Date(policy.enforced_from))
-            return res.status(403).json({ message: 'Face enrollment is required for this member. Contact the gym administrator.', code: 'FACE_ENROLLMENT_REQUIRED' })
-        }
+        })
       }
-      res.set('Cache-Control', 'no-store')
       return res.json(createSession(account))
     } catch (error) {
       if (error instanceof PasswordAuthenticationError) {
@@ -93,6 +138,18 @@ export function passwordLoginHandler({
             error.code,
             error.cause?.code || error.cause?.name || 'invalid_response'
           )
+        if (error.code === 'INVALID_CREDENTIALS') {
+          bucket.failed += 1
+          if (bucket.failed >= FAILED_LOGIN_LIMIT) {
+            bucket.expiresAt = Date.now() + LOGIN_LOCK_MS
+            return locked()
+          }
+          return res.status(401).json({
+            message: error.message,
+            code: error.code,
+            remainingAttempts: FAILED_LOGIN_LIMIT - bucket.failed
+          })
+        }
         return res.status(error.status).json({ message: error.message, code: error.code })
       }
       console.error('Login account lookup failed:', error.message)
@@ -102,6 +159,11 @@ export function passwordLoginHandler({
           message: 'Unable to load your account. Please try again shortly.',
           code: 'ACCOUNT_SERVICE_UNAVAILABLE'
         })
+    } finally {
+      if (checkingPassword) {
+        bucket.pending -= 1
+        if (!bucket.pending && !bucket.failed) attempts.delete(key)
+      }
     }
   }
 }

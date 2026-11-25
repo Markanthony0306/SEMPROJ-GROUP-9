@@ -1,4 +1,5 @@
 import { membershipState } from './membership.js'
+import { formatDate, formatDateTime, formatTime } from '../../shared/formatDate.js'
 
 export const REPORT_TYPES = [
   ['active', 'Active memberships'],
@@ -8,15 +9,21 @@ export const REPORT_TYPES = [
   ['renewals', 'Membership renewals'],
   ['maintenance', 'Equipment maintenance']
 ]
-const date = (value) =>
-  Number.isFinite(Date.parse(value))
-    ? new Date(value).toLocaleString('en-PH', {
-        timeZone: 'Asia/Manila',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
-    : 'Not set'
+const date = (value) => formatDate(value, 'Not set')
+
+export function parseReportDateTime(date, time, now = Date.now()) {
+  const parts = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(date)
+  if (!parts || !/^\d{2}:\d{2}$/.test(time))
+    throw new Error('Enter a date in dd/mm/yyyy and choose a valid Manila time.')
+  const [, day, month, year] = parts
+  // Manila has used UTC+08:00 throughout the supported report date range.
+  const timestamp = Date.parse(`${year}-${month}-${day}T${time}:00+08:00`)
+  if (formatDate(timestamp) !== date || formatTime(timestamp, { hour12: false }) !== time)
+    throw new Error('Enter a valid calendar date and time.')
+  if (timestamp < Date.UTC(2000, 0, 1) || timestamp > now)
+    throw new Error('Choose a record date and time between January 2000 and now.')
+  return new Date(timestamp).toISOString()
+}
 
 export function buildReport(kind, data, now = Date.now()) {
   const members = data.members.filter((member) => ['user', 'member'].includes(member.role))
@@ -43,14 +50,7 @@ export function buildReport(kind, data, now = Date.now()) {
         .map((item) => [
           item.memberName,
           item.memberId,
-          new Date(item.date).toLocaleString('en-PH', {
-            timeZone: 'Asia/Manila',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-          }),
+          formatDateTime(item.date, 'Not set'),
           item.source || 'Staff'
         ])
     }

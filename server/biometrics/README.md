@@ -38,11 +38,11 @@ If the app server starts with a different Python environment, set `FITPULSE_BIOM
 4. Do **not** rerun the destructive `025_remove_identity_verification.sql` after this migration.
 5. Do not expose `SUPABASE_SECRET_KEY` or `JWT_SECRET` to the Vite frontend.
 
-The new tables are distinct from the retired identity-verification schema. **No old facial templates are recovered**; a member created after applying this migration must have face enrollment. Existing members without an enrollment record retain their prior password-login behavior (created before the migration's policy timestamp).
+The new tables use a separate enrollment schema. All members need an enrollment record before they can sign in. Help an existing member without a facial template complete enrollment through the gym's approved account process.
 
 ## Test the workflow
 
-Start the original backend and frontend as usual (`npm run server`, `npm run dev`). Sign in as admin and select **Create Member**. Proceed through member details, payment, ID type, consent, live ID capture, and the right/left/front face scans. If verification passes, the existing credentials modal shows the temporary password once. After password sign-in, the newly created member will see the facial login challenge and must turn right, left, then face forward to receive a session.
+Start the backend and frontend (`npm run server`, `npm run dev`). An administrator signs in with credentials and can select **Create Member** on the dashboard. Proceed through member details, payment, ID type, consent, live ID capture, and the right/left/front face scans. If verification passes, the credentials modal shows the temporary password once. Members enter credentials, scroll through and accept the current Terms and Conditions, then turn right, left, and face forward to complete facial verification and receive a session.
 
 The system checks the **ID's printed ID-type label and the member's first/last name**, since a government ID generally does not contain the member's email or phone number. Poor OCR may require retaking the ID. Face matching thresholds and head-turn estimates are best-effort and require evaluation on representative devices and ID styles; this **does not provide production-grade anti-spoofing**. Static images or recorded videos may fool pose-only challenges. Do not rely on this alone for consequential or regulated identity checks; offer manual review and an accessible non-biometric alternative before real deployment.
 

@@ -9,6 +9,7 @@ import {
   useState
 } from 'react'
 import { gorillaEvents, gorillaTitles } from '../../../shared/gorillaEvents'
+import { formatDateTime } from '../../../shared/formatDate.js'
 import { apiRequest, apiUrl } from '../../utils/api'
 import { useAuth } from '../../auth/AuthContext'
 import GorillaArt from './GorillaArt'
@@ -21,6 +22,7 @@ const SIZE = 84
 const MARGIN = 8
 const GAP = 10
 const STORAGE_KEY = 'fitpulse-rocky-position'
+const GREETING_ID = 'fitpulse-welcome'
 const TYPES = { info: 'i', success: '✓', warning: '!', error: '×' }
 const DESTINATIONS = {
   [gorillaTitles.memberCreated]: 'Members',
@@ -34,14 +36,6 @@ const DESTINATIONS = {
   [gorillaTitles.equipmentUpdated]: 'Equipment'
 }
 const ALERT_SECTIONS = new Set([...Object.values(DESTINATIONS), 'Membership', 'Reports'])
-const timeFormat = new Intl.DateTimeFormat('en-PH', {
-  timeZone: 'Asia/Manila',
-  month: 'short',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-  hour12: true
-})
 
 export function useGorilla() {
   return useContext(GorillaContext)
@@ -86,15 +80,16 @@ export function RockyPreference() {
   return (
     <article className="card clay rocky-preference">
       <h2>Notifications</h2>
-      <label className="set">
-        <span>Show Rocky</span>
+      <label className="set rocky-switch" data-rocky-avoid>
+        <span>Rocky</span>
         <input
           type="checkbox"
+          role="switch"
           checked={rocky.enabled}
           onChange={(event) => rocky.setEnabled(event.target.checked)}
         />
       </label>
-      <p>When Rocky is hidden, FitPulse still shows every notification.</p>
+      <p>Choose Rocky or plain popups for your notifications.</p>
     </article>
   )
 }
@@ -292,6 +287,16 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
   const [inbox, setInbox] = useState(() => readPreferences(preferenceKey))
   const alerts = Array.isArray(inbox.alerts) ? inbox.alerts : []
   const enabled = inbox.enabled !== false
+  const greetingKey = `${preferenceKey}:greeted`
+  const [greeting, setGreeting] = useState(() => {
+    if (!user?.id || !enabled) return null
+    try {
+      if (sessionStorage.getItem(greetingKey)) return null
+    } catch {
+      // Rocky can still greet the user when session storage is unavailable.
+    }
+    return { id: GREETING_ID, message: `Hi, ${user.name?.trim().split(/\s+/)[0] || 'there'}. Welcome to FitPulse!` }
+  })
   const [queue, setQueue] = useState([])
   const [latestEvent, setLatestEvent] = useState(null)
   const [mode, setMode] = useState('')
@@ -313,7 +318,7 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
   const navigate = useRef(null)
   const bubbleId = useId()
   const unread = alerts.filter((alert) => !alert.read).length
-  const activePopup = queue.length ? alerts.find((alert) => alert.id === queue[0]) : null
+  const activePopup = (enabled && greeting) || alerts.find((alert) => alert.id === queue[0])
   const desired = constrain(
     stored ?? {
       x: side === 'left' ? 16 : view.width - SIZE - 16,
@@ -354,7 +359,6 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
       )
     }))
     if (!delivered.current.has(id)) {
-      delivered.current.add(id)
       setQueue((previous) => [...previous, id])
       setLatestEvent(item)
     }
@@ -374,7 +378,7 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
       delivered: [...delivered.current],
       read: [...read.current]
     })
-  }, [preferenceKey, enabled, inbox])
+  }, [preferenceKey, enabled, inbox, queue])
 
   useEffect(() => {
     const read = () => setView(viewport())
@@ -440,14 +444,26 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
 
   const popupId = !mode && !dragging && !sheetOpen ? activePopup?.id : undefined
   const dismissPopup = useCallback((id) => {
+    if (id === GREETING_ID) {
+      setGreeting(null)
+      return
+    }
+    delivered.current.add(id)
     setQueue((previous) => previous.filter((item) => item !== id))
   }, [])
 
   useEffect(() => {
     if (!popupId) return
-    const timer = window.setTimeout(() => dismissPopup(popupId), 7000)
+    if (popupId === GREETING_ID) {
+      try {
+        sessionStorage.setItem(greetingKey, '1')
+      } catch {
+        // The in-memory greeting still clears after it is shown.
+      }
+    }
+    const timer = window.setTimeout(() => dismissPopup(popupId), popupId === GREETING_ID ? 3500 : 7000)
     return () => window.clearTimeout(timer)
-  }, [popupId, dismissPopup])
+  }, [popupId, dismissPopup, greetingKey])
 
   useEffect(
     () => () => {
@@ -557,6 +573,7 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
 
   const setEnabled = useCallback((value) => {
     setInbox((previous) => ({ ...previous, enabled: value }))
+    if (!value) setGreeting(null)
     setMode('')
   }, [])
   const toggleList = useCallback(() => {
@@ -601,7 +618,8 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
   const docked = !enabled
   const bubble = bubblePosition(position, view)
   const shown = Boolean((mode || popupId) && !dragging && !sheetOpen)
-  const visibleAlerts = mode ? alerts : activePopup ? [activePopup] : []
+  const greetingShown = popupId === GREETING_ID
+  const visibleAlerts = mode ? alerts : activePopup && !greetingShown ? [activePopup] : []
 
   return (
     <GorillaContext.Provider value={context}>
@@ -688,7 +706,8 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
               </button>
             </div>
             <div className="rocky-list" aria-live={mode ? 'off' : 'polite'}>
-              {!alerts.length && <p>No notifications yet.</p>}
+              {greetingShown && <p className="rocky-greeting">{greeting.message}</p>}
+              {mode && !alerts.length && <p>No notifications yet.</p>}
               {visibleAlerts.map((alert) => {
                 // Older events carry only a title. New events can identify a specific record.
                 const target = ALERT_SECTIONS.has(alert.target?.section)
@@ -706,7 +725,7 @@ export function GorillaProvider({ side = 'right', eventsUrl = '/api/events', chi
                         <strong>{alert.title}</strong>
                         {!alert.read && <span className="rocky-new">Unread</span>}
                         <time dateTime={alert.receivedAt}>
-                          {timeFormat.format(new Date(alert.receivedAt))}
+                          {formatDateTime(alert.receivedAt)}
                         </time>
                       </div>
                       <p>{alert.message}</p>

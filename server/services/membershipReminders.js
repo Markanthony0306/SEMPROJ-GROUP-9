@@ -150,19 +150,13 @@ export function createMembershipReminderService({
     }
     let mailResult
     try {
-      const expiryDate = new Date(membershipEnd).toLocaleDateString('en-PH', {
-        timeZone: 'Asia/Manila',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-      })
       mailResult = await mailer.sendMail({
         from,
         to: member.email,
         ...expiryEmail({
           name: member.name,
           plan: member.plan,
-          expiryDate,
+          expiryDate: membershipEnd,
           expired: type === 'expired',
           loginUrl
         })

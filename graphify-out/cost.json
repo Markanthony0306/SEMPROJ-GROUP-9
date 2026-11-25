@@ -1,0 +1,14 @@
+{
+  "runs": [
+    {
+      "date": "2026-11-24T16:04:57.545742+00:00",
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "files": 81,
+      "usage_available": false
+    }
+  ],
+  "total_input_tokens": 0,
+  "total_output_tokens": 0,
+  "usage_note": "Actual token usage was not exposed by the host; zeros mean unavailable."
+}

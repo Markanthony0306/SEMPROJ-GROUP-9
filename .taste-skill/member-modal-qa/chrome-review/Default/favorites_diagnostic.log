@@ -1,0 +1,18 @@
+2026-11-24 16:28:03.840: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\member-modal-qa\chrome-review\Default
+2026-11-24 16:28:03.840: [INFO] Profiles total count: 1
+2026-11-24 16:28:03.840: [INFO] Profile: name=Profile 1 path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\member-modal-qa\chrome-review\Default lastActive=null
+2026-11-24 16:28:03.840: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\member-modal-qa\chrome-review\Default
+2026-11-24 16:28:03.840: [INFO] VisibilityChanged: 0
+2026-11-24 16:28:03.916: [INFO] BookmarkNodeAdded, ABU: 0
+2026-11-24 16:28:03.916: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:28:03.916: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:28:03.916: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:28:03.916: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:28:04.077: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-24 16:28:05.856: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-24 16:28:05.882: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-24 16:28:05.914: [INFO] Primary account changed.
+2026-11-24 16:28:05.914: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-11-24 16:28:05.956: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-24 16:28:05.964: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-24 16:28:08.702: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1

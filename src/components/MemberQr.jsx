@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '../auth/AuthContext'
 import { getMemberQr, readCachedMemberQr } from '../utils/memberQr'
+import { formatDate } from '../../shared/formatDate.js'
 
 export default function MemberQr({ member, viewOnly = false }) {
   const { token } = useAuth()
@@ -38,9 +39,7 @@ export default function MemberQr({ member, viewOnly = false }) {
     return () => window.clearTimeout(timer)
   }, [qr])
   const daysLeft = qr ? Math.max(0, Math.ceil((qr.expiresAt - Date.now()) / 86400000)) : 0
-  const expiryDate = qr ? new Date(qr.expiresAt).toLocaleDateString(
-    viewOnly ? 'en-PH' : undefined, viewOnly ? { timeZone: 'Asia/Manila' } : undefined
-  ) : ''
+  const expiryDate = formatDate(qr?.expiresAt, '')
 
   const downloadQrCard = () => {
     if (!qr) return

@@ -37,6 +37,11 @@
   .fitpulse-mobile-header .brand {
     gap: 5px;
   }
+  .fitpulse-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
   .fitpulse-mobile button:focus-visible,
   dialog.fitpulse-bottom-sheet button:focus-visible,
   dialog.fitpulse-bottom-sheet input:focus-visible,
@@ -422,8 +427,7 @@
   dialog.fitpulse-bottom-sheet .dialog-close {
     min-width: 44px;
   }
-  dialog.fitpulse-bottom-sheet .btn.ghost:hover,
-  dialog.fitpulse-bottom-sheet .dialog-close:hover {
+  dialog.fitpulse-bottom-sheet .btn.ghost:hover {
     color: var(--red);
   }
   dialog.fitpulse-bottom-sheet .field {
@@ -437,7 +441,7 @@
     box-shadow: var(--in);
   }
   dialog.fitpulse-bottom-sheet :is(input, select):focus {
-    outline: 2px solid var(--orange);
+    outline: 2px solid var(--text);
   }
   dialog.fitpulse-bottom-sheet :is(input, select)[aria-invalid='true'] {
     outline: 2px solid var(--red);

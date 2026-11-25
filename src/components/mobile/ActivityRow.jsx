@@ -1,14 +1,4 @@
-const manilaTime = new Intl.DateTimeFormat('en-PH', {
-  timeZone: 'Asia/Manila',
-  hour: 'numeric',
-  minute: '2-digit',
-  hour12: true
-})
-const manilaDay = new Intl.DateTimeFormat('en-PH', {
-  timeZone: 'Asia/Manila',
-  month: 'short',
-  day: 'numeric'
-})
+import { formatDate, formatTime } from '../../../shared/formatDate.js'
 
 // Use the recorded event time, formatted in the gym's timezone.
 export default function ActivityRow({ row, Icon }) {
@@ -22,9 +12,9 @@ export default function ActivityRow({ row, Icon }) {
         <strong>{row.title}</strong>
         <small>{row.detail}</small>
       </span>
-      <time dateTime={date.toISOString()}>
-        <span>{manilaDay.format(date)}</span>
-        <span>{manilaTime.format(date)}</span>
+      <time dateTime={row.date}>
+        <span>{formatDate(date)}</span>
+        <span>{formatTime(date)}</span>
       </time>
     </li>
   )

@@ -82,15 +82,11 @@ export default function AdminEquipmentSection({ data, loading, pending, act, set
                     Log repair
                   </button>
                   {canDeleteHistory && (
-                    <button
-                      className="btn sm danger"
-                      type="button"
-                      aria-label={`Delete equipment ${item.name}`}
+                    <RecordDeleteButton
+                      label={`Delete equipment ${item.name}`}
                       disabled={loading || pending}
                       onClick={() => setDeletion({ category: 'equipment', id: item.id, label: item.name })}
-                    >
-                      Delete
-                    </button>
+                    />
                   )}
                 </td>
               </tr>

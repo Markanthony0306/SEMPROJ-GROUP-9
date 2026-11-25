@@ -1,0 +1,11 @@
+{
+ "page": ".taste-skill/table-spacing-qa/preview.html",
+ "url": null,
+ "root": ".",
+ "kind": "software",
+ "category": "gym administration",
+ "primary": "Explore reports",
+ "rounds": 3,
+ "start": "2026-11-21T15:29:10.722Z",
+ "by": "gate.mjs --start"
+}

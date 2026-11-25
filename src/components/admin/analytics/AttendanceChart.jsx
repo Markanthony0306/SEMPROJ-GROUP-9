@@ -1,4 +1,5 @@
 import { useCallback } from 'react'
+import { formatDate } from '../../../../shared/formatDate.js'
 import ChartCard from './ChartCard'
 import useAnalyticsChart, { chartOptions } from './useAnalyticsChart'
 
@@ -7,6 +8,10 @@ export default function AttendanceChart({ data, loading, error, onRetry }) {
     (colors) => {
       const counts = data.days.map((day) => day.count)
       const highest = Math.max(...counts)
+      const options = chartOptions(colors)
+      options.plugins.tooltip.callbacks = {
+        title: ([point]) => formatDate(data.days[point?.dataIndex]?.date)
+      }
       // Rounded bars; every tied peak is orange. Single-series legends stay hidden.
       return {
         type: 'bar',
@@ -25,7 +30,7 @@ export default function AttendanceChart({ data, loading, error, onRetry }) {
             }
           ]
         },
-        options: chartOptions(colors)
+        options
       }
     },
     [data]
@@ -50,7 +55,7 @@ export default function AttendanceChart({ data, loading, error, onRetry }) {
         <canvas
           ref={canvasRef}
           role="img"
-          aria-label={`QR check-ins this week: ${data?.days.map((day) => `${day.label} ${day.count}`).join(', ')}`}
+          aria-label={`QR check-ins this week: ${data?.days.map((day) => `${formatDate(day.date)} ${day.count}`).join(', ')}`}
         />
       </div>
     </ChartCard>

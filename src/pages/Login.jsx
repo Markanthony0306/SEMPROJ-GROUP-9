@@ -1,14 +1,14 @@
-import { useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useTheme } from '../components/brand/useTheme'
 import Dialog from '../components/Dialog'
 import Spinner from '../components/Spinner'
-import FacialLoginChallenge from '../components/FacialLoginChallenge'
+import HeartRateLoader from '../components/HeartRateLoader'
 import { apiRequest } from '../utils/api'
 import { gorillaEvents } from '../../shared/gorillaEvents'
 import './Login.css'
 
-const FAILED_LOGIN_LIMIT = 5
-// Login uses the same alert wording inside its existing accessible dialog.
+const MemberTerms = lazy(() => import('../components/MemberTerms'))
+const FacialLoginChallenge = lazy(() => import('../components/FacialLoginChallenge'))
 const loginLockAlert = gorillaEvents.loginLocked()
 
 const ICONS = {
@@ -156,38 +156,41 @@ function Dumbbell() {
   )
 }
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, navigate, initialRecoveryOpen = false }) {
   const [email, setEmail] = useState(() => localStorage.getItem('fp_email') || '')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(() => Boolean(localStorage.getItem('fp_email')))
   const [showPassword, setShowPassword] = useState(false)
   const [capsLock, setCapsLock] = useState(false)
   const [pending, setPending] = useState(false)
-  const [failedAttempts, setFailedAttempts] = useState(0)
+  const [lockedAccount, setLockedAccount] = useState(null)
   const [showLockAlert, setShowLockAlert] = useState(false)
-  const loginLocked = failedAttempts >= FAILED_LOGIN_LIMIT
+  const loginLocked = lockedAccount?.email === email.trim().toLowerCase()
   const [shaking, setShaking] = useState(false)
   const [errors, setErrors] = useState({ email: '', password: '', general: '' })
-  const [resetOpen, setResetOpen] = useState(false)
+  const [resetOpen, setResetOpen] = useState(initialRecoveryOpen)
   const [resetEmail, setResetEmail] = useState('')
   const [resetPending, setResetPending] = useState(false)
   const [resetError, setResetError] = useState('')
-  const [toast, setToast] = useState('')
+  const [resetMessage, setResetMessage] = useState('')
+  const [termsTicket, setTermsTicket] = useState('')
   const [faceChallenge, setFaceChallenge] = useState('')
   const { dark, toggle: toggleTheme } = useTheme()
   const emailRef = useRef(null)
   const passwordRef = useRef(null)
   const submissionLock = useRef(false)
 
+  useEffect(() => {
+    if (!lockedAccount) return
+    const timer = window.setTimeout(() => setLockedAccount(null), lockedAccount.retryAfterSeconds * 1000)
+    return () => window.clearTimeout(timer)
+  }, [lockedAccount])
+
   const clearErrors = () => setErrors({ email: '', password: '', general: '' })
   const finishLogin = (session) => {
     if (remember) localStorage.setItem('fp_email', session.user.email.trim().toLowerCase())
     else localStorage.removeItem('fp_email')
     onLogin(session)
-  }
-  const showToast = (message) => {
-    setToast(message)
-    window.setTimeout(() => setToast(''), 2400)
   }
   const submit = async (event) => {
     event.preventDefault()
@@ -215,26 +218,21 @@ export default function Login({ onLogin }) {
         method: 'POST',
         body: JSON.stringify({ email: normalizedEmail, password: submittedPassword })
       })
-      if (session.requiresFace === true && session.challenge) {
-        // No application session is issued until all face checks succeed.
-        setFaceChallenge(session.challenge)
+      if (session.requiresTerms === true && session.termsTicket) {
+        setTermsTicket(session.termsTicket)
       } else if (session.token && session.user) finishLogin(session)
       else throw new Error('Unable to start sign-in. Please try again.')
-      setFailedAttempts(0)
       setPassword('')
       setShaking(false)
     } catch (error) {
       setShowPassword(false)
-      if (error.code === 'INVALID_CREDENTIALS') {
-        const nextAttempts = failedAttempts + 1
-        setFailedAttempts(nextAttempts)
-        if (nextAttempts >= FAILED_LOGIN_LIMIT) {
-          setPassword('')
-          setShaking(false)
-          setErrors({ email: '', password: '', general: loginLockAlert.message })
-          setShowLockAlert(true)
-          return
-        }
+      if (error.code === 'LOGIN_LOCKED') {
+        setLockedAccount({ email: normalizedEmail, retryAfterSeconds: error.retryAfterSeconds || 900 })
+        setPassword('')
+        setShaking(false)
+        setErrors({ email: '', password: '', general: loginLockAlert.message })
+        setShowLockAlert(true)
+        return
       }
       setErrors({
         email: '',
@@ -251,6 +249,7 @@ export default function Login({ onLogin }) {
   }
   const sendReset = async (event) => {
     event.preventDefault()
+    if (resetPending || resetMessage) return
     if (!/^\S+@\S+\.\S+$/.test(resetEmail.trim())) {
       setResetError('Enter a valid email address')
       return
@@ -258,17 +257,21 @@ export default function Login({ onLogin }) {
     setResetError('')
     setResetPending(true)
     try {
-      await apiRequest('/auth/forgot-password', {
+      const result = await apiRequest('/auth/forgot-password', {
         method: 'POST',
         body: JSON.stringify({ email: resetEmail.trim() })
       })
-      setResetOpen(false)
-      showToast('If that email has an account, a reset link was sent')
+      setResetMessage(result.message)
     } catch (error) {
       setResetError(error.message || 'We could not send the reset link. Please try again.')
     } finally {
       setResetPending(false)
     }
+  }
+
+  const closeReset = () => {
+    if (initialRecoveryOpen) navigate('login')
+    else setResetOpen(false)
   }
 
   return (
@@ -329,7 +332,7 @@ export default function Login({ onLogin }) {
                   <Icon name="mail" />
                   <input
                     ref={emailRef}
-                    disabled={pending || loginLocked}
+                    disabled={pending}
                     aria-labelledby="login-email-label"
                     aria-invalid={Boolean(errors.email)}
                     aria-describedby={errors.email ? 'login-email-error' : undefined}
@@ -406,10 +409,11 @@ export default function Login({ onLogin }) {
                   <button
                     className="forgot-link"
                     type="button"
-                    disabled={pending || loginLocked}
+                    disabled={pending}
                     onClick={() => {
                       setResetEmail(email)
                       setResetError('')
+                      setResetMessage('')
                       setResetOpen(true)
                     }}
                   >
@@ -431,25 +435,48 @@ export default function Login({ onLogin }) {
               <p className="lfoot">Need an account? Ask your gym admin to create one for you.</p>
         </section>
       </div>
-      {faceChallenge && (
-        <FacialLoginChallenge
-          challenge={faceChallenge}
-          onCancel={() => { setFaceChallenge(''); setPassword('') }}
-          onVerified={session => { setFaceChallenge(''); finishLogin(session); setFailedAttempts(0); setPassword('') }}
-        />
-      )}
+      <Suspense fallback={<HeartRateLoader message="Opening the next sign-in step" />}>
+        {termsTicket && (
+          <MemberTerms
+            ticket={termsTicket}
+            onCancel={() => setTermsTicket('')}
+            onAccepted={(challenge) => {
+              setTermsTicket('')
+              setFaceChallenge(challenge)
+            }}
+          />
+        )}
+        {faceChallenge && (
+          <FacialLoginChallenge
+            challenge={faceChallenge}
+            onCancel={() => setFaceChallenge('')}
+            onVerified={(session) => {
+              setFaceChallenge('')
+              finishLogin(session)
+            }}
+          />
+        )}
+      </Suspense>
       {showLockAlert && (
         <Dialog title={loginLockAlert.title} onClose={() => setShowLockAlert(false)} alert>
           <p className="modal-copy">{loginLockAlert.message}</p>
           <div className="ma">
-            <button className="btn" type="button" onClick={() => window.location.reload()} data-autofocus>
-              Refresh page
+            <button className="btn" type="button" onClick={() => setShowLockAlert(false)} data-autofocus>
+              Close
             </button>
           </div>
         </Dialog>
       )}
       {resetOpen && (
-        <Dialog title="Reset password" onClose={() => setResetOpen(false)} busy={resetPending}>
+        <Dialog title="Reset password" onClose={closeReset} busy={resetPending}>
+          {resetMessage ? (
+            <>
+              <p className="modal-copy" role="status">{resetMessage}</p>
+              <div className="ma">
+                <button className="btn" type="button" onClick={closeReset}>Done</button>
+              </div>
+            </>
+          ) : (
             <form onSubmit={sendReset}>
               <p className="modal-copy">
                 Enter your account email and we'll send you a reset link.
@@ -461,6 +488,7 @@ export default function Login({ onLogin }) {
                   data-autofocus
                   autoComplete="email"
                   required
+                  disabled={resetPending}
                   type="email"
                   placeholder="you@example.com"
                   aria-invalid={resetError === 'Enter a valid email address'}
@@ -473,18 +501,16 @@ export default function Login({ onLogin }) {
               <div className="ma">
                 <button className="btn" type="submit" disabled={resetPending}>
                   {resetPending && <Spinner />}
-                  {resetPending ? 'Sending...' : 'Send reset link'}
+                  {resetPending ? 'Sending...' : 'Send email'}
                 </button>
-                <button className="btn ghost cancel-button" type="button" onClick={() => setResetOpen(false)}>
+                <button className="btn ghost cancel-button" type="button" onClick={closeReset} disabled={resetPending}>
                   Cancel
                 </button>
               </div>
             </form>
+          )}
         </Dialog>
       )}
-      <div role="status" aria-live="polite" id="toast" className={`clay${toast ? ' show' : ''}`}>
-        {toast}
-      </div>
     </div>
   )
 }

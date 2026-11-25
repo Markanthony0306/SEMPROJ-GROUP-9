@@ -1,0 +1,220 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/AccountDeleteDialog.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=bdf2c8f1"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx");
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+var _s = $RefreshSig$();
+import __vite__cjsImport3_react from "/node_modules/.vite/deps/react.js?v=bdf2c8f1"; const useRef = __vite__cjsImport3_react["useRef"]; const useState = __vite__cjsImport3_react["useState"];
+import { useAuth } from "/src/auth/AuthContext.jsx";
+import { apiRequest } from "/src/utils/api.js";
+import Dialog from "/src/components/Dialog.jsx";
+import { gorillaEvents, RockyDeleteError, useGorilla } from "/src/components/gorilla/GorillaAssistant.jsx";
+export default function AccountDeleteDialog({ account, onClose, onDeleted }) {
+  _s();
+  const { token } = useAuth();
+  const { notify } = useGorilla() || {};
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const actionLock = useRef(false);
+  const remove = async (event) => {
+    event.preventDefault();
+    if (actionLock.current) return;
+    const values = new FormData(event.currentTarget);
+    if (values.get("confirmation") !== "DELETE") {
+      setError("Type DELETE to confirm account deletion.");
+      return;
+    }
+    actionLock.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await apiRequest(`/admin/members/${account.id}`, {
+        token,
+        method: "DELETE",
+        body: JSON.stringify({
+          confirmation: values.get("confirmation"),
+          currentPassword: values.get("currentPassword")
+        })
+      });
+      notify?.(gorillaEvents.memberDeleted(), result.notificationId);
+    } catch (cause) {
+      const message = cause.message || "Unable to delete the account. Please try again.";
+      setError(message);
+      notify?.({ type: "error", title: "Member deletion failed", message });
+      actionLock.current = false;
+      setBusy(false);
+      return;
+    }
+    onDeleted();
+  };
+  return /* @__PURE__ */ jsxDEV(
+    Dialog,
+    {
+      title: "Delete member account?",
+      busy,
+      onClose,
+      children: /* @__PURE__ */ jsxDEV("form", { className: "mf", onSubmit: remove, children: [
+        /* @__PURE__ */ jsxDEV("p", { className: "modal-copy", children: [
+          "Permanently delete ",
+          /* @__PURE__ */ jsxDEV("strong", { children: account.name }, void 0, false, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+            lineNumber: 79,
+            columnNumber: 30
+          }, this),
+          " (",
+          account.email,
+          "). Their login, profile, ID and face data, membership, payments, and attendance history will be removed. This cannot be undone."
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+          lineNumber: 78,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Your current password",
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              className: "clay-in",
+              name: "currentPassword",
+              type: "password",
+              autoComplete: "current-password",
+              required: true,
+              disabled: busy,
+              "data-autofocus": true
+            },
+            void 0,
+            false,
+            {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+              lineNumber: 85,
+              columnNumber: 11
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+          lineNumber: 83,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Type DELETE to confirm",
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              className: "clay-in",
+              name: "confirmation",
+              autoComplete: "off",
+              spellCheck: false,
+              pattern: "DELETE",
+              required: true,
+              disabled: busy
+            },
+            void 0,
+            false,
+            {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+              lineNumber: 98,
+              columnNumber: 11
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+          lineNumber: 96,
+          columnNumber: 9
+        }, this),
+        error && /* @__PURE__ */ jsxDEV(RockyDeleteError, { message: error }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+          lineNumber: 109,
+          columnNumber: 19
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "ma", children: [
+          /* @__PURE__ */ jsxDEV(
+            "button",
+            {
+              className: "btn ghost",
+              type: "button",
+              disabled: busy,
+              onClick: onClose,
+              children: "Cancel"
+            },
+            void 0,
+            false,
+            {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+              lineNumber: 112,
+              columnNumber: 11
+            },
+            this
+          ),
+          /* @__PURE__ */ jsxDEV(
+            "button",
+            {
+              className: "btn danger",
+              type: "submit",
+              disabled: busy,
+              children: busy ? "Deleting..." : "Delete account"
+            },
+            void 0,
+            false,
+            {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+              lineNumber: 121,
+              columnNumber: 11
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+          lineNumber: 111,
+          columnNumber: 9
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+        lineNumber: 77,
+        columnNumber: 7
+      }, this)
+    },
+    void 0,
+    false,
+    {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx",
+      lineNumber: 72,
+      columnNumber: 5
+    },
+    this
+  );
+}
+_s(AccountDeleteDialog, "Ngw0bQ66fe7eCGY/pg3RVHu2/r8=", false, function() {
+  return [useAuth, useGorilla];
+});
+_c = AccountDeleteDialog;
+var _c;
+$RefreshReg$(_c, "AccountDeleteDialog");
+if (import.meta.hot && !inWebWorker) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+if (import.meta.hot && !inWebWorker) {
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/AccountDeleteDialog.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJtYXBwaW5ncyI6IkFBMkQ2Qjs7Ozs7Ozs7Ozs7Ozs7Ozs7QUExRDdCLFNBQVNBLFFBQVFDLGdCQUFnQjtBQUNqQyxTQUFTQyxlQUFlO0FBQ3hCLFNBQVNDLGtCQUFrQjtBQUMzQixPQUFPQyxZQUFZO0FBQ25CLFNBQVNDLGVBQWVDLGtCQUFrQkMsa0JBQWtCO0FBRTVELHdCQUF3QkMsb0JBQW9CLEVBQUVDLFNBQVNDLFNBQVNDLFVBQVUsR0FBRztBQUFBQyxLQUFBO0FBQzNFLFFBQU0sRUFBRUMsTUFBTSxJQUFJWCxRQUFRO0FBQzFCLFFBQU0sRUFBRVksT0FBTyxJQUFJUCxXQUFXLEtBQUssQ0FBQztBQUNwQyxRQUFNLENBQUNRLE1BQU1DLE9BQU8sSUFBSWYsU0FBUyxLQUFLO0FBQ3RDLFFBQU0sQ0FBQ2dCLE9BQU9DLFFBQVEsSUFBSWpCLFNBQVMsRUFBRTtBQUNyQyxRQUFNa0IsYUFBYW5CLE9BQU8sS0FBSztBQUUvQixRQUFNb0IsU0FBUyxPQUFPQyxVQUFVO0FBQzlCQSxVQUFNQyxlQUFlO0FBQ3JCLFFBQUlILFdBQVdJLFFBQVM7QUFFeEIsVUFBTUMsU0FBUyxJQUFJQyxTQUFTSixNQUFNSyxhQUFhO0FBRS9DLFFBQUlGLE9BQU9HLElBQUksY0FBYyxNQUFNLFVBQVU7QUFDM0NULGVBQVMsMENBQTBDO0FBQ25EO0FBQUEsSUFDRjtBQUVBQyxlQUFXSSxVQUFVO0FBQ3JCUCxZQUFRLElBQUk7QUFDWkUsYUFBUyxFQUFFO0FBRVgsUUFBSTtBQUNGLFlBQU1VLFNBQVMsTUFBTXpCLFdBQVcsa0JBQWtCTSxRQUFRb0IsRUFBRSxJQUFJO0FBQUEsUUFDOURoQjtBQUFBQSxRQUNBaUIsUUFBUTtBQUFBLFFBQ1JDLE1BQU1DLEtBQUtDLFVBQVU7QUFBQSxVQUNuQkMsY0FBY1YsT0FBT0csSUFBSSxjQUFjO0FBQUEsVUFDdkNRLGlCQUFpQlgsT0FBT0csSUFBSSxpQkFBaUI7QUFBQSxRQUMvQyxDQUFDO0FBQUEsTUFDSCxDQUFDO0FBQ0RiLGVBQVNULGNBQWMrQixjQUFjLEdBQUdSLE9BQU9TLGNBQWM7QUFBQSxJQUMvRCxTQUFTQyxPQUFPO0FBQ2QsWUFBTUMsVUFBVUQsTUFBTUMsV0FBVztBQUNqQ3JCLGVBQVNxQixPQUFPO0FBQ2hCekIsZUFBUyxFQUFFMEIsTUFBTSxTQUFTQyxPQUFPLDBCQUEwQkYsUUFBUSxDQUFDO0FBQ3BFcEIsaUJBQVdJLFVBQVU7QUFDckJQLGNBQVEsS0FBSztBQUNiO0FBQUEsSUFDRjtBQUVBTCxjQUFVO0FBQUEsRUFDWjtBQUVBLFNBQ0U7QUFBQSxJQUFDO0FBQUE7QUFBQSxNQUNDLE9BQU07QUFBQSxNQUNOO0FBQUEsTUFDQTtBQUFBLE1BRUEsaUNBQUMsVUFBSyxXQUFVLE1BQUssVUFBVVMsUUFDN0I7QUFBQSwrQkFBQyxPQUFFLFdBQVUsY0FBYTtBQUFBO0FBQUEsVUFDTCx1QkFBQyxZQUFRWCxrQkFBUWlDLFFBQWpCO0FBQUE7QUFBQTtBQUFBO0FBQUEsaUJBQXNCO0FBQUEsVUFBUztBQUFBLFVBQUdqQyxRQUFRa0M7QUFBQUEsVUFBTTtBQUFBLGFBRHJFO0FBQUE7QUFBQTtBQUFBO0FBQUEsZUFHQTtBQUFBLFFBRUEsdUJBQUMsV0FBTSxXQUFVLFNBQVE7QUFBQTtBQUFBLFVBRXZCO0FBQUEsWUFBQztBQUFBO0FBQUEsY0FDQyxXQUFVO0FBQUEsY0FDVixNQUFLO0FBQUEsY0FDTCxNQUFLO0FBQUEsY0FDTCxjQUFhO0FBQUEsY0FDYjtBQUFBLGNBQ0EsVUFBVTVCO0FBQUFBLGNBQ1Ysa0JBQWM7QUFBQTtBQUFBLFlBUGhCO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxVQU9nQjtBQUFBLGFBVGxCO0FBQUE7QUFBQTtBQUFBO0FBQUEsZUFXQTtBQUFBLFFBRUEsdUJBQUMsV0FBTSxXQUFVLFNBQVE7QUFBQTtBQUFBLFVBRXZCO0FBQUEsWUFBQztBQUFBO0FBQUEsY0FDQyxXQUFVO0FBQUEsY0FDVixNQUFLO0FBQUEsY0FDTCxjQUFhO0FBQUEsY0FDYixZQUFZO0FBQUEsY0FDWixTQUFRO0FBQUEsY0FDUjtBQUFBLGNBQ0EsVUFBVUE7QUFBQUE7QUFBQUEsWUFQWjtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsVUFPaUI7QUFBQSxhQVRuQjtBQUFBO0FBQUE7QUFBQTtBQUFBLGVBV0E7QUFBQSxRQUVDRSxTQUFTLHVCQUFDLG9CQUFpQixTQUFTQSxTQUEzQjtBQUFBO0FBQUE7QUFBQTtBQUFBLGVBQWlDO0FBQUEsUUFFM0MsdUJBQUMsU0FBSSxXQUFVLE1BQ2I7QUFBQTtBQUFBLFlBQUM7QUFBQTtBQUFBLGNBQ0MsV0FBVTtBQUFBLGNBQ1YsTUFBSztBQUFBLGNBQ0wsVUFBVUY7QUFBQUEsY0FDVixTQUFTTDtBQUFBQSxjQUFRO0FBQUE7QUFBQSxZQUpuQjtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsVUFPQTtBQUFBLFVBRUE7QUFBQSxZQUFDO0FBQUE7QUFBQSxjQUNDLFdBQVU7QUFBQSxjQUNWLE1BQUs7QUFBQSxjQUNMLFVBQVVLO0FBQUFBLGNBRVRBLGlCQUFPLGdCQUFnQjtBQUFBO0FBQUEsWUFMMUI7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLFVBTUE7QUFBQSxhQWhCRjtBQUFBO0FBQUE7QUFBQTtBQUFBLGVBaUJBO0FBQUEsV0FuREY7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQW9EQTtBQUFBO0FBQUEsSUF6REY7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLEVBMERBO0FBRUo7QUFBQ0gsR0F6R3VCSixxQkFBbUI7QUFBQSxVQUN2Qk4sU0FDQ0ssVUFBVTtBQUFBO0FBQUEsS0FGUEM7QUFBbUIsSUFBQW9DO0FBQUEsYUFBQUEsSUFBQSIsIm5hbWVzIjpbInVzZVJlZiIsInVzZVN0YXRlIiwidXNlQXV0aCIsImFwaVJlcXVlc3QiLCJEaWFsb2ciLCJnb3JpbGxhRXZlbnRzIiwiUm9ja3lEZWxldGVFcnJvciIsInVzZUdvcmlsbGEiLCJBY2NvdW50RGVsZXRlRGlhbG9nIiwiYWNjb3VudCIsIm9uQ2xvc2UiLCJvbkRlbGV0ZWQiLCJfcyIsInRva2VuIiwibm90aWZ5IiwiYnVzeSIsInNldEJ1c3kiLCJlcnJvciIsInNldEVycm9yIiwiYWN0aW9uTG9jayIsInJlbW92ZSIsImV2ZW50IiwicHJldmVudERlZmF1bHQiLCJjdXJyZW50IiwidmFsdWVzIiwiRm9ybURhdGEiLCJjdXJyZW50VGFyZ2V0IiwiZ2V0IiwicmVzdWx0IiwiaWQiLCJtZXRob2QiLCJib2R5IiwiSlNPTiIsInN0cmluZ2lmeSIsImNvbmZpcm1hdGlvbiIsImN1cnJlbnRQYXNzd29yZCIsIm1lbWJlckRlbGV0ZWQiLCJub3RpZmljYXRpb25JZCIsImNhdXNlIiwibWVzc2FnZSIsInR5cGUiLCJ0aXRsZSIsIm5hbWUiLCJlbWFpbCIsIl9jIl0sImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIkFjY291bnREZWxldGVEaWFsb2cuanN4Il0sInNvdXJjZXNDb250ZW50IjpbIlxyXG5pbXBvcnQgeyB1c2VSZWYsIHVzZVN0YXRlIH0gZnJvbSAncmVhY3QnXHJcbmltcG9ydCB7IHVzZUF1dGggfSBmcm9tICcuLi9hdXRoL0F1dGhDb250ZXh0J1xyXG5pbXBvcnQgeyBhcGlSZXF1ZXN0IH0gZnJvbSAnLi4vdXRpbHMvYXBpJ1xyXG5pbXBvcnQgRGlhbG9nIGZyb20gJy4vRGlhbG9nJ1xyXG5pbXBvcnQgeyBnb3JpbGxhRXZlbnRzLCBSb2NreURlbGV0ZUVycm9yLCB1c2VHb3JpbGxhIH0gZnJvbSAnLi9nb3JpbGxhL0dvcmlsbGFBc3Npc3RhbnQnXHJcblxyXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbiBBY2NvdW50RGVsZXRlRGlhbG9nKHsgYWNjb3VudCwgb25DbG9zZSwgb25EZWxldGVkIH0pIHtcclxuICBjb25zdCB7IHRva2VuIH0gPSB1c2VBdXRoKClcclxuICBjb25zdCB7IG5vdGlmeSB9ID0gdXNlR29yaWxsYSgpIHx8IHt9XHJcbiAgY29uc3QgW2J1c3ksIHNldEJ1c3ldID0gdXNlU3RhdGUoZmFsc2UpXHJcbiAgY29uc3QgW2Vycm9yLCBzZXRFcnJvcl0gPSB1c2VTdGF0ZSgnJylcclxuICBjb25zdCBhY3Rpb25Mb2NrID0gdXNlUmVmKGZhbHNlKVxyXG5cclxuICBjb25zdCByZW1vdmUgPSBhc3luYyAoZXZlbnQpID0+IHtcclxuICAgIGV2ZW50LnByZXZlbnREZWZhdWx0KClcclxuICAgIGlmIChhY3Rpb25Mb2NrLmN1cnJlbnQpIHJldHVyblxyXG5cclxuICAgIGNvbnN0IHZhbHVlcyA9IG5ldyBGb3JtRGF0YShldmVudC5jdXJyZW50VGFyZ2V0KVxyXG5cclxuICAgIGlmICh2YWx1ZXMuZ2V0KCdjb25maXJtYXRpb24nKSAhPT0gJ0RFTEVURScpIHtcclxuICAgICAgc2V0RXJyb3IoJ1R5cGUgREVMRVRFIHRvIGNvbmZpcm0gYWNjb3VudCBkZWxldGlvbi4nKVxyXG4gICAgICByZXR1cm5cclxuICAgIH1cclxuXHJcbiAgICBhY3Rpb25Mb2NrLmN1cnJlbnQgPSB0cnVlXHJcbiAgICBzZXRCdXN5KHRydWUpXHJcbiAgICBzZXRFcnJvcignJylcclxuXHJcbiAgICB0cnkge1xyXG4gICAgICBjb25zdCByZXN1bHQgPSBhd2FpdCBhcGlSZXF1ZXN0KGAvYWRtaW4vbWVtYmVycy8ke2FjY291bnQuaWR9YCwge1xyXG4gICAgICAgIHRva2VuLFxyXG4gICAgICAgIG1ldGhvZDogJ0RFTEVURScsXHJcbiAgICAgICAgYm9keTogSlNPTi5zdHJpbmdpZnkoe1xyXG4gICAgICAgICAgY29uZmlybWF0aW9uOiB2YWx1ZXMuZ2V0KCdjb25maXJtYXRpb24nKSxcclxuICAgICAgICAgIGN1cnJlbnRQYXNzd29yZDogdmFsdWVzLmdldCgnY3VycmVudFBhc3N3b3JkJylcclxuICAgICAgICB9KVxyXG4gICAgICB9KVxyXG4gICAgICBub3RpZnk/Lihnb3JpbGxhRXZlbnRzLm1lbWJlckRlbGV0ZWQoKSwgcmVzdWx0Lm5vdGlmaWNhdGlvbklkKVxyXG4gICAgfSBjYXRjaCAoY2F1c2UpIHtcclxuICAgICAgY29uc3QgbWVzc2FnZSA9IGNhdXNlLm1lc3NhZ2UgfHwgJ1VuYWJsZSB0byBkZWxldGUgdGhlIGFjY291bnQuIFBsZWFzZSB0cnkgYWdhaW4uJ1xyXG4gICAgICBzZXRFcnJvcihtZXNzYWdlKVxyXG4gICAgICBub3RpZnk/Lih7IHR5cGU6ICdlcnJvcicsIHRpdGxlOiAnTWVtYmVyIGRlbGV0aW9uIGZhaWxlZCcsIG1lc3NhZ2UgfSlcclxuICAgICAgYWN0aW9uTG9jay5jdXJyZW50ID0gZmFsc2VcclxuICAgICAgc2V0QnVzeShmYWxzZSlcclxuICAgICAgcmV0dXJuXHJcbiAgICB9XHJcblxyXG4gICAgb25EZWxldGVkKClcclxuICB9XHJcblxyXG4gIHJldHVybiAoXHJcbiAgICA8RGlhbG9nXHJcbiAgICAgIHRpdGxlPVwiRGVsZXRlIG1lbWJlciBhY2NvdW50P1wiXHJcbiAgICAgIGJ1c3k9e2J1c3l9XHJcbiAgICAgIG9uQ2xvc2U9e29uQ2xvc2V9XHJcbiAgICA+XHJcbiAgICAgIDxmb3JtIGNsYXNzTmFtZT1cIm1mXCIgb25TdWJtaXQ9e3JlbW92ZX0+XHJcbiAgICAgICAgPHAgY2xhc3NOYW1lPVwibW9kYWwtY29weVwiPlxyXG4gICAgICAgICAgUGVybWFuZW50bHkgZGVsZXRlIDxzdHJvbmc+e2FjY291bnQubmFtZX08L3N0cm9uZz4gKHthY2NvdW50LmVtYWlsfSkuXHJcbiAgICAgICAgICBUaGVpciBsb2dpbiwgcHJvZmlsZSwgSUQgYW5kIGZhY2UgZGF0YSwgbWVtYmVyc2hpcCwgcGF5bWVudHMsIGFuZCBhdHRlbmRhbmNlIGhpc3Rvcnkgd2lsbCBiZSByZW1vdmVkLiBUaGlzIGNhbm5vdCBiZSB1bmRvbmUuXHJcbiAgICAgICAgPC9wPlxyXG5cclxuICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZmllbGRcIj5cclxuICAgICAgICAgIFlvdXIgY3VycmVudCBwYXNzd29yZFxyXG4gICAgICAgICAgPGlucHV0XHJcbiAgICAgICAgICAgIGNsYXNzTmFtZT1cImNsYXktaW5cIlxyXG4gICAgICAgICAgICBuYW1lPVwiY3VycmVudFBhc3N3b3JkXCJcclxuICAgICAgICAgICAgdHlwZT1cInBhc3N3b3JkXCJcclxuICAgICAgICAgICAgYXV0b0NvbXBsZXRlPVwiY3VycmVudC1wYXNzd29yZFwiXHJcbiAgICAgICAgICAgIHJlcXVpcmVkXHJcbiAgICAgICAgICAgIGRpc2FibGVkPXtidXN5fVxyXG4gICAgICAgICAgICBkYXRhLWF1dG9mb2N1c1xyXG4gICAgICAgICAgLz5cclxuICAgICAgICA8L2xhYmVsPlxyXG5cclxuICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZmllbGRcIj5cclxuICAgICAgICAgIFR5cGUgREVMRVRFIHRvIGNvbmZpcm1cclxuICAgICAgICAgIDxpbnB1dFxyXG4gICAgICAgICAgICBjbGFzc05hbWU9XCJjbGF5LWluXCJcclxuICAgICAgICAgICAgbmFtZT1cImNvbmZpcm1hdGlvblwiXHJcbiAgICAgICAgICAgIGF1dG9Db21wbGV0ZT1cIm9mZlwiXHJcbiAgICAgICAgICAgIHNwZWxsQ2hlY2s9e2ZhbHNlfVxyXG4gICAgICAgICAgICBwYXR0ZXJuPVwiREVMRVRFXCJcclxuICAgICAgICAgICAgcmVxdWlyZWRcclxuICAgICAgICAgICAgZGlzYWJsZWQ9e2J1c3l9XHJcbiAgICAgICAgICAvPlxyXG4gICAgICAgIDwvbGFiZWw+XHJcblxyXG4gICAgICAgIHtlcnJvciAmJiA8Um9ja3lEZWxldGVFcnJvciBtZXNzYWdlPXtlcnJvcn0gLz59XHJcblxyXG4gICAgICAgIDxkaXYgY2xhc3NOYW1lPVwibWFcIj5cclxuICAgICAgICAgIDxidXR0b25cclxuICAgICAgICAgICAgY2xhc3NOYW1lPVwiYnRuIGdob3N0XCJcclxuICAgICAgICAgICAgdHlwZT1cImJ1dHRvblwiXHJcbiAgICAgICAgICAgIGRpc2FibGVkPXtidXN5fVxyXG4gICAgICAgICAgICBvbkNsaWNrPXtvbkNsb3NlfVxyXG4gICAgICAgICAgPlxyXG4gICAgICAgICAgICBDYW5jZWxcclxuICAgICAgICAgIDwvYnV0dG9uPlxyXG5cclxuICAgICAgICAgIDxidXR0b25cclxuICAgICAgICAgICAgY2xhc3NOYW1lPVwiYnRuIGRhbmdlclwiXHJcbiAgICAgICAgICAgIHR5cGU9XCJzdWJtaXRcIlxyXG4gICAgICAgICAgICBkaXNhYmxlZD17YnVzeX1cclxuICAgICAgICAgID5cclxuICAgICAgICAgICAge2J1c3kgPyAnRGVsZXRpbmcuLi4nIDogJ0RlbGV0ZSBhY2NvdW50J31cclxuICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgIDwvZGl2PlxyXG4gICAgICA8L2Zvcm0+XHJcbiAgICA8L0RpYWxvZz5cclxuICApXHJcbn1cclxuIl0sImZpbGUiOiJDOi9Vc2Vycy9nZWV6ZS9Eb3dubG9hZHMvTEFORElORy1QQUdFL3NyYy9jb21wb25lbnRzL0FjY291bnREZWxldGVEaWFsb2cuanN4In0=

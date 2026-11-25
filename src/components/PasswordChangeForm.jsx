@@ -18,15 +18,17 @@ export default function PasswordChangeForm() {
     if (pending) return
     setError('')
     setMessage('')
-    if (!passwordPolicy(values.password)) {
+    // Password managers can fill the inputs without firing a React change event.
+    const { currentPassword, password, confirmPassword } = Object.fromEntries(new FormData(event.currentTarget))
+    if (!passwordPolicy(password)) {
       setError(passwordPolicyMessage)
       return
     }
-    if (values.password !== values.confirmPassword) {
+    if (password !== confirmPassword) {
       setError('The new passwords do not match.')
       return
     }
-    if (values.password === values.currentPassword) {
+    if (password === currentPassword) {
       setError('Choose a password different from your current password.')
       return
     }
@@ -35,11 +37,7 @@ export default function PasswordChangeForm() {
       const result = await apiRequest('/profile/change-password', {
         token,
         method: 'POST',
-        body: JSON.stringify({
-          currentPassword: values.currentPassword,
-          password: values.password,
-          confirmPassword: values.confirmPassword
-        })
+        body: JSON.stringify({ currentPassword, password, confirmPassword })
       })
       if (result.session) login(result.session)
       setValues({ currentPassword: '', password: '', confirmPassword: '' })

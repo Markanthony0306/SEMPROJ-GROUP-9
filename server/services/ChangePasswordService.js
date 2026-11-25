@@ -31,7 +31,7 @@ export class ChangePasswordService {
       throw new ChangePasswordError(this.passwordPolicyMessage, 400)
     }
 
-    if (confirmPassword !== undefined && confirmPassword !== password) {
+    if (confirmPassword !== password) {
       throw new ChangePasswordError('The new passwords do not match.', 400)
     }
 

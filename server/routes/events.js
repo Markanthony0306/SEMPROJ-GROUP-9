@@ -18,11 +18,11 @@ export function eventRoutes({
 
   // Native EventSource cannot attach the existing Authorization header.
   router.post('/events/ticket', authenticate, (req, res) => {
-    const { id, role, authVersion, faceVerified, exp } = req.user
+    const { id, role, authVersion, termsVersion, exp } = req.user
     if (!allowed(role)) return res.sendStatus(403)
     const expiresAt = Math.min(exp, Math.floor(Date.now() / 1000) + TICKET_SECONDS)
     const ticket = jwt.sign(
-      { id, role, authVersion, faceVerified, exp: expiresAt, sessionExp: exp, purpose: AUDIENCE },
+      { id, role, authVersion, termsVersion, exp: expiresAt, sessionExp: exp, purpose: AUDIENCE },
       jwtSecret,
       { algorithm: 'HS256', audience: AUDIENCE }
     )

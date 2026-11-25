@@ -1,0 +1,267 @@
+GATE: OPEN 59 (rounds used up)
+
+Table spacing verification: passed.
+Production build: npm run build passed.
+Existing rendering checks: node scripts/test-ui-render.mjs passed.
+Source diff checks: passed.
+Reviewed ten admin/table variants at 1440, 1024, 820, 768, 390, and 320 pixels.
+Reviewed member attendance, payment, and empty tables at 390 and 320 pixels.
+Geometry checks covered toolbar containment, control heights, overlapping controls, cell padding, action spacing, readable member/name and maintenance columns, page overflow, and member-card overflow.
+
+Scope: existing FitPulse software dashboard. Kept the existing clay palette, typography, controls, copy, and app structure. No dependencies or application assets were added. The preview uses isolated fixture data without API requests.
+Full live authentication/database behavior and a separate performance audit were not checked for this spacing change.
+The broad design gate evaluates the isolated preview using landing-page rules. Findings include its missing hero/nav/visuals, fixture contacts, existing button styles, and intentional table scrolling. No waivers were added.
+
+Open design gate findings:
+1. hero-fill: div.app.admin-app > main > article.card.clay:nth-of-type(2) "Payment History"
+   the next section shows on the first screen: it starts at 647px on a 900px screen (the hero ends at 604px)
+   Suggested by checker: let the hero fill the first screen alone (min-height: 100svh, less above it): nothing of the next section on load
+2. placeholder: table > tbody > tr:nth-of-type(1) > td:nth-of-type(3) "alexandra.delacruz@fixture.test Fixture "
+   a stand-in contact printed on the page ("alexandra.delacruz@fixture.test"): no visitor can use it (and 1 more like it: "christopher.alexander.sa")
+   Suggested by checker: print the real address and number, or a form or a button that names the action: never an example.com address or a number of zeros
+3. nav: (the first screen)
+   no nav bar across the top of the first screen (a header with the brand, the section links and the main action)
+   Suggested by checker: make the nav one bar from the content's left edge to its right edge, with every link and action inside it
+4. no-visual: div.app.admin-app > main > article.card.clay:nth-of-type(1) "Member Records"
+   no picture, effect or mock in this section; a feature section needs a visual
+   Suggested by checker: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+5. no-visual: div.app.admin-app > main > article.card.clay:nth-of-type(2) "Payment History"
+   no picture, effect or mock in this section; a feature section needs a visual
+   Suggested by checker: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+6. no-visual: div.app.admin-app > main > article.card.clay:nth-of-type(3) "Entrance check-ins"
+   no picture, effect or mock in this section; a feature section needs a visual
+   Suggested by checker: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+7. no-visual: div.app.admin-app > main > article.card.clay:nth-of-type(4) "Equipment Monitoring"
+   no picture, effect or mock in this section; a feature section needs a visual
+   Suggested by checker: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+8. no-visual: div.app.admin-app > main > article.card.clay:nth-of-type(5) "Maintenance & Repair Log"
+   no picture, effect or mock in this section; a feature section needs a visual
+   Suggested by checker: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+9. no-visual: div.app.admin-app > main > article.card.clay:nth-of-type(6) "Active 2 Expired 0 Attendance 1 Payment "
+   no picture, effect or mock in this section; a feature section needs a visual
+   Suggested by checker: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+10. text-only: div.app.admin-app > main > article.card.clay:nth-of-type(10) "Empty table"
+   the closing section is only text: no picture, icon, mock or effect in it
+   Suggested by checker: give the section a visual: a photograph that fits, the real icons, or a UI fragment on a ground
+11. button-styles: (one screen)
+   3 button styles on one screen: pill, fill gradient ("Create Account"); pill, fill #d62828 ("Delete"); pill, fill #f5f8fd ("Export CSV"); the odd one out: "Export CSV"
+   Suggested by checker: one primary and one secondary button: one shape, one height per size, one label size
+12. button-styles: (the page)
+   3 button styles on the page: pill, fill gradient x9 ("Create Account"); pill, fill #d62828 x3 ("Delete"); pill, fill #f5f8fd x3 ("Export CSV")
+   Suggested by checker: one primary and one secondary button: one shape, one height per size, one label size
+13. cta: div.app.admin-app > main > article.card.clay:nth-of-type(10) "Empty table"
+   the last section before the footer ends with no button
+   Suggested by checker: add the action: a button in the hero, one on every priced item, one in the closing section
+14. copy-headline: (the page)
+   the page has no visible h1
+   Suggested by checker: put the category noun in the h1 (and who it is for, or where), in 2 to 8 words
+15. copy-headings: article.card.clay:nth-of-type(3) > div.record-section-heading > div > h2 "Entrance check-ins"
+   "Entrance check-ins" names no product, part, place or section (4 headings like it; at most one brand line per page) (and 3 more like it: "Equipment Monitoring", "Maintenance & Repair Log", "Empty table")
+   Suggested by checker: name the thing in every heading: the product, a part, the place or a section noun
+16. copy-actions: tr:nth-of-type(2) > td.acts.member-record-actions > div.table-cell-actions > button.btn.sm "Delete"
+   3 actions in the hero ("Create Account", "Delete", "Delete"); at most 2
+   Suggested by checker: few actions, one wording: at most 2 in the hero, the main action word for word in nav, hero and close
+17. contrast: tr:nth-of-type(1) > td:nth-of-type(2) > div.member-table-person > span.av "AD"
+   body text over a effect reads at 2.0:1 at its worst tenth (needs 4.5:1) (and 9 more like it: "CA", "Clear all data", "Clear all data", "AD", ...)
+   Suggested by checker: put the text on a calm part of the picture, or on a solid panel
+18. text-contrast: main > article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in "Search"
+   a caption, label or muted line in #566d80 on #d5dfee reads 4.01:1 (needs 4.5:1)
+   Suggested by checker: body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels
+19. text-contrast: tbody > tr:nth-of-type(1) > td:nth-of-type(6) > span.pill.p-ok "Active"
+   a caption, label or muted line in #ffffff on #2a9d5c reads 3.46:1 (needs 4.5:1); 2 like it, like "Active"
+   Suggested by checker: body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels
+20. text-contrast: tbody > tr > td:nth-of-type(5) > span.pill.p-warn "GCash"
+   a caption, label or muted line in #ffffff on #f77f00 reads 2.63:1 (needs 4.5:1)
+   Suggested by checker: body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels
+21. section-tile: div.app.admin-app > main > article.card.clay:nth-of-type(5) "Maintenance & Repair Log"
+   the section is 344px tall (0.38 screens at 1440x900), shorter than the screen: its tile (the screen from its top) shows 344px of it and 530px of the next section ("Active 2 Expired 0 Attendance "), its picture on screen
+   Suggested by checker: set every section after the hero to one screen or two (height: calc(var(--h,1) * 100vh)) and fit its content above --padb
+22. field-label: tbody > tr > td:nth-of-type(2) > select.clay-in
+   a select[type=select-one] without a label you can see: only an aria-label names it
+   Suggested by checker: put a <label for> with the field's name above it (references/system.md, Forms); a placeholder is no label
+23. field-label: tbody > tr > td:nth-of-type(3) > select.clay-in
+   a select[type=select-one] without a label you can see: nothing names it
+   Suggested by checker: put a <label for> with the field's name above it (references/system.md, Forms); a placeholder is no label
+24. focus-visible: article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > label.sbox.clay-in > input
+   Tab stop 1, input "": it shows no change when focused
+   Suggested by checker: keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus
+25. focus-visible: main > article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > button.btn "Create Account"
+   Tab stop 2, button "Create Account": its focus change is faint: 2.47:1 against the ground, 3:1 needed
+   Suggested by checker: keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus
+26. focus-visible: div.data-table:nth-of-type(2) > div.table-toolbar:nth-of-type(1) > label.table-sort.table-sort-field:nth-of-type(1) > select "Original order ID Name Contact Plan Expi"
+   Tab stop 3, select "Original order ID Name Contact Plan Expires Status": its focus change is faint: 2.47:1 against the ground, 3:1 needed
+   Suggested by checker: keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus
+27. focus-visible: div.data-table:nth-of-type(2) > div.table-toolbar:nth-of-type(1) > label.table-sort.table-sort-order:nth-of-type(2) > select "Ascending Descending"
+   Tab stop 4, select "Ascending Descending": its focus change is faint: 2.47:1 against the ground, 3:1 needed
+   Suggested by checker: keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus
+28. moment-none: (the page)
+   a software page (--type) deals no moment: every kind carries one, two on a long page (moments.md)
+   Suggested by checker: deal one (moments.mjs pick --page software) and mount it in its own section
+29. hero-screen: div.app.admin-app > main > article.card.clay:nth-of-type(1) "Member RecordsSearch Create AccountRecor"
+   the hero ends at 604px on a 900px screen, 296px above the fold: it ends at the fold, 1px either way (SR-1)
+   Suggested by checker: make the hero exactly one screen (height: 100svh, its content fitted inside), never taller or shorter
+30. hero-screen: div.app.admin-app > main > article.card.clay:nth-of-type(2) "Payment HistoryExport CSVRecord PaymentC"
+   280px of the next section shows on the first screen (from 620px on a 900px screen): nothing below the hero shows at load (SR-1)
+   Suggested by checker: end the hero at the fold so nothing of the next section shows at load (hero height: 100svh)
+31. section-height: div.app.admin-app > main > article.card.clay:nth-of-type(7) "Member attendanceSearch recordsRecordsOr"
+   the section is 295px tall (0.3 screens), 605px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)
+   Suggested by checker: set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit
+32. section-height: div.app.admin-app > main > article.card.clay:nth-of-type(8) "Member paymentsSearch recordsRecordsOrig"
+   the section is 295px tall (0.3 screens), 605px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)
+   Suggested by checker: set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit
+33. section-height: div.app.admin-app > main > article.card.clay:nth-of-type(10) "Empty tableSearch recordsRecordsOriginal"
+   the section is 323px tall (0.4 screens), 577px short of one screen (900px): every section after the hero is one screen or two, 2px either way (and 6 more like it: "Payment HistoryExport CS", "Entrance check-insClear ", "Equipment MonitoringAdd ") (SR-2)
+   Suggested by checker: set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit
+34. section-height: div.app.admin-app > main > article.card.clay:nth-of-type(4) "Equipment MonitoringAdd EquipmentSearch "
+   the section starts at 1338px, 438px below the screen grid (1 x 900px): sections start on whole screens (SR-2)
+   Suggested by checker: make every section above it exactly one or two screens tall, so this one starts on a whole screen
+35. section-height: div.app.admin-app > main > article.card.clay:nth-of-type(9) "Renewal history in a narrow dialogRecord"
+   the section starts at 3226px, 374px above the screen grid (4 x 900px): sections start on whole screens (SR-2)
+   Suggested by checker: make every section above it exactly one or two screens tall, so this one starts on a whole screen
+36. section-height: div.app.admin-app > main > article.card.clay:nth-of-type(2) "Payment HistoryExport CSVRecord PaymentC"
+   the section starts at 620px, 280px above the screen grid (1 x 900px): sections start on whole screens (and 7 more like it: "Active2Expired0Attendanc", "Member paymentsSearch re", "Maintenance & Repair Log") (SR-2)
+   Suggested by checker: make every section above it exactly one or two screens tall, so this one starts on a whole screen
+37. section-height: div.app.admin-app > main > article.card.clay:nth-of-type(6) "Active2Expired0Attendance1Payment1Renewa"
+   the section's content does not fit it: its lowest content ends 503px below its top, past 458px (the section less 72px of bottom padding) (SR-2)
+   Suggested by checker: fit the content above the section's bottom padding (--padb), or make it two screens (.g2) in two groups
+38. one-section: main > article.card.clay:nth-of-type(5) > div.record-section-heading > h2 "Maintenance & Repair Log"
+   the screen at scroll 1338px (the top of section 4) shows 344px of section 5 and the heading of section 5 whole and the content of 3 sections, over 24px each beside section 4: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)
+   Suggested by checker: make each section exactly one screen or two, so a screen shows one section and no neighbour peeks
+39. one-section: main > article.card.clay:nth-of-type(2) > div.record-section-heading > h2 "Payment History"
+   the screen at scroll 67px (the top of section 1) shows 343px of section 2 and the heading of section 2 whole and the content of 2 sections, over 24px each beside section 1: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)
+   Suggested by checker: make each section exactly one screen or two, so a screen shows one section and no neighbour peeks
+40. one-section: article.card.clay:nth-of-type(3) > div.record-section-heading > div > h2 "Entrance check-ins"
+   the screen at scroll 620px (the top of section 2) shows 343px of section 3 and the heading of section 3 whole and the content of 3 sections, over 24px each beside section 2: a screen shows one section (another may peek 8px, 24px WARN) (and 7 more like it: scroll 900px, scroll 3037px, scroll 2058px) (SR-4)
+   Suggested by checker: make each section exactly one screen or two, so a screen shows one section and no neighbour peeks
+41. one-section: div.app.admin-app > main > article.card.clay:nth-of-type(1) "Member RecordsSearch Create AccountRecor"
+   a <article> sits directly in <main>: every part of <main> is a <section> (SR-4)
+   Suggested by checker: put every block of <main> in a <section>, and give a band its own section instead of a ground inside one
+42. one-section: div.app.admin-app > main > article.card.clay:nth-of-type(2) "Payment HistoryExport CSVRecord PaymentC"
+   a <article> sits directly in <main>: every part of <main> is a <section> (SR-4)
+   Suggested by checker: put every block of <main> in a <section>, and give a band its own section instead of a ground inside one
+43. one-section: div.app.admin-app > main > article.card.clay:nth-of-type(3) "Entrance check-insClear all dataSearch r"
+   a <article> sits directly in <main>: every part of <main> is a <section> (and 8 more like it: "Equipment MonitoringAdd ", "Maintenance & Repair Log", "Active2Expired0Attendanc") (SR-4)
+   Suggested by checker: put every block of <main> in a <section>, and give a band its own section instead of a ground inside one
+44. one-heading: div.app.admin-app > main > article.card.clay:nth-of-type(1) > h2 "Member Records"
+   the hero holds an h2 (1): its heading is the h1, and an h2 opens the next section (SR-5)
+   Suggested by checker: give each section one h2, first in its .wrap, and the hero only its h1
+45. one-heading: main > article.card.clay:nth-of-type(2) > div.record-section-heading > h2 "Payment History"
+   headings of two sections show whole on one screen at 46 of 61 scroll positions (75.4%; at scroll 0, 50, 150, 200px), here with "Member Records": at most 3% on a desktop (SR-5)
+   Suggested by checker: make the sections one screen tall so their headings sit a screen apart and two never share one
+46. container-edges: div.app.admin-app > main > article.card.clay:nth-of-type(1) "Member RecordsSearch Create AccountRecor"
+   the content of section 1 runs 291px from the left and 43px from the right (read from its outermost blocks: no .wrap): 291 and 43px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)
+   Suggested by checker: use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone
+47. container-edges: div.app.admin-app > main > article.card.clay:nth-of-type(2) "Payment HistoryExport CSVRecord PaymentC"
+   the content of section 2 runs 291px from the left and 43px from the right (read from its outermost blocks: no .wrap): 291 and 43px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)
+   Suggested by checker: use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone
+48. container-edges: div.app.admin-app > main > article.card.clay:nth-of-type(3) "Entrance check-insClear all dataSearch r"
+   the content of section 3 runs 291px from the left and 43px from the right (read from its outermost blocks: no .wrap): 291 and 43px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (and 7 more like it: "Equipment MonitoringAdd ", "Maintenance & Repair Log", "Active2Expired0Attendanc") (SR-6)
+   Suggested by checker: use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone
+49. container-edges: pre#qa-result "PASS: {"width":1440,"tables":10,"failure"
+   a <pre> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)
+   Suggested by checker: build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing
+50. container-edges: div.app.admin-app "FitPulse table spacing previewMember Rec"
+   a <div> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)
+   Suggested by checker: build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing
+51. container-edges: main > article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in "Search"
+   1 text block starts on a left line at x 306, 15px from the container's left: text starts on the container's left, or on one split line (x 762, 856, 950) (SR-6)
+   Suggested by checker: start the text on the container's left, or on the one split line every split shares
+52. row-lines: main > article.card.clay:nth-of-type(9) > div.data-table > div.table-wrap "RecordsPlan ↕Amount ↕Method ↕Date ↕Month"
+   a sideways scroller: 82px of it hidden behind overflow-x: auto (SR-7)
+   Suggested by checker: show every item inside the container, or stack them: no sideways scroller, no half-cut carousel
+53. cut-text: table > tbody > tr > td:nth-of-type(3) "GCash"
+   runs past the edge of its box div.app.admin-app > main > article.card.clay:nth-of-type(9)
+   Suggested by checker: give the text room: no overflow clipping a line, no line past its box
+54. no-visual: div.app.admin-app > main > article.card.clay:nth-of-type(7) "Member attendance"
+   no picture, effect or mock in this section; a feature section needs a visual
+   Suggested by checker: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+55. no-visual: div.app.admin-app > main > article.card.clay:nth-of-type(8) "Member payments"
+   no picture, effect or mock in this section; a feature section needs a visual
+   Suggested by checker: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+56. no-visual: div.app.admin-app > main > article.card.clay:nth-of-type(9) "Renewal history in a narrow dialog"
+   no picture, effect or mock in this section; a feature section needs a visual
+   Suggested by checker: give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits
+57. off-grid: pre#qa-result "PASS: {"width":390,"tables":10,"failures"
+   left edge at 16px, 23px off the page margin at 39px (53 elements, like h2)
+   Suggested by checker: move it onto the page margin, or the column edge its section uses
+58. off-viewport: div.app.admin-app > aside.clay "FitPulse table spacing preview"
+   at 320px wide it runs 324px past the screen's left edge (cut there: the page clips what runs past it)
+   Suggested by checker: keep it inside the screen at this width: let it shrink, wrap or stack
+59. container: page
+   no .wrap
+   Suggested by checker: put the content in one .wrap
+
+Warnings:
+1. flush: div.table-wrap > table > tbody > tr:nth-of-type(2) "FP-002 CA Christopher Alexander Santos c"
+   its last line sits 27px above the lower edge of article.card.clay:nth-of-type(1), where the ground changes to article.card.clay:nth-of-type(2)
+2. flush: article.card.clay:nth-of-type(2) > div.record-section-heading > div.record-section-actions > button.btn.ghost "Export CSV"
+   its first line sits 27px under the top edge of article.card.clay:nth-of-type(2), where the ground changes
+3. flush: main > article.card.clay:nth-of-type(3) > div.record-section-heading > button.btn.report-clear-button "Clear all data"
+   its first line sits 27px under the top edge of article.card.clay:nth-of-type(3), where the ground changes
+4. flush: main > article.card.clay:nth-of-type(4) > div.record-section-heading > button.btn "Add Equipment"
+   its first line sits 27px under the top edge of article.card.clay:nth-of-type(4), where the ground changes
+5. flush: main > article.card.clay:nth-of-type(5) > div.record-section-heading > button.btn.report-clear-button "Clear all data"
+   its first line sits 27px under the top edge of article.card.clay:nth-of-type(5), where the ground changes
+6. flush: article.card.clay:nth-of-type(6) > div.report-heading > div.report-tabs > button:nth-of-type(1) "Active 2"
+   its first line sits 27px under the top edge of article.card.clay:nth-of-type(6), where the ground changes
+7. flush: main > article.card.clay:nth-of-type(6) > div.report-total > strong "2 active memberships"
+   its last line sits 27px above the lower edge of article.card.clay:nth-of-type(6), where the ground changes to article.card.clay:nth-of-type(7)
+8. flush: div.app.admin-app > main > article.card.clay:nth-of-type(7) > h2 "Member attendance"
+   its first line sits 27px under the top edge of article.card.clay:nth-of-type(7), where the ground changes
+9. flush: div.app.admin-app > main > article.card.clay:nth-of-type(8) > h2 "Member payments"
+   its first line sits 27px under the top edge of article.card.clay:nth-of-type(8), where the ground changes
+10. flush: div.app.admin-app > main > article.card.clay:nth-of-type(9) > h2 "Renewal history in a narrow dialog"
+   its first line sits 27px under the top edge of article.card.clay:nth-of-type(9), where the ground changes
+11. flush: div.app.admin-app > main > article.card.clay:nth-of-type(10) > h2 "Empty table"
+   its first line sits 27px under the top edge of article.card.clay:nth-of-type(10), where the ground changes
+12. fold-card: div.app.admin-app > aside.clay "FitPulse table spacing preview"
+   the 232x868 card starts on the first screen and runs 35px past its bottom (inside a held section or scroll scene, whose motion --quick does not check)
+13. pinned: div.app.admin-app > aside.clay "FitPulse table spacing preview"
+   held on screen for 3.3 screens of scroll (position: sticky) while the page moves on (a narrow sticky column)
+14. copy-buttons: tr:nth-of-type(1) > td.acts.member-record-actions > div.table-cell-actions > button.btn.sm "Delete"
+   "Delete" does not start with a verb (book, buy, try, start, get, see...) (and 5 more like it: "Export CSV", "Record Payment", "Clear all data", "Inspected", ...)
+15. copy-actions: (the page)
+   the main action "Explore reports" does not read word for word the same in the nav or hero and the closing section
+16. heading-scale: (the page)
+   the page has no visible h1
+17. stranded-action: article.card.clay:nth-of-type(2) > div.record-section-heading > div.record-section-actions > button.btn.ghost "Export CSV"
+   stands 546px across from the nearest text of its block ("Payment History") (and 5 more like it: "Record Payment", "Clear all data", "Clear all data", "Add Equipment", ...)
+18. button-contrast: article.card.clay:nth-of-type(2) > div.record-section-heading > div.record-section-actions > button.btn.ghost "Export CSV"
+   the button "Export CSV" (#f5f8fd) stands only 1.03:1 off the ground around it: it reads as part of the ground, or as switched off
+19. button-contrast: tr > td.acts > div.table-cell-actions > button.btn.sm:nth-of-type(2) "Log repair"
+   the button "Log repair" (#f5f8fd) stands only 1.07:1 off the ground around it: it reads as part of the ground, or as switched off
+20. button-contrast: article.card.clay:nth-of-type(6) > div.report-heading > div.report-heading-actions > button.btn.ghost "Export CSV"
+   the button "Export CSV" (#f5f8fd) stands only 1.02:1 off the ground around it: it reads as part of the ground, or as switched off
+21. one-screen: div.app.admin-app > main > article.card.clay:nth-of-type(6) "Active 2 Expired 0 Attendance 1 Payment "
+   1 section is shorter than the screen, so the next one's heading or picture shows with it: "Active 2 Expired 0 Attendance 1 Payment " is 530px of the 900px under the nav, and "Member attendance" shows below it
+22. font-load: div.app.admin-app > main > article.card.clay:nth-of-type(1) > h2 "Fredoka"
+   "Fredoka" is asked for by the h2s but never loaded (no font link or @font-face loads it): it shows in its fallback
+23. font-load: body "Nunito"
+   "Nunito" is asked for by the body text but never loaded (no font link or @font-face loads it): it shows in its fallback
+24. skip-link: article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > label.sbox.clay-in > input
+   the first Tab stop is "article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > label.sbox.clay-in > input", not a skip link: a keyboard user tabs through the whole nav on every visit
+25. page-meta: head "FitPulse table spacing review"
+   no <meta name="description">: a search result and a shared link show a scrap of the page instead
+26. share-meta: head
+   the head lacks og:title, og:description, og:image, twitter:card, an icon, theme-color: a shared link shows no picture or title of its own
+27. section-air: div.app.admin-app > main > article.card.clay:nth-of-type(6) / div.app.admin-app > main > article.card.clay:nth-of-type(7)
+   70px of air between the content of these two sections: 128-480px (64-600px WARN) (every gap out of the band at 1440px, top to bottom: 88px after "Payment HistoryExpor", 88px after "Entrance check-insCl", 88px after "Equipment Monitoring", 88px after "Maintenance & Repair", 70px after "Active2Expired0Atten", 90px after "Member attendanceSea", 90px after "Member paymentsSearc", 90px after "Renewal history in a") (SR-3)
+28. section-air: div.app.admin-app > main > article.card.clay:nth-of-type(2) / div.app.admin-app > main > article.card.clay:nth-of-type(3)
+   88px of air between the content of these two sections: 128-480px (64-600px WARN) (SR-3)
+29. section-air: div.app.admin-app > main > article.card.clay:nth-of-type(3) / div.app.admin-app > main > article.card.clay:nth-of-type(4)
+   88px of air between the content of these two sections: 128-480px (64-600px WARN) (SR-3)
+30. tap-size: article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in > input
+   a 282x29px tap target: under the 44px a phone needs
+31. tap-size: article.card.clay:nth-of-type(6) > div.report-heading > div.report-tabs > button:nth-of-type(1) "Active 2"
+   a 97x42px tap target (and 5 more like it on this screen): under the 44px a phone needs
+32. section-tile: div.app.admin-app > main > article.card.clay:nth-of-type(5) "Maintenance & Repair Log"
+   the section is 675px tall (0.80 screens at 390x844), shorter than the screen: its tile (the screen from its top) shows 675px of it and only 153px of the next section's ground ("Active 2 Expired 0 Attendance "), none of its content
+33. fold-cut: tbody > tr:nth-of-type(1) > td:nth-of-type(3) > small.table-secondary "Fixture contact"
+   a line of the hero text is sliced by the bottom of the first screen
+34. copy-stat-strip: copy x1: "2 / 0 / 1 / 1 / 1 / 1"
+   stat strip x1
+
+Graphify: src scope, 332 nodes, 1058 edges, 15 communities. Outputs are in graphify-out/.
+Graph health warnings: 75 dangling-endpoint edges, 10 self-loops, 14 collapsed endpoint pairs; the scoped map may be incomplete.
+Actual semantic-extraction token usage was unavailable. The cost file records unknown usage, not zero-cost model work.
+Graphify outputs are untracked and not currently ignored.

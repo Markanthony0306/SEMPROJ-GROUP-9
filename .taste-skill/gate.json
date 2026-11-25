@@ -1,0 +1,2330 @@
+{
+ "start": "2026-11-21T15:29:10.722Z",
+ "round": 3,
+ "idle": 0,
+ "errors": 0,
+ "status": "open",
+ "history": [
+  {
+   "at": "2026-11-21T16:04:51.356Z",
+   "mode": "manual",
+   "status": "fail",
+   "fails": 38,
+   "round": 1,
+   "reused": false,
+   "stopHookActive": false
+  },
+  {
+   "at": "2026-11-24T16:11:18.422Z",
+   "mode": "manual",
+   "status": "fail",
+   "fails": 58,
+   "round": 2,
+   "reused": false,
+   "stopHookActive": false
+  },
+  {
+   "at": "2026-11-24T16:15:05.182Z",
+   "mode": "manual",
+   "status": "open",
+   "fails": 59,
+   "round": 3,
+   "reused": false,
+   "stopHookActive": false
+  }
+ ],
+ "max": 3,
+ "marker": {
+  "page": ".taste-skill/table-spacing-qa/preview.html",
+  "url": null,
+  "root": ".",
+  "kind": "software",
+  "category": "gym administration",
+  "primary": "Explore reports",
+  "rounds": 3,
+  "start": "2026-11-21T15:29:10.722Z",
+  "by": "gate.mjs --start"
+ },
+ "manual": true,
+ "roundKey": "703f6986f8682b12:da39a3ee",
+ "roundFree": false,
+ "idleFree": false,
+ "blockKey": null,
+ "fp": "703f6986f8682b12",
+ "page": ".taste-skill/table-spacing-qa/preview.html",
+ "found": {
+  "fails": [
+   {
+    "check": "hero-fill",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment History\"",
+    "msg": "the next section shows on the first screen: it starts at 647px on a 900px screen (the hero ends at 604px)",
+    "fix": "let the hero fill the first screen alone (min-height: 100svh, less above it): nothing of the next section on load",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "hero-fill"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment History\""
+    ]
+   },
+   {
+    "check": "placeholder",
+    "where": "table > tbody > tr:nth-of-type(1) > td:nth-of-type(3) \"alexandra.delacruz@fixture.test Fixture \"",
+    "msg": "a stand-in contact printed on the page (\"alexandra.delacruz@fixture.test\"): no visitor can use it (and 1 more like it: \"christopher.alexander.sa\")",
+    "fix": "print the real address and number, or a form or a button that names the action: never an example.com address or a number of zeros",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "placeholder"
+    ],
+    "wheres": [
+     "table > tbody > tr:nth-of-type(1) > td:nth-of-type(3) \"alexandra.delacruz@fixture.test Fixture \""
+    ]
+   },
+   {
+    "check": "nav",
+    "where": "(the first screen)",
+    "msg": "no nav bar across the top of the first screen (a header with the brand, the section links and the main action)",
+    "fix": "make the nav one bar from the content's left edge to its right edge, with every link and action inside it",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "nav"
+    ],
+    "wheres": [
+     "(the first screen)"
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member Records\"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member Records\""
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment History\"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment History\""
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-ins\"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-ins\""
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(4) \"Equipment Monitoring\"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(4) \"Equipment Monitoring\""
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(5) \"Maintenance & Repair Log\"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(5) \"Maintenance & Repair Log\""
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(6) \"Active 2 Expired 0 Attendance 1 Payment \"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(6) \"Active 2 Expired 0 Attendance 1 Payment \""
+    ]
+   },
+   {
+    "check": "text-only",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty table\"",
+    "msg": "the closing section is only text: no picture, icon, mock or effect in it",
+    "fix": "give the section a visual: a photograph that fits, the real icons, or a UI fragment on a ground",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-only"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty table\""
+    ]
+   },
+   {
+    "check": "button-styles",
+    "where": "(one screen)",
+    "msg": "3 button styles on one screen: pill, fill gradient (\"Create Account\"); pill, fill #d62828 (\"Delete\"); pill, fill #f5f8fd (\"Export CSV\"); the odd one out: \"Export CSV\"",
+    "fix": "one primary and one secondary button: one shape, one height per size, one label size",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "button-styles"
+    ],
+    "wheres": [
+     "(one screen)"
+    ]
+   },
+   {
+    "check": "button-styles",
+    "where": "(the page)",
+    "msg": "3 button styles on the page: pill, fill gradient x9 (\"Create Account\"); pill, fill #d62828 x3 (\"Delete\"); pill, fill #f5f8fd x3 (\"Export CSV\")",
+    "fix": "one primary and one secondary button: one shape, one height per size, one label size",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "button-styles"
+    ],
+    "wheres": [
+     "(the page)"
+    ]
+   },
+   {
+    "check": "cta",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty table\"",
+    "msg": "the last section before the footer ends with no button",
+    "fix": "add the action: a button in the hero, one on every priced item, one in the closing section",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "cta"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty table\""
+    ]
+   },
+   {
+    "check": "copy-headline",
+    "where": "(the page)",
+    "msg": "the page has no visible h1",
+    "fix": "put the category noun in the h1 (and who it is for, or where), in 2 to 8 words",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "copy-headline"
+    ],
+    "wheres": [
+     "(the page)"
+    ]
+   },
+   {
+    "check": "copy-headings",
+    "where": "article.card.clay:nth-of-type(3) > div.record-section-heading > div > h2 \"Entrance check-ins\"",
+    "msg": "\"Entrance check-ins\" names no product, part, place or section (4 headings like it; at most one brand line per page) (and 3 more like it: \"Equipment Monitoring\", \"Maintenance & Repair Log\", \"Empty table\")",
+    "fix": "name the thing in every heading: the product, a part, the place or a section noun",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "copy-headings"
+    ],
+    "wheres": [
+     "article.card.clay:nth-of-type(3) > div.record-section-heading > div > h2 \"Entrance check-ins\""
+    ]
+   },
+   {
+    "check": "copy-actions",
+    "where": "tr:nth-of-type(2) > td.acts.member-record-actions > div.table-cell-actions > button.btn.sm \"Delete\"",
+    "msg": "3 actions in the hero (\"Create Account\", \"Delete\", \"Delete\"); at most 2",
+    "fix": "few actions, one wording: at most 2 in the hero, the main action word for word in nav, hero and close",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "copy-actions"
+    ],
+    "wheres": [
+     "tr:nth-of-type(2) > td.acts.member-record-actions > div.table-cell-actions > button.btn.sm \"Delete\""
+    ]
+   },
+   {
+    "check": "contrast",
+    "where": "tr:nth-of-type(1) > td:nth-of-type(2) > div.member-table-person > span.av \"AD\"",
+    "msg": "body text over a effect reads at 2.0:1 at its worst tenth (needs 4.5:1) (and 9 more like it: \"CA\", \"Clear all data\", \"Clear all data\", \"AD\", ...)",
+    "fix": "put the text on a calm part of the picture, or on a solid panel",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "contrast"
+    ],
+    "wheres": [
+     "tr:nth-of-type(1) > td:nth-of-type(2) > div.member-table-person > span.av \"AD\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "main > article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in \"Search\"",
+    "msg": "a caption, label or muted line in #566d80 on #d5dfee reads 4.01:1 (needs 4.5:1)",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "main > article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in \"Search\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "tbody > tr:nth-of-type(1) > td:nth-of-type(6) > span.pill.p-ok \"Active\"",
+    "msg": "a caption, label or muted line in #ffffff on #2a9d5c reads 3.46:1 (needs 4.5:1); 2 like it, like \"Active\"",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "tbody > tr:nth-of-type(1) > td:nth-of-type(6) > span.pill.p-ok \"Active\""
+    ]
+   },
+   {
+    "check": "text-contrast",
+    "where": "tbody > tr > td:nth-of-type(5) > span.pill.p-warn \"GCash\"",
+    "msg": "a caption, label or muted line in #ffffff on #f77f00 reads 2.63:1 (needs 4.5:1)",
+    "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "text-contrast"
+    ],
+    "wheres": [
+     "tbody > tr > td:nth-of-type(5) > span.pill.p-warn \"GCash\""
+    ]
+   },
+   {
+    "check": "section-tile",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(5) \"Maintenance & Repair Log\"",
+    "msg": "the section is 344px tall (0.38 screens at 1440x900), shorter than the screen: its tile (the screen from its top) shows 344px of it and 530px of the next section (\"Active 2 Expired 0 Attendance \"), its picture on screen",
+    "fix": "set every section after the hero to one screen or two (height: calc(var(--h,1) * 100vh)) and fit its content above --padb",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-tile"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(5) \"Maintenance & Repair Log\""
+    ]
+   },
+   {
+    "check": "field-label",
+    "where": "tbody > tr > td:nth-of-type(2) > select.clay-in",
+    "msg": "a select[type=select-one] without a label you can see: only an aria-label names it",
+    "fix": "put a <label for> with the field's name above it (references/system.md, Forms); a placeholder is no label",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "field-label"
+    ],
+    "wheres": [
+     "tbody > tr > td:nth-of-type(2) > select.clay-in"
+    ]
+   },
+   {
+    "check": "field-label",
+    "where": "tbody > tr > td:nth-of-type(3) > select.clay-in",
+    "msg": "a select[type=select-one] without a label you can see: nothing names it",
+    "fix": "put a <label for> with the field's name above it (references/system.md, Forms); a placeholder is no label",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "field-label"
+    ],
+    "wheres": [
+     "tbody > tr > td:nth-of-type(3) > select.clay-in"
+    ]
+   },
+   {
+    "check": "focus-visible",
+    "where": "article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > label.sbox.clay-in > input",
+    "msg": "Tab stop 1, input \"\": it shows no change when focused",
+    "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "focus-visible"
+    ],
+    "wheres": [
+     "article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > label.sbox.clay-in > input"
+    ]
+   },
+   {
+    "check": "focus-visible",
+    "where": "main > article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > button.btn \"Create Account\"",
+    "msg": "Tab stop 2, button \"Create Account\": its focus change is faint: 2.47:1 against the ground, 3:1 needed",
+    "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "focus-visible"
+    ],
+    "wheres": [
+     "main > article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > button.btn \"Create Account\""
+    ]
+   },
+   {
+    "check": "focus-visible",
+    "where": "div.data-table:nth-of-type(2) > div.table-toolbar:nth-of-type(1) > label.table-sort.table-sort-field:nth-of-type(1) > select \"Original order ID Name Contact Plan Expi\"",
+    "msg": "Tab stop 3, select \"Original order ID Name Contact Plan Expires Status\": its focus change is faint: 2.47:1 against the ground, 3:1 needed",
+    "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "focus-visible"
+    ],
+    "wheres": [
+     "div.data-table:nth-of-type(2) > div.table-toolbar:nth-of-type(1) > label.table-sort.table-sort-field:nth-of-type(1) > select \"Original order ID Name Contact Plan Expi\""
+    ]
+   },
+   {
+    "check": "focus-visible",
+    "where": "div.data-table:nth-of-type(2) > div.table-toolbar:nth-of-type(1) > label.table-sort.table-sort-order:nth-of-type(2) > select \"Ascending Descending\"",
+    "msg": "Tab stop 4, select \"Ascending Descending\": its focus change is faint: 2.47:1 against the ground, 3:1 needed",
+    "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "focus-visible"
+    ],
+    "wheres": [
+     "div.data-table:nth-of-type(2) > div.table-toolbar:nth-of-type(1) > label.table-sort.table-sort-order:nth-of-type(2) > select \"Ascending Descending\""
+    ]
+   },
+   {
+    "check": "moment-none",
+    "where": "(the page)",
+    "msg": "a software page (--type) deals no moment: every kind carries one, two on a long page (moments.md)",
+    "fix": "deal one (moments.mjs pick --page software) and mount it in its own section",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "moment-none"
+    ],
+    "wheres": [
+     "(the page)"
+    ]
+   },
+   {
+    "check": "hero-screen",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\"",
+    "msg": "the hero ends at 604px on a 900px screen, 296px above the fold: it ends at the fold, 1px either way (SR-1)",
+    "fix": "make the hero exactly one screen (height: 100svh, its content fitted inside), never taller or shorter",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "hero-screen"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\""
+    ]
+   },
+   {
+    "check": "hero-screen",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\"",
+    "msg": "280px of the next section shows on the first screen (from 620px on a 900px screen): nothing below the hero shows at load (SR-1)",
+    "fix": "end the hero at the fold so nothing of the next section shows at load (hero height: 100svh)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "hero-screen"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(7) \"Member attendanceSearch recordsRecordsOr\"",
+    "msg": "the section is 295px tall (0.3 screens), 605px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)",
+    "fix": "set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(7) \"Member attendanceSearch recordsRecordsOr\""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(8) \"Member paymentsSearch recordsRecordsOrig\"",
+    "msg": "the section is 295px tall (0.3 screens), 605px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)",
+    "fix": "set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(8) \"Member paymentsSearch recordsRecordsOrig\""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty tableSearch recordsRecordsOriginal\"",
+    "msg": "the section is 323px tall (0.4 screens), 577px short of one screen (900px): every section after the hero is one screen or two, 2px either way (and 6 more like it: \"Payment HistoryExport CS\", \"Entrance check-insClear \", \"Equipment MonitoringAdd \") (SR-2)",
+    "fix": "set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty tableSearch recordsRecordsOriginal\""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(4) \"Equipment MonitoringAdd EquipmentSearch \"",
+    "msg": "the section starts at 1338px, 438px below the screen grid (1 x 900px): sections start on whole screens (SR-2)",
+    "fix": "make every section above it exactly one or two screens tall, so this one starts on a whole screen",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(4) \"Equipment MonitoringAdd EquipmentSearch \""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(9) \"Renewal history in a narrow dialogRecord\"",
+    "msg": "the section starts at 3226px, 374px above the screen grid (4 x 900px): sections start on whole screens (SR-2)",
+    "fix": "make every section above it exactly one or two screens tall, so this one starts on a whole screen",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(9) \"Renewal history in a narrow dialogRecord\""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\"",
+    "msg": "the section starts at 620px, 280px above the screen grid (1 x 900px): sections start on whole screens (and 7 more like it: \"Active2Expired0Attendanc\", \"Member paymentsSearch re\", \"Maintenance & Repair Log\") (SR-2)",
+    "fix": "make every section above it exactly one or two screens tall, so this one starts on a whole screen",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\""
+    ]
+   },
+   {
+    "check": "section-height",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(6) \"Active2Expired0Attendance1Payment1Renewa\"",
+    "msg": "the section's content does not fit it: its lowest content ends 503px below its top, past 458px (the section less 72px of bottom padding) (SR-2)",
+    "fix": "fit the content above the section's bottom padding (--padb), or make it two screens (.g2) in two groups",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "section-height"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(6) \"Active2Expired0Attendance1Payment1Renewa\""
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "main > article.card.clay:nth-of-type(5) > div.record-section-heading > h2 \"Maintenance & Repair Log\"",
+    "msg": "the screen at scroll 1338px (the top of section 4) shows 344px of section 5 and the heading of section 5 whole and the content of 3 sections, over 24px each beside section 4: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)",
+    "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "main > article.card.clay:nth-of-type(5) > div.record-section-heading > h2 \"Maintenance & Repair Log\""
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "main > article.card.clay:nth-of-type(2) > div.record-section-heading > h2 \"Payment History\"",
+    "msg": "the screen at scroll 67px (the top of section 1) shows 343px of section 2 and the heading of section 2 whole and the content of 2 sections, over 24px each beside section 1: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)",
+    "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "main > article.card.clay:nth-of-type(2) > div.record-section-heading > h2 \"Payment History\""
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "article.card.clay:nth-of-type(3) > div.record-section-heading > div > h2 \"Entrance check-ins\"",
+    "msg": "the screen at scroll 620px (the top of section 2) shows 343px of section 3 and the heading of section 3 whole and the content of 3 sections, over 24px each beside section 2: a screen shows one section (another may peek 8px, 24px WARN) (and 7 more like it: scroll 900px, scroll 3037px, scroll 2058px) (SR-4)",
+    "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "article.card.clay:nth-of-type(3) > div.record-section-heading > div > h2 \"Entrance check-ins\""
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\"",
+    "msg": "a <article> sits directly in <main>: every part of <main> is a <section> (SR-4)",
+    "fix": "put every block of <main> in a <section>, and give a band its own section instead of a ground inside one",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\""
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\"",
+    "msg": "a <article> sits directly in <main>: every part of <main> is a <section> (SR-4)",
+    "fix": "put every block of <main> in a <section>, and give a band its own section instead of a ground inside one",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\""
+    ]
+   },
+   {
+    "check": "one-section",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-insClear all dataSearch r\"",
+    "msg": "a <article> sits directly in <main>: every part of <main> is a <section> (and 8 more like it: \"Equipment MonitoringAdd \", \"Maintenance & Repair Log\", \"Active2Expired0Attendanc\") (SR-4)",
+    "fix": "put every block of <main> in a <section>, and give a band its own section instead of a ground inside one",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-section"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-insClear all dataSearch r\""
+    ]
+   },
+   {
+    "check": "one-heading",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) > h2 \"Member Records\"",
+    "msg": "the hero holds an h2 (1): its heading is the h1, and an h2 opens the next section (SR-5)",
+    "fix": "give each section one h2, first in its .wrap, and the hero only its h1",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-heading"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(1) > h2 \"Member Records\""
+    ]
+   },
+   {
+    "check": "one-heading",
+    "where": "main > article.card.clay:nth-of-type(2) > div.record-section-heading > h2 \"Payment History\"",
+    "msg": "headings of two sections show whole on one screen at 46 of 61 scroll positions (75.4%; at scroll 0, 50, 150, 200px), here with \"Member Records\": at most 3% on a desktop (SR-5)",
+    "fix": "make the sections one screen tall so their headings sit a screen apart and two never share one",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "one-heading"
+    ],
+    "wheres": [
+     "main > article.card.clay:nth-of-type(2) > div.record-section-heading > h2 \"Payment History\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\"",
+    "msg": "the content of section 1 runs 291px from the left and 43px from the right (read from its outermost blocks: no .wrap): 291 and 43px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+    "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\"",
+    "msg": "the content of section 2 runs 291px from the left and 43px from the right (read from its outermost blocks: no .wrap): 291 and 43px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+    "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-insClear all dataSearch r\"",
+    "msg": "the content of section 3 runs 291px from the left and 43px from the right (read from its outermost blocks: no .wrap): 291 and 43px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (and 7 more like it: \"Equipment MonitoringAdd \", \"Maintenance & Repair Log\", \"Active2Expired0Attendanc\") (SR-6)",
+    "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-insClear all dataSearch r\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "pre#qa-result \"PASS: {\"width\":1440,\"tables\":10,\"failure\"",
+    "msg": "a <pre> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)",
+    "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "pre#qa-result \"PASS: {\"width\":1440,\"tables\":10,\"failure\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "div.app.admin-app \"FitPulse table spacing previewMember Rec\"",
+    "msg": "a <div> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)",
+    "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "div.app.admin-app \"FitPulse table spacing previewMember Rec\""
+    ]
+   },
+   {
+    "check": "container-edges",
+    "where": "main > article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in \"Search\"",
+    "msg": "1 text block starts on a left line at x 306, 15px from the container's left: text starts on the container's left, or on one split line (x 762, 856, 950) (SR-6)",
+    "fix": "start the text on the container's left, or on the one split line every split shares",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "container-edges"
+    ],
+    "wheres": [
+     "main > article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in \"Search\""
+    ]
+   },
+   {
+    "check": "row-lines",
+    "where": "main > article.card.clay:nth-of-type(9) > div.data-table > div.table-wrap \"RecordsPlan ↕Amount ↕Method ↕Date ↕Month\"",
+    "msg": "a sideways scroller: 82px of it hidden behind overflow-x: auto (SR-7)",
+    "fix": "show every item inside the container, or stack them: no sideways scroller, no half-cut carousel",
+    "widths": [
+     1440
+    ],
+    "from": "consistency",
+    "ids": [
+     "row-lines"
+    ],
+    "wheres": [
+     "main > article.card.clay:nth-of-type(9) > div.data-table > div.table-wrap \"RecordsPlan ↕Amount ↕Method ↕Date ↕Month\""
+    ]
+   },
+   {
+    "check": "cut-text",
+    "where": "table > tbody > tr > td:nth-of-type(3) \"GCash\"",
+    "msg": "runs past the edge of its box div.app.admin-app > main > article.card.clay:nth-of-type(9)",
+    "fix": "give the text room: no overflow clipping a line, no line past its box",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "cut-text"
+    ],
+    "wheres": [
+     "table > tbody > tr > td:nth-of-type(3) \"GCash\""
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(7) \"Member attendance\"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(7) \"Member attendance\""
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(8) \"Member payments\"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(8) \"Member payments\""
+    ]
+   },
+   {
+    "check": "no-visual",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(9) \"Renewal history in a narrow dialog\"",
+    "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+    "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "no-visual"
+    ],
+    "wheres": [
+     "div.app.admin-app > main > article.card.clay:nth-of-type(9) \"Renewal history in a narrow dialog\""
+    ]
+   },
+   {
+    "check": "off-grid",
+    "where": "pre#qa-result \"PASS: {\"width\":390,\"tables\":10,\"failures\"",
+    "msg": "left edge at 16px, 23px off the page margin at 39px (53 elements, like h2)",
+    "fix": "move it onto the page margin, or the column edge its section uses",
+    "widths": [
+     390
+    ],
+    "from": "consistency",
+    "ids": [
+     "off-grid"
+    ],
+    "wheres": [
+     "pre#qa-result \"PASS: {\"width\":390,\"tables\":10,\"failures\""
+    ]
+   },
+   {
+    "check": "off-viewport",
+    "where": "div.app.admin-app > aside.clay \"FitPulse table spacing preview\"",
+    "msg": "at 320px wide it runs 324px past the screen's left edge (cut there: the page clips what runs past it)",
+    "fix": "keep it inside the screen at this width: let it shrink, wrap or stack",
+    "widths": [
+     320
+    ],
+    "from": "consistency",
+    "ids": [
+     "off-viewport"
+    ],
+    "wheres": [
+     "div.app.admin-app > aside.clay \"FitPulse table spacing preview\""
+    ]
+   },
+   {
+    "check": "container",
+    "where": "page",
+    "msg": "no .wrap",
+    "fix": "put the content in one .wrap",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "layout",
+    "ids": [
+     "container"
+    ],
+    "wheres": [
+     "page"
+    ]
+   }
+  ],
+  "warns": [
+   {
+    "check": "flush",
+    "where": "div.table-wrap > table > tbody > tr:nth-of-type(2) \"FP-002 CA Christopher Alexander Santos c\"",
+    "msg": "its last line sits 27px above the lower edge of article.card.clay:nth-of-type(1), where the ground changes to article.card.clay:nth-of-type(2)",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "article.card.clay:nth-of-type(2) > div.record-section-heading > div.record-section-actions > button.btn.ghost \"Export CSV\"",
+    "msg": "its first line sits 27px under the top edge of article.card.clay:nth-of-type(2), where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "main > article.card.clay:nth-of-type(3) > div.record-section-heading > button.btn.report-clear-button \"Clear all data\"",
+    "msg": "its first line sits 27px under the top edge of article.card.clay:nth-of-type(3), where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "main > article.card.clay:nth-of-type(4) > div.record-section-heading > button.btn \"Add Equipment\"",
+    "msg": "its first line sits 27px under the top edge of article.card.clay:nth-of-type(4), where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "main > article.card.clay:nth-of-type(5) > div.record-section-heading > button.btn.report-clear-button \"Clear all data\"",
+    "msg": "its first line sits 27px under the top edge of article.card.clay:nth-of-type(5), where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "article.card.clay:nth-of-type(6) > div.report-heading > div.report-tabs > button:nth-of-type(1) \"Active 2\"",
+    "msg": "its first line sits 27px under the top edge of article.card.clay:nth-of-type(6), where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "main > article.card.clay:nth-of-type(6) > div.report-total > strong \"2 active memberships\"",
+    "msg": "its last line sits 27px above the lower edge of article.card.clay:nth-of-type(6), where the ground changes to article.card.clay:nth-of-type(7)",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(7) > h2 \"Member attendance\"",
+    "msg": "its first line sits 27px under the top edge of article.card.clay:nth-of-type(7), where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(8) > h2 \"Member payments\"",
+    "msg": "its first line sits 27px under the top edge of article.card.clay:nth-of-type(8), where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(9) > h2 \"Renewal history in a narrow dialog\"",
+    "msg": "its first line sits 27px under the top edge of article.card.clay:nth-of-type(9), where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "flush",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(10) > h2 \"Empty table\"",
+    "msg": "its first line sits 27px under the top edge of article.card.clay:nth-of-type(10), where the ground changes",
+    "fix": "give the section its padding at the edge where the ground changes (the closing call keeps a clear gap above the footer)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "fold-card",
+    "where": "div.app.admin-app > aside.clay \"FitPulse table spacing preview\"",
+    "msg": "the 232x868 card starts on the first screen and runs 35px past its bottom (inside a held section or scroll scene, whose motion --quick does not check)",
+    "fix": "end the card inside the first screen, or start it lower, so its whole edge shows",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "pinned",
+    "where": "div.app.admin-app > aside.clay \"FitPulse table spacing preview\"",
+    "msg": "held on screen for 3.3 screens of scroll (position: sticky) while the page moves on (a narrow sticky column)",
+    "fix": "let the section scroll with the page",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-buttons",
+    "where": "tr:nth-of-type(1) > td.acts.member-record-actions > div.table-cell-actions > button.btn.sm \"Delete\"",
+    "msg": "\"Delete\" does not start with a verb (book, buy, try, start, get, see...) (and 5 more like it: \"Export CSV\", \"Record Payment\", \"Clear all data\", \"Inspected\", ...)",
+    "fix": "label buttons with a verb and what the visitor gets (\"Book a room\", \"Start free trial\")",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-actions",
+    "where": "(the page)",
+    "msg": "the main action \"Explore reports\" does not read word for word the same in the nav or hero and the closing section",
+    "fix": "few actions, one wording: at most 2 in the hero, the main action word for word in nav, hero and close",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "heading-scale",
+    "where": "(the page)",
+    "msg": "the page has no visible h1",
+    "fix": "size headings by level: the h1 largest, one size per level, each level below the one above",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "stranded-action",
+    "where": "article.card.clay:nth-of-type(2) > div.record-section-heading > div.record-section-actions > button.btn.ghost \"Export CSV\"",
+    "msg": "stands 546px across from the nearest text of its block (\"Payment History\") (and 5 more like it: \"Record Payment\", \"Clear all data\", \"Clear all data\", \"Add Equipment\", ...)",
+    "fix": "put the button under or beside the text it belongs to",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "button-contrast",
+    "where": "article.card.clay:nth-of-type(2) > div.record-section-heading > div.record-section-actions > button.btn.ghost \"Export CSV\"",
+    "msg": "the button \"Export CSV\" (#f5f8fd) stands only 1.03:1 off the ground around it: it reads as part of the ground, or as switched off",
+    "fix": "give the button a fill that stands at least 1.5:1 off what is around it, or an outline in the ink",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "button-contrast",
+    "where": "tr > td.acts > div.table-cell-actions > button.btn.sm:nth-of-type(2) \"Log repair\"",
+    "msg": "the button \"Log repair\" (#f5f8fd) stands only 1.07:1 off the ground around it: it reads as part of the ground, or as switched off",
+    "fix": "give the button a fill that stands at least 1.5:1 off what is around it, or an outline in the ink",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "button-contrast",
+    "where": "article.card.clay:nth-of-type(6) > div.report-heading > div.report-heading-actions > button.btn.ghost \"Export CSV\"",
+    "msg": "the button \"Export CSV\" (#f5f8fd) stands only 1.02:1 off the ground around it: it reads as part of the ground, or as switched off",
+    "fix": "give the button a fill that stands at least 1.5:1 off what is around it, or an outline in the ink",
+    "widths": [
+     1440,
+     390
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "one-screen",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(6) \"Active 2 Expired 0 Attendance 1 Payment \"",
+    "msg": "1 section is shorter than the screen, so the next one's heading or picture shows with it: \"Active 2 Expired 0 Attendance 1 Payment \" is 530px of the 900px under the nav, and \"Member attendance\" shows below it",
+    "fix": "give each section the screen (min-height: 100svh less the nav, its content centred), or join two short ones into one",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "font-load",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) > h2 \"Fredoka\"",
+    "msg": "\"Fredoka\" is asked for by the h2s but never loaded (no font link or @font-face loads it): it shows in its fallback",
+    "fix": "load every family the type asks for: name it in the font link as start.mjs prints it, spelt as Google Fonts spells it, or ask for a family the page loads",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "font-load",
+    "where": "body \"Nunito\"",
+    "msg": "\"Nunito\" is asked for by the body text but never loaded (no font link or @font-face loads it): it shows in its fallback",
+    "fix": "load every family the type asks for: name it in the font link as start.mjs prints it, spelt as Google Fonts spells it, or ask for a family the page loads",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "skip-link",
+    "where": "article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > label.sbox.clay-in > input",
+    "msg": "the first Tab stop is \"article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > label.sbox.clay-in > input\", not a skip link: a keyboard user tabs through the whole nav on every visit",
+    "fix": "add the starter's skip link as the header's first child: <a class=\"skip-link\" href=\"#top\">Skip to content</a>",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "page-meta",
+    "where": "head \"FitPulse table spacing review\"",
+    "msg": "no <meta name=\"description\">: a search result and a shared link show a scrap of the page instead",
+    "fix": "write a <title> \"Name: what it is for whom or where\" and a one-sentence description in other words (starter.html)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "share-meta",
+    "where": "head",
+    "msg": "the head lacks og:title, og:description, og:image, twitter:card, an icon, theme-color: a shared link shows no picture or title of its own",
+    "fix": "copy the head block of starter.html: og tags, twitter:card, the icon and theme-color (references/system.md, Head)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "section-air",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(6) / div.app.admin-app > main > article.card.clay:nth-of-type(7)",
+    "msg": "70px of air between the content of these two sections: 128-480px (64-600px WARN) (every gap out of the band at 1440px, top to bottom: 88px after \"Payment HistoryExpor\", 88px after \"Entrance check-insCl\", 88px after \"Equipment Monitoring\", 88px after \"Maintenance & Repair\", 70px after \"Active2Expired0Atten\", 90px after \"Member attendanceSea\", 90px after \"Member paymentsSearc\", 90px after \"Renewal history in a\") (SR-3)",
+    "fix": "keep 128-480px of air between the content of neighbouring sections (112-420px on a phone): the sections' padding (--padt, --padb)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "section-air",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) / div.app.admin-app > main > article.card.clay:nth-of-type(3)",
+    "msg": "88px of air between the content of these two sections: 128-480px (64-600px WARN) (SR-3)",
+    "fix": "keep 128-480px of air between the content of neighbouring sections (112-420px on a phone): the sections' padding (--padt, --padb)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "section-air",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(3) / div.app.admin-app > main > article.card.clay:nth-of-type(4)",
+    "msg": "88px of air between the content of these two sections: 128-480px (64-600px WARN) (SR-3)",
+    "fix": "keep 128-480px of air between the content of neighbouring sections (112-420px on a phone): the sections' padding (--padt, --padb)",
+    "widths": [
+     1440
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "tap-size",
+    "where": "article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in > input",
+    "msg": "a 282x29px tap target: under the 44px a phone needs",
+    "fix": "make every link and control outside running text 44px tall on a phone: display: inline-flex; align-items: center; min-height: 44px (a footer list then needs no gap), a 44px small button, or a transparent ::before laid past the box",
+    "widths": [
+     390,
+     320
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "tap-size",
+    "where": "article.card.clay:nth-of-type(6) > div.report-heading > div.report-tabs > button:nth-of-type(1) \"Active 2\"",
+    "msg": "a 97x42px tap target (and 5 more like it on this screen): under the 44px a phone needs",
+    "fix": "make every link and control outside running text 44px tall on a phone: display: inline-flex; align-items: center; min-height: 44px (a footer list then needs no gap), a 44px small button, or a transparent ::before laid past the box",
+    "widths": [
+     390,
+     320
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "section-tile",
+    "where": "div.app.admin-app > main > article.card.clay:nth-of-type(5) \"Maintenance & Repair Log\"",
+    "msg": "the section is 675px tall (0.80 screens at 390x844), shorter than the screen: its tile (the screen from its top) shows 675px of it and only 153px of the next section's ground (\"Active 2 Expired 0 Attendance \"), none of its content",
+    "fix": "set every section after the hero to one screen or two (height: calc(var(--h,1) * 100vh)) and fit its content above --padb",
+    "widths": [
+     390
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "fold-cut",
+    "where": "tbody > tr:nth-of-type(1) > td:nth-of-type(3) > small.table-secondary \"Fixture contact\"",
+    "msg": "a line of the hero text is sliced by the bottom of the first screen",
+    "fix": "size the hero so the heading ends above the fold, or starts below it",
+    "widths": [
+     320
+    ],
+    "from": "consistency"
+   },
+   {
+    "check": "copy-stat-strip",
+    "msg": "stat strip x1",
+    "fix": "a strip only of figures the brief gives (a price, hours, a count); otherwise put each number in the sentence it proves, or leave it out (references/copy-tells.md)",
+    "widths": [],
+    "from": "copy",
+    "where": "copy x1: \"2 / 0 / 1 / 1 / 1 / 1\"",
+    "exact": false
+   }
+  ],
+  "crashed": [],
+  "seconds": {
+   "consistency": 132,
+   "layout": 5
+  }
+ },
+ "open": [
+  {
+   "check": "hero-fill",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment History\"",
+   "msg": "the next section shows on the first screen: it starts at 647px on a 900px screen (the hero ends at 604px)",
+   "fix": "let the hero fill the first screen alone (min-height: 100svh, less above it): nothing of the next section on load",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "hero-fill"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment History\""
+   ]
+  },
+  {
+   "check": "placeholder",
+   "where": "table > tbody > tr:nth-of-type(1) > td:nth-of-type(3) \"alexandra.delacruz@fixture.test Fixture \"",
+   "msg": "a stand-in contact printed on the page (\"alexandra.delacruz@fixture.test\"): no visitor can use it (and 1 more like it: \"christopher.alexander.sa\")",
+   "fix": "print the real address and number, or a form or a button that names the action: never an example.com address or a number of zeros",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "placeholder"
+   ],
+   "wheres": [
+    "table > tbody > tr:nth-of-type(1) > td:nth-of-type(3) \"alexandra.delacruz@fixture.test Fixture \""
+   ]
+  },
+  {
+   "check": "nav",
+   "where": "(the first screen)",
+   "msg": "no nav bar across the top of the first screen (a header with the brand, the section links and the main action)",
+   "fix": "make the nav one bar from the content's left edge to its right edge, with every link and action inside it",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "nav"
+   ],
+   "wheres": [
+    "(the first screen)"
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member Records\"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member Records\""
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment History\"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment History\""
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-ins\"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-ins\""
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(4) \"Equipment Monitoring\"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(4) \"Equipment Monitoring\""
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(5) \"Maintenance & Repair Log\"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(5) \"Maintenance & Repair Log\""
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(6) \"Active 2 Expired 0 Attendance 1 Payment \"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(6) \"Active 2 Expired 0 Attendance 1 Payment \""
+   ]
+  },
+  {
+   "check": "text-only",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty table\"",
+   "msg": "the closing section is only text: no picture, icon, mock or effect in it",
+   "fix": "give the section a visual: a photograph that fits, the real icons, or a UI fragment on a ground",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-only"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty table\""
+   ]
+  },
+  {
+   "check": "button-styles",
+   "where": "(one screen)",
+   "msg": "3 button styles on one screen: pill, fill gradient (\"Create Account\"); pill, fill #d62828 (\"Delete\"); pill, fill #f5f8fd (\"Export CSV\"); the odd one out: \"Export CSV\"",
+   "fix": "one primary and one secondary button: one shape, one height per size, one label size",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "button-styles"
+   ],
+   "wheres": [
+    "(one screen)"
+   ]
+  },
+  {
+   "check": "button-styles",
+   "where": "(the page)",
+   "msg": "3 button styles on the page: pill, fill gradient x9 (\"Create Account\"); pill, fill #d62828 x3 (\"Delete\"); pill, fill #f5f8fd x3 (\"Export CSV\")",
+   "fix": "one primary and one secondary button: one shape, one height per size, one label size",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "button-styles"
+   ],
+   "wheres": [
+    "(the page)"
+   ]
+  },
+  {
+   "check": "cta",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty table\"",
+   "msg": "the last section before the footer ends with no button",
+   "fix": "add the action: a button in the hero, one on every priced item, one in the closing section",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "cta"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty table\""
+   ]
+  },
+  {
+   "check": "copy-headline",
+   "where": "(the page)",
+   "msg": "the page has no visible h1",
+   "fix": "put the category noun in the h1 (and who it is for, or where), in 2 to 8 words",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "copy-headline"
+   ],
+   "wheres": [
+    "(the page)"
+   ]
+  },
+  {
+   "check": "copy-headings",
+   "where": "article.card.clay:nth-of-type(3) > div.record-section-heading > div > h2 \"Entrance check-ins\"",
+   "msg": "\"Entrance check-ins\" names no product, part, place or section (4 headings like it; at most one brand line per page) (and 3 more like it: \"Equipment Monitoring\", \"Maintenance & Repair Log\", \"Empty table\")",
+   "fix": "name the thing in every heading: the product, a part, the place or a section noun",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "copy-headings"
+   ],
+   "wheres": [
+    "article.card.clay:nth-of-type(3) > div.record-section-heading > div > h2 \"Entrance check-ins\""
+   ]
+  },
+  {
+   "check": "copy-actions",
+   "where": "tr:nth-of-type(2) > td.acts.member-record-actions > div.table-cell-actions > button.btn.sm \"Delete\"",
+   "msg": "3 actions in the hero (\"Create Account\", \"Delete\", \"Delete\"); at most 2",
+   "fix": "few actions, one wording: at most 2 in the hero, the main action word for word in nav, hero and close",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "copy-actions"
+   ],
+   "wheres": [
+    "tr:nth-of-type(2) > td.acts.member-record-actions > div.table-cell-actions > button.btn.sm \"Delete\""
+   ]
+  },
+  {
+   "check": "contrast",
+   "where": "tr:nth-of-type(1) > td:nth-of-type(2) > div.member-table-person > span.av \"AD\"",
+   "msg": "body text over a effect reads at 2.0:1 at its worst tenth (needs 4.5:1) (and 9 more like it: \"CA\", \"Clear all data\", \"Clear all data\", \"AD\", ...)",
+   "fix": "put the text on a calm part of the picture, or on a solid panel",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "contrast"
+   ],
+   "wheres": [
+    "tr:nth-of-type(1) > td:nth-of-type(2) > div.member-table-person > span.av \"AD\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "main > article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in \"Search\"",
+   "msg": "a caption, label or muted line in #566d80 on #d5dfee reads 4.01:1 (needs 4.5:1)",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "main > article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in \"Search\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "tbody > tr:nth-of-type(1) > td:nth-of-type(6) > span.pill.p-ok \"Active\"",
+   "msg": "a caption, label or muted line in #ffffff on #2a9d5c reads 3.46:1 (needs 4.5:1); 2 like it, like \"Active\"",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "tbody > tr:nth-of-type(1) > td:nth-of-type(6) > span.pill.p-ok \"Active\""
+   ]
+  },
+  {
+   "check": "text-contrast",
+   "where": "tbody > tr > td:nth-of-type(5) > span.pill.p-warn \"GCash\"",
+   "msg": "a caption, label or muted line in #ffffff on #f77f00 reads 2.63:1 (needs 4.5:1)",
+   "fix": "body text in the ink at 7:1 or more; grey (4.5:1 or more) only for captions and labels",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "text-contrast"
+   ],
+   "wheres": [
+    "tbody > tr > td:nth-of-type(5) > span.pill.p-warn \"GCash\""
+   ]
+  },
+  {
+   "check": "section-tile",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(5) \"Maintenance & Repair Log\"",
+   "msg": "the section is 344px tall (0.38 screens at 1440x900), shorter than the screen: its tile (the screen from its top) shows 344px of it and 530px of the next section (\"Active 2 Expired 0 Attendance \"), its picture on screen",
+   "fix": "set every section after the hero to one screen or two (height: calc(var(--h,1) * 100vh)) and fit its content above --padb",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-tile"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(5) \"Maintenance & Repair Log\""
+   ]
+  },
+  {
+   "check": "field-label",
+   "where": "tbody > tr > td:nth-of-type(2) > select.clay-in",
+   "msg": "a select[type=select-one] without a label you can see: only an aria-label names it",
+   "fix": "put a <label for> with the field's name above it (references/system.md, Forms); a placeholder is no label",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "field-label"
+   ],
+   "wheres": [
+    "tbody > tr > td:nth-of-type(2) > select.clay-in"
+   ]
+  },
+  {
+   "check": "field-label",
+   "where": "tbody > tr > td:nth-of-type(3) > select.clay-in",
+   "msg": "a select[type=select-one] without a label you can see: nothing names it",
+   "fix": "put a <label for> with the field's name above it (references/system.md, Forms); a placeholder is no label",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "field-label"
+   ],
+   "wheres": [
+    "tbody > tr > td:nth-of-type(3) > select.clay-in"
+   ]
+  },
+  {
+   "check": "focus-visible",
+   "where": "article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > label.sbox.clay-in > input",
+   "msg": "Tab stop 1, input \"\": it shows no change when focused",
+   "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "focus-visible"
+   ],
+   "wheres": [
+    "article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > label.sbox.clay-in > input"
+   ]
+  },
+  {
+   "check": "focus-visible",
+   "where": "main > article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > button.btn \"Create Account\"",
+   "msg": "Tab stop 2, button \"Create Account\": its focus change is faint: 2.47:1 against the ground, 3:1 needed",
+   "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "focus-visible"
+   ],
+   "wheres": [
+    "main > article.card.clay:nth-of-type(1) > div.bar:nth-of-type(1) > button.btn \"Create Account\""
+   ]
+  },
+  {
+   "check": "focus-visible",
+   "where": "div.data-table:nth-of-type(2) > div.table-toolbar:nth-of-type(1) > label.table-sort.table-sort-field:nth-of-type(1) > select \"Original order ID Name Contact Plan Expi\"",
+   "msg": "Tab stop 3, select \"Original order ID Name Contact Plan Expires Status\": its focus change is faint: 2.47:1 against the ground, 3:1 needed",
+   "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "focus-visible"
+   ],
+   "wheres": [
+    "div.data-table:nth-of-type(2) > div.table-toolbar:nth-of-type(1) > label.table-sort.table-sort-field:nth-of-type(1) > select \"Original order ID Name Contact Plan Expi\""
+   ]
+  },
+  {
+   "check": "focus-visible",
+   "where": "div.data-table:nth-of-type(2) > div.table-toolbar:nth-of-type(1) > label.table-sort.table-sort-order:nth-of-type(2) > select \"Ascending Descending\"",
+   "msg": "Tab stop 4, select \"Ascending Descending\": its focus change is faint: 2.47:1 against the ground, 3:1 needed",
+   "fix": "keep the kit's ring (system.css :focus-visible, 2px in --action, there at once); a control that hides itself shows on focus",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "focus-visible"
+   ],
+   "wheres": [
+    "div.data-table:nth-of-type(2) > div.table-toolbar:nth-of-type(1) > label.table-sort.table-sort-order:nth-of-type(2) > select \"Ascending Descending\""
+   ]
+  },
+  {
+   "check": "moment-none",
+   "where": "(the page)",
+   "msg": "a software page (--type) deals no moment: every kind carries one, two on a long page (moments.md)",
+   "fix": "deal one (moments.mjs pick --page software) and mount it in its own section",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "moment-none"
+   ],
+   "wheres": [
+    "(the page)"
+   ]
+  },
+  {
+   "check": "hero-screen",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\"",
+   "msg": "the hero ends at 604px on a 900px screen, 296px above the fold: it ends at the fold, 1px either way (SR-1)",
+   "fix": "make the hero exactly one screen (height: 100svh, its content fitted inside), never taller or shorter",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "hero-screen"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\""
+   ]
+  },
+  {
+   "check": "hero-screen",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\"",
+   "msg": "280px of the next section shows on the first screen (from 620px on a 900px screen): nothing below the hero shows at load (SR-1)",
+   "fix": "end the hero at the fold so nothing of the next section shows at load (hero height: 100svh)",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "hero-screen"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(7) \"Member attendanceSearch recordsRecordsOr\"",
+   "msg": "the section is 295px tall (0.3 screens), 605px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)",
+   "fix": "set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(7) \"Member attendanceSearch recordsRecordsOr\""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(8) \"Member paymentsSearch recordsRecordsOrig\"",
+   "msg": "the section is 295px tall (0.3 screens), 605px short of one screen (900px): every section after the hero is one screen or two, 2px either way (SR-2)",
+   "fix": "set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(8) \"Member paymentsSearch recordsRecordsOrig\""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty tableSearch recordsRecordsOriginal\"",
+   "msg": "the section is 323px tall (0.4 screens), 577px short of one screen (900px): every section after the hero is one screen or two, 2px either way (and 6 more like it: \"Payment HistoryExport CS\", \"Entrance check-insClear \", \"Equipment MonitoringAdd \") (SR-2)",
+   "fix": "set the section to one screen or two (height: calc(var(--h,1) * 100vh), --h 1 or 2) and cut or split its content to fit",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(10) \"Empty tableSearch recordsRecordsOriginal\""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(4) \"Equipment MonitoringAdd EquipmentSearch \"",
+   "msg": "the section starts at 1338px, 438px below the screen grid (1 x 900px): sections start on whole screens (SR-2)",
+   "fix": "make every section above it exactly one or two screens tall, so this one starts on a whole screen",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(4) \"Equipment MonitoringAdd EquipmentSearch \""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(9) \"Renewal history in a narrow dialogRecord\"",
+   "msg": "the section starts at 3226px, 374px above the screen grid (4 x 900px): sections start on whole screens (SR-2)",
+   "fix": "make every section above it exactly one or two screens tall, so this one starts on a whole screen",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(9) \"Renewal history in a narrow dialogRecord\""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\"",
+   "msg": "the section starts at 620px, 280px above the screen grid (1 x 900px): sections start on whole screens (and 7 more like it: \"Active2Expired0Attendanc\", \"Member paymentsSearch re\", \"Maintenance & Repair Log\") (SR-2)",
+   "fix": "make every section above it exactly one or two screens tall, so this one starts on a whole screen",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\""
+   ]
+  },
+  {
+   "check": "section-height",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(6) \"Active2Expired0Attendance1Payment1Renewa\"",
+   "msg": "the section's content does not fit it: its lowest content ends 503px below its top, past 458px (the section less 72px of bottom padding) (SR-2)",
+   "fix": "fit the content above the section's bottom padding (--padb), or make it two screens (.g2) in two groups",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "section-height"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(6) \"Active2Expired0Attendance1Payment1Renewa\""
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "main > article.card.clay:nth-of-type(5) > div.record-section-heading > h2 \"Maintenance & Repair Log\"",
+   "msg": "the screen at scroll 1338px (the top of section 4) shows 344px of section 5 and the heading of section 5 whole and the content of 3 sections, over 24px each beside section 4: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)",
+   "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "main > article.card.clay:nth-of-type(5) > div.record-section-heading > h2 \"Maintenance & Repair Log\""
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "main > article.card.clay:nth-of-type(2) > div.record-section-heading > h2 \"Payment History\"",
+   "msg": "the screen at scroll 67px (the top of section 1) shows 343px of section 2 and the heading of section 2 whole and the content of 2 sections, over 24px each beside section 1: a screen shows one section (another may peek 8px, 24px WARN) (SR-4)",
+   "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "main > article.card.clay:nth-of-type(2) > div.record-section-heading > h2 \"Payment History\""
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "article.card.clay:nth-of-type(3) > div.record-section-heading > div > h2 \"Entrance check-ins\"",
+   "msg": "the screen at scroll 620px (the top of section 2) shows 343px of section 3 and the heading of section 3 whole and the content of 3 sections, over 24px each beside section 2: a screen shows one section (another may peek 8px, 24px WARN) (and 7 more like it: scroll 900px, scroll 3037px, scroll 2058px) (SR-4)",
+   "fix": "make each section exactly one screen or two, so a screen shows one section and no neighbour peeks",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "article.card.clay:nth-of-type(3) > div.record-section-heading > div > h2 \"Entrance check-ins\""
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\"",
+   "msg": "a <article> sits directly in <main>: every part of <main> is a <section> (SR-4)",
+   "fix": "put every block of <main> in a <section>, and give a band its own section instead of a ground inside one",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\""
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\"",
+   "msg": "a <article> sits directly in <main>: every part of <main> is a <section> (SR-4)",
+   "fix": "put every block of <main> in a <section>, and give a band its own section instead of a ground inside one",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\""
+   ]
+  },
+  {
+   "check": "one-section",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-insClear all dataSearch r\"",
+   "msg": "a <article> sits directly in <main>: every part of <main> is a <section> (and 8 more like it: \"Equipment MonitoringAdd \", \"Maintenance & Repair Log\", \"Active2Expired0Attendanc\") (SR-4)",
+   "fix": "put every block of <main> in a <section>, and give a band its own section instead of a ground inside one",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-section"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-insClear all dataSearch r\""
+   ]
+  },
+  {
+   "check": "one-heading",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) > h2 \"Member Records\"",
+   "msg": "the hero holds an h2 (1): its heading is the h1, and an h2 opens the next section (SR-5)",
+   "fix": "give each section one h2, first in its .wrap, and the hero only its h1",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-heading"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(1) > h2 \"Member Records\""
+   ]
+  },
+  {
+   "check": "one-heading",
+   "where": "main > article.card.clay:nth-of-type(2) > div.record-section-heading > h2 \"Payment History\"",
+   "msg": "headings of two sections show whole on one screen at 46 of 61 scroll positions (75.4%; at scroll 0, 50, 150, 200px), here with \"Member Records\": at most 3% on a desktop (SR-5)",
+   "fix": "make the sections one screen tall so their headings sit a screen apart and two never share one",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "one-heading"
+   ],
+   "wheres": [
+    "main > article.card.clay:nth-of-type(2) > div.record-section-heading > h2 \"Payment History\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\"",
+   "msg": "the content of section 1 runs 291px from the left and 43px from the right (read from its outermost blocks: no .wrap): 291 and 43px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+   "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(1) \"Member RecordsSearch Create AccountRecor\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\"",
+   "msg": "the content of section 2 runs 291px from the left and 43px from the right (read from its outermost blocks: no .wrap): 291 and 43px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (SR-6)",
+   "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(2) \"Payment HistoryExport CSVRecord PaymentC\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-insClear all dataSearch r\"",
+   "msg": "the content of section 3 runs 291px from the left and 43px from the right (read from its outermost blocks: no .wrap): 291 and 43px are not one margin; the margin is 64-120px at 1440px (one container, equal margins, 2px either way) (and 7 more like it: \"Equipment MonitoringAdd \", \"Maintenance & Repair Log\", \"Active2Expired0Attendanc\") (SR-6)",
+   "fix": "use one container on every section and the nav (.wrap): one margin left and right, 64-120px on a desktop, 16-24px on a phone",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(3) \"Entrance check-insClear all dataSearch r\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "pre#qa-result \"PASS: {\"width\":1440,\"tables\":10,\"failure\"",
+   "msg": "a <pre> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)",
+   "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "pre#qa-result \"PASS: {\"width\":1440,\"tables\":10,\"failure\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "div.app.admin-app \"FitPulse table spacing previewMember Rec\"",
+   "msg": "a <div> at the top of the page, outside header.nav, main, footer.closing and nav.actionbar (SR-6)",
+   "fix": "build the page as header.nav, a main of sections (each one in-flow .wrap plus background layers) and footer.closing",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "div.app.admin-app \"FitPulse table spacing previewMember Rec\""
+   ]
+  },
+  {
+   "check": "container-edges",
+   "where": "main > article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in \"Search\"",
+   "msg": "1 text block starts on a left line at x 306, 15px from the container's left: text starts on the container's left, or on one split line (x 762, 856, 950) (SR-6)",
+   "fix": "start the text on the container's left, or on the one split line every split shares",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "container-edges"
+   ],
+   "wheres": [
+    "main > article.card.clay:nth-of-type(1) > div.bar > label.sbox.clay-in \"Search\""
+   ]
+  },
+  {
+   "check": "row-lines",
+   "where": "main > article.card.clay:nth-of-type(9) > div.data-table > div.table-wrap \"RecordsPlan ↕Amount ↕Method ↕Date ↕Month\"",
+   "msg": "a sideways scroller: 82px of it hidden behind overflow-x: auto (SR-7)",
+   "fix": "show every item inside the container, or stack them: no sideways scroller, no half-cut carousel",
+   "widths": [
+    1440
+   ],
+   "from": "consistency",
+   "ids": [
+    "row-lines"
+   ],
+   "wheres": [
+    "main > article.card.clay:nth-of-type(9) > div.data-table > div.table-wrap \"RecordsPlan ↕Amount ↕Method ↕Date ↕Month\""
+   ]
+  },
+  {
+   "check": "cut-text",
+   "where": "table > tbody > tr > td:nth-of-type(3) \"GCash\"",
+   "msg": "runs past the edge of its box div.app.admin-app > main > article.card.clay:nth-of-type(9)",
+   "fix": "give the text room: no overflow clipping a line, no line past its box",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "cut-text"
+   ],
+   "wheres": [
+    "table > tbody > tr > td:nth-of-type(3) \"GCash\""
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(7) \"Member attendance\"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(7) \"Member attendance\""
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(8) \"Member payments\"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(8) \"Member payments\""
+   ]
+  },
+  {
+   "check": "no-visual",
+   "where": "div.app.admin-app > main > article.card.clay:nth-of-type(9) \"Renewal history in a narrow dialog\"",
+   "msg": "no picture, effect or mock in this section; a feature section needs a visual",
+   "fix": "give the section a visual: a UI fragment on a ground, real icons, or a photograph that fits",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "no-visual"
+   ],
+   "wheres": [
+    "div.app.admin-app > main > article.card.clay:nth-of-type(9) \"Renewal history in a narrow dialog\""
+   ]
+  },
+  {
+   "check": "off-grid",
+   "where": "pre#qa-result \"PASS: {\"width\":390,\"tables\":10,\"failures\"",
+   "msg": "left edge at 16px, 23px off the page margin at 39px (53 elements, like h2)",
+   "fix": "move it onto the page margin, or the column edge its section uses",
+   "widths": [
+    390
+   ],
+   "from": "consistency",
+   "ids": [
+    "off-grid"
+   ],
+   "wheres": [
+    "pre#qa-result \"PASS: {\"width\":390,\"tables\":10,\"failures\""
+   ]
+  },
+  {
+   "check": "off-viewport",
+   "where": "div.app.admin-app > aside.clay \"FitPulse table spacing preview\"",
+   "msg": "at 320px wide it runs 324px past the screen's left edge (cut there: the page clips what runs past it)",
+   "fix": "keep it inside the screen at this width: let it shrink, wrap or stack",
+   "widths": [
+    320
+   ],
+   "from": "consistency",
+   "ids": [
+    "off-viewport"
+   ],
+   "wheres": [
+    "div.app.admin-app > aside.clay \"FitPulse table spacing preview\""
+   ]
+  },
+  {
+   "check": "container",
+   "where": "page",
+   "msg": "no .wrap",
+   "fix": "put the content in one .wrap",
+   "widths": [
+    1440,
+    390
+   ],
+   "from": "layout",
+   "ids": [
+    "container"
+   ],
+   "wheres": [
+    "page"
+   ]
+  }
+ ],
+ "waived": [],
+ "warnCount": 34,
+ "at": "2026-11-24T16:15:05.183Z",
+ "openTold": true
+}

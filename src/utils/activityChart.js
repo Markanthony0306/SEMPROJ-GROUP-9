@@ -1,17 +1,8 @@
-const manilaDate = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Asia/Manila',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit'
-})
+import { formatDate, manilaDateKey } from '../../shared/formatDate.js'
 
 function calendarDate(value) {
-  const date = new Date(value)
-  if (!Number.isFinite(date.getTime())) return null
-  const parts = Object.fromEntries(
-    manilaDate.formatToParts(date).map(({ type, value }) => [type, value])
-  )
-  return new Date(Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day)))
+  const key = manilaDateKey(value)
+  return key ? new Date(`${key}T00:00:00Z`) : null
 }
 
 // Bucket by Manila calendar dates rather than rolling 24-hour periods.
@@ -33,11 +24,7 @@ export function activityBuckets(records, range = 'week', metric = 'attendance', 
         timeZone: 'UTC',
         [monthly ? 'month' : 'weekday']: 'short'
       }),
-      description: date.toLocaleDateString('en-PH', {
-        timeZone: 'UTC',
-        month: 'long',
-        ...(monthly ? { year: 'numeric' } : { day: 'numeric', year: 'numeric' })
-      })
+      description: `${monthly ? 'Month starting ' : ''}${formatDate(date)}`
     }
   })
   const byKey = new Map(buckets.map((bucket) => [bucket.key, bucket]))

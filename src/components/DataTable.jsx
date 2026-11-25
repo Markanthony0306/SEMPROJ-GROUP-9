@@ -104,7 +104,12 @@ export default function DataTable({
         </span>
       </div>
       <div className="table-wrap" role="region" aria-label={caption} tabIndex={0}>
-        <table role="table">
+        <table
+          role="table"
+          style={{
+            '--table-min-width': headings.length > 2 ? `${headings.length * 144}px` : '100%'
+          }}
+        >
           <caption className="sr-only">{caption}</caption>
           <thead>
             <tr role="row">

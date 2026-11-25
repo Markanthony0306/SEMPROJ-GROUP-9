@@ -60,14 +60,14 @@ test('email variants compile real MIME messages without sending', async () => {
     expiryEmail({
       name: 'Test Member',
       plan: 'Monthly',
-      expiryDate: 'Oct 30, 2026',
+      expiryDate: '2026-10-29T16:30:00.000Z',
       expired: false,
       loginUrl: 'https://app.fixture.test'
     }),
     expiryEmail({
       name: 'Test Member',
       plan: 'Monthly',
-      expiryDate: 'Oct 22, 2026',
+      expiryDate: '2026-10-22T00:00:00.000Z',
       expired: true,
       loginUrl: 'https://app.fixture.test'
     })

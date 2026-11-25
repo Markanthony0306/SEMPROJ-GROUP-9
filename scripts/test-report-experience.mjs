@@ -311,7 +311,7 @@ try {
         body: { memberId, date: iso(-1) }
       })
       assert.equal(result.status, 403)
-      assert.match(result.body.message, /scanner/)
+      assert.match(result.body.message, role === 'admin' ? /scanner/ : /Denied/)
     }
     assert.deepEqual(project.attendance_logs, before)
     const database = await loadDatabase(supabase, ['accounts', 'attendance'])
@@ -542,10 +542,10 @@ try {
       expiryEmail({
         name: 'Test',
         plan: 'Monthly',
-        expiryDate: 'Oct 16, 2026',
+        expiryDate: '2026-10-15T16:30:00.000Z',
         expired: true,
         loginUrl: 'https://fitpulse.test'
-      }).text.includes('Oct 16, 2026')
+      }).text.includes('16/10/2026')
     )
     assert.throws(() => recoveryEmail({ name: 'Test', recoveryUrl: 'javascript:alert(1)' }))
     transport.close()

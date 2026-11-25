@@ -1,0 +1,250 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/admin/AdminMembersSection.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=bdf2c8f1"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx");
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+import DataTable from "/src/components/DataTable.jsx";
+import ProfileAvatar from "/src/components/ProfileAvatar.jsx";
+import { RecordDeleteButton } from "/src/components/RecordDeleteControls.jsx";
+import { Icon } from "/src/components/DashboardShell.jsx";
+import { Pill, memberBadge } from "/src/components/admin/AdminStaffDialogs.jsx";
+import { filterMemberRecords } from "/src/utils/membership.js";
+export default function AdminMembersSection({ query, setQuery, currentUser, setModal, members, pending, date }) {
+  return /* @__PURE__ */ jsxDEV("article", { className: "card clay", children: [
+    /* @__PURE__ */ jsxDEV("h2", { children: "Member Records" }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+      lineNumber: 31,
+      columnNumber: 9
+    }, this),
+    /* @__PURE__ */ jsxDEV("div", { className: "bar", children: [
+      /* @__PURE__ */ jsxDEV("label", { className: "sbox clay-in", children: [
+        "Search",
+        " ",
+        /* @__PURE__ */ jsxDEV(
+          "input",
+          {
+            value: query,
+            placeholder: "Name, member ID, email, or phone",
+            onChange: (event) => setQuery(event.target.value)
+          },
+          void 0,
+          false,
+          {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+            lineNumber: 35,
+            columnNumber: 13
+          },
+          this
+        )
+      ] }, void 0, true, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+        lineNumber: 33,
+        columnNumber: 11
+      }, this),
+      currentUser?.role === "admin" && /* @__PURE__ */ jsxDEV("button", { className: "btn", onClick: () => setModal({ kind: "create" }), children: "Create Account" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+        lineNumber: 42,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+      lineNumber: 32,
+      columnNumber: 9
+    }, this),
+    /* @__PURE__ */ jsxDEV(
+      DataTable,
+      {
+        searchable: false,
+        headings: ["ID", "Name", "Contact", "Plan", "Expires", "Status", "Actions"],
+        children: filterMemberRecords(members, query).map((member) => {
+          const membershipStatus = memberBadge(member);
+          const showAccountStatus = member.status && member.status !== "active" && member.status !== membershipStatus.toLowerCase();
+          return /* @__PURE__ */ jsxDEV("tr", { children: [
+            /* @__PURE__ */ jsxDEV("td", { className: "record-id", children: member.memberCode || member.id }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+              lineNumber: 62,
+              columnNumber: 19
+            }, this),
+            /* @__PURE__ */ jsxDEV("td", { children: /* @__PURE__ */ jsxDEV("div", { className: "member-table-person", children: [
+              /* @__PURE__ */ jsxDEV(ProfileAvatar, { user: member, memberId: member.id }, void 0, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                lineNumber: 65,
+                columnNumber: 23
+              }, this),
+              /* @__PURE__ */ jsxDEV("span", { children: member.name }, void 0, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                lineNumber: 66,
+                columnNumber: 23
+              }, this)
+            ] }, void 0, true, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+              lineNumber: 64,
+              columnNumber: 21
+            }, this) }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+              lineNumber: 63,
+              columnNumber: 19
+            }, this),
+            /* @__PURE__ */ jsxDEV("td", { children: [
+              /* @__PURE__ */ jsxDEV("span", { children: member.email }, void 0, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                lineNumber: 70,
+                columnNumber: 21
+              }, this),
+              /* @__PURE__ */ jsxDEV("small", { className: "table-secondary", children: member.phone || "No phone added" }, void 0, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                lineNumber: 71,
+                columnNumber: 21
+              }, this)
+            ] }, void 0, true, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+              lineNumber: 69,
+              columnNumber: 19
+            }, this),
+            /* @__PURE__ */ jsxDEV("td", { children: member.plan }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+              lineNumber: 73,
+              columnNumber: 19
+            }, this),
+            /* @__PURE__ */ jsxDEV("td", { children: date(member.membershipEnd) }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+              lineNumber: 74,
+              columnNumber: 19
+            }, this),
+            /* @__PURE__ */ jsxDEV("td", { children: [
+              /* @__PURE__ */ jsxDEV(Pill, { status: membershipStatus }, void 0, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                lineNumber: 76,
+                columnNumber: 21
+              }, this),
+              showAccountStatus && /* @__PURE__ */ jsxDEV("small", { className: "table-secondary", children: [
+                "Account ",
+                member.status
+              ] }, void 0, true, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                lineNumber: 78,
+                columnNumber: 17
+              }, this)
+            ] }, void 0, true, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+              lineNumber: 75,
+              columnNumber: 19
+            }, this),
+            /* @__PURE__ */ jsxDEV("td", { className: "acts member-record-actions", children: [
+              /* @__PURE__ */ jsxDEV(
+                "button",
+                {
+                  className: "report-icon-button",
+                  type: "button",
+                  "aria-label": `View ${member.name}`,
+                  onClick: () => setModal({ kind: "view", member }),
+                  children: /* @__PURE__ */ jsxDEV(Icon, { name: "eye", size: 18 }, void 0, false, {
+                    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                    lineNumber: 88,
+                    columnNumber: 23
+                  }, this)
+                },
+                void 0,
+                false,
+                {
+                  fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                  lineNumber: 82,
+                  columnNumber: 21
+                },
+                this
+              ),
+              /* @__PURE__ */ jsxDEV(
+                "button",
+                {
+                  className: "report-icon-button",
+                  type: "button",
+                  "aria-label": `Edit ${member.name}`,
+                  onClick: () => setModal({ kind: "edit", member }),
+                  children: /* @__PURE__ */ jsxDEV(Icon, { name: "edit", size: 18 }, void 0, false, {
+                    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                    lineNumber: 96,
+                    columnNumber: 23
+                  }, this)
+                },
+                void 0,
+                false,
+                {
+                  fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                  lineNumber: 90,
+                  columnNumber: 21
+                },
+                this
+              ),
+              currentUser?.role === "admin" && /* @__PURE__ */ jsxDEV(
+                RecordDeleteButton,
+                {
+                  label: `Delete account for ${member.name}`,
+                  disabled: pending,
+                  onClick: () => setModal({ kind: "deactivate-account", member })
+                },
+                void 0,
+                false,
+                {
+                  fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+                  lineNumber: 99,
+                  columnNumber: 17
+                },
+                this
+              )
+            ] }, void 0, true, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+              lineNumber: 81,
+              columnNumber: 19
+            }, this)
+          ] }, member.id, true, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+            lineNumber: 61,
+            columnNumber: 13
+          }, this);
+        })
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+        lineNumber: 48,
+        columnNumber: 9
+      },
+      this
+    )
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx",
+    lineNumber: 30,
+    columnNumber: 5
+  }, this);
+}
+_c = AdminMembersSection;
+var _c;
+$RefreshReg$(_c, "AdminMembersSection");
+if (import.meta.hot && !inWebWorker) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+if (import.meta.hot && !inWebWorker) {
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminMembersSection.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,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QTtBQUFBLGNBR2tFO0FBQUEsaUJBckJ0RTtBQUFBO0FBQUE7QUFBQTtBQUFBLG1CQXdCQTtBQUFBLGVBNUNPQSxPQUFPTSxJQUFoQjtBQUFBO0FBQUE7QUFBQTtBQUFBLGlCQTZDQTtBQUFBLFFBRUosQ0FBQztBQUFBO0FBQUEsTUE1REw7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLElBNkRBO0FBQUEsT0EvRUY7QUFBQTtBQUFBO0FBQUE7QUFBQSxTQWdGQTtBQUVOO0FBQUNNLEtBcEZ1QjFCO0FBQW1CLElBQUEwQjtBQUFBLGFBQUFBLElBQUEiLCJuYW1lcyI6WyJEYXRhVGFibGUiLCJQcm9maWxlQXZhdGFyIiwiUmVjb3JkRGVsZXRlQnV0dG9uIiwiSWNvbiIsIlBpbGwiLCJtZW1iZXJCYWRnZSIsImZpbHRlck1lbWJlclJlY29yZHMiLCJBZG1pbk1lbWJlcnNTZWN0aW9uIiwicXVlcnkiLCJzZXRRdWVyeSIsImN1cnJlbnRVc2VyIiwic2V0TW9kYWwiLCJtZW1iZXJzIiwicGVuZGluZyIsImRhdGUiLCJldmVudCIsInRhcmdldCIsInZhbHVlIiwicm9sZSIsImtpbmQiLCJtYXAiLCJtZW1iZXIiLCJtZW1iZXJzaGlwU3RhdHVzIiwic2hvd0FjY291bnRTdGF0dXMiLCJzdGF0dXMiLCJ0b0xvd2VyQ2FzZSIsIm1lbWJlckNvZGUiLCJpZCIsIm5hbWUiLCJlbWFpbCIsInBob25lIiwicGxhbiIsIm1lbWJlcnNoaXBFbmQiLCJfYyJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyJBZG1pbk1lbWJlcnNTZWN0aW9uLmpzeCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgRGF0YVRhYmxlIGZyb20gJy4uL0RhdGFUYWJsZSdcclxuaW1wb3J0IFByb2ZpbGVBdmF0YXIgZnJvbSAnLi4vUHJvZmlsZUF2YXRhcidcclxuaW1wb3J0IHsgUmVjb3JkRGVsZXRlQnV0dG9uIH0gZnJvbSAnLi4vUmVjb3JkRGVsZXRlQ29udHJvbHMnXHJcbmltcG9ydCB7IEljb24gfSBmcm9tICcuLi9EYXNoYm9hcmRTaGVsbCdcclxuaW1wb3J0IHsgUGlsbCwgbWVtYmVyQmFkZ2UgfSBmcm9tICcuL0FkbWluU3RhZmZEaWFsb2dzJ1xyXG5pbXBvcnQgeyBmaWx0ZXJNZW1iZXJSZWNvcmRzIH0gZnJvbSAnLi4vLi4vdXRpbHMvbWVtYmVyc2hpcCdcclxuXHJcbi8vIERlc2t0b3AgYW5kIG1vYmlsZSB1c2UgdGhlIHNhbWUgc2VhcmNoIGZpZWxkcyBhbmQgbWF0Y2hpbmcgcnVsZXMuXHJcbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIEFkbWluTWVtYmVyc1NlY3Rpb24oeyBxdWVyeSwgc2V0UXVlcnksIGN1cnJlbnRVc2VyLCBzZXRNb2RhbCwgbWVtYmVycywgcGVuZGluZywgZGF0ZSB9KSB7XHJcbiAgcmV0dXJuIChcclxuICAgICAgPGFydGljbGUgY2xhc3NOYW1lPVwiY2FyZCBjbGF5XCI+XHJcbiAgICAgICAgPGgyPk1lbWJlciBSZWNvcmRzPC9oMj5cclxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cImJhclwiPlxyXG4gICAgICAgICAgPGxhYmVsIGNsYXNzTmFtZT1cInNib3ggY2xheS1pblwiPlxyXG4gICAgICAgICAgICBTZWFyY2h7JyAnfVxyXG4gICAgICAgICAgICA8aW5wdXRcclxuICAgICAgICAgICAgICB2YWx1ZT17cXVlcnl9XHJcbiAgICAgICAgICAgICAgcGxhY2Vob2xkZXI9XCJOYW1lLCBtZW1iZXIgSUQsIGVtYWlsLCBvciBwaG9uZVwiXHJcbiAgICAgICAgICAgICAgb25DaGFuZ2U9eyhldmVudCkgPT4gc2V0UXVlcnkoZXZlbnQudGFyZ2V0LnZhbHVlKX1cclxuICAgICAgICAgICAgLz5cclxuICAgICAgICAgIDwvbGFiZWw+XHJcbiAgICAgICAgICB7Y3VycmVudFVzZXI/LnJvbGUgPT09ICdhZG1pbicgJiYgKFxyXG4gICAgICAgICAgICA8YnV0dG9uIGNsYXNzTmFtZT1cImJ0blwiIG9uQ2xpY2s9eygpID0+IHNldE1vZGFsKHsga2luZDogJ2NyZWF0ZScgfSl9PlxyXG4gICAgICAgICAgICAgIENyZWF0ZSBBY2NvdW50XHJcbiAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgKX1cclxuICAgICAgICA8L2Rpdj5cclxuXHJcbiAgICAgICAgPERhdGFUYWJsZVxyXG4gICAgICAgICAgc2VhcmNoYWJsZT17ZmFsc2V9XHJcbiAgICAgICAgICBoZWFkaW5ncz17WydJRCcsICdOYW1lJywgJ0NvbnRhY3QnLCAnUGxhbicsICdFeHBpcmVzJywgJ1N0YXR1cycsICdBY3Rpb25zJ119XHJcbiAgICAgICAgPlxyXG4gICAgICAgICAge2ZpbHRlck1lbWJlclJlY29yZHMobWVtYmVycywgcXVlcnkpXHJcbiAgICAgICAgICAgIC5tYXAoKG1lbWJlcikgPT4ge1xyXG4gICAgICAgICAgICAgIGNvbnN0IG1lbWJlcnNoaXBTdGF0dXMgPSBtZW1iZXJCYWRnZShtZW1iZXIpXHJcbiAgICAgICAgICAgICAgY29uc3Qgc2hvd0FjY291bnRTdGF0dXMgPVxyXG4gICAgICAgICAgICAgICAgbWVtYmVyLnN0YXR1cyAmJlxyXG4gICAgICAgICAgICAgICAgbWVtYmVyLnN0YXR1cyAhPT0gJ2FjdGl2ZScgJiZcclxuICAgICAgICAgICAgICAgIG1lbWJlci5zdGF0dXMgIT09IG1lbWJlcnNoaXBTdGF0dXMudG9Mb3dlckNhc2UoKVxyXG5cclxuICAgICAgICAgICAgICByZXR1cm4gKFxyXG4gICAgICAgICAgICAgICAgPHRyIGtleT17bWVtYmVyLmlkfT5cclxuICAgICAgICAgICAgICAgICAgPHRkIGNsYXNzTmFtZT1cInJlY29yZC1pZFwiPnttZW1iZXIubWVtYmVyQ29kZSB8fCBtZW1iZXIuaWR9PC90ZD5cclxuICAgICAgICAgICAgICAgICAgPHRkPlxyXG4gICAgICAgICAgICAgICAgICAgIDxkaXYgY2xhc3NOYW1lPVwibWVtYmVyLXRhYmxlLXBlcnNvblwiPlxyXG4gICAgICAgICAgICAgICAgICAgICAgPFByb2ZpbGVBdmF0YXIgdXNlcj17bWVtYmVyfSBtZW1iZXJJZD17bWVtYmVyLmlkfSAvPlxyXG4gICAgICAgICAgICAgICAgICAgICAgPHNwYW4+e21lbWJlci5uYW1lfTwvc3Bhbj5cclxuICAgICAgICAgICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgICAgICAgICAgPC90ZD5cclxuICAgICAgICAgICAgICAgICAgPHRkPlxyXG4gICAgICAgICAgICAgICAgICAgIDxzcGFuPnttZW1iZXIuZW1haWx9PC9zcGFuPlxyXG4gICAgICAgICAgICAgICAgICAgIDxzbWFsbCBjbGFzc05hbWU9XCJ0YWJsZS1zZWNvbmRhcnlcIj57bWVtYmVyLnBob25lIHx8ICdObyBwaG9uZSBhZGRlZCd9PC9zbWFsbD5cclxuICAgICAgICAgICAgICAgICAgPC90ZD5cclxuICAgICAgICAgICAgICAgICAgPHRkPnttZW1iZXIucGxhbn08L3RkPlxyXG4gICAgICAgICAgICAgICAgICA8dGQ+e2RhdGUobWVtYmVyLm1lbWJlcnNoaXBFbmQpfTwvdGQ+XHJcbiAgICAgICAgICAgICAgICAgIDx0ZD5cclxuICAgICAgICAgICAgICAgICAgICA8UGlsbCBzdGF0dXM9e21lbWJlcnNoaXBTdGF0dXN9IC8+XHJcbiAgICAgICAgICAgICAgICAgICAge3Nob3dBY2NvdW50U3RhdHVzICYmIChcclxuICAgICAgICAgICAgICAgICAgICAgIDxzbWFsbCBjbGFzc05hbWU9XCJ0YWJsZS1zZWNvbmRhcnlcIj5BY2NvdW50IHttZW1iZXIuc3RhdHVzfTwvc21hbGw+XHJcbiAgICAgICAgICAgICAgICAgICAgKX1cclxuICAgICAgICAgICAgICAgICAgPC90ZD5cclxuICAgICAgICAgICAgICAgICAgPHRkIGNsYXNzTmFtZT1cImFjdHMgbWVtYmVyLXJlY29yZC1hY3Rpb25zXCI+XHJcbiAgICAgICAgICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwicmVwb3J0LWljb24tYnV0dG9uXCJcclxuICAgICAgICAgICAgICAgICAgICAgIHR5cGU9XCJidXR0b25cIlxyXG4gICAgICAgICAgICAgICAgICAgICAgYXJpYS1sYWJlbD17YFZpZXcgJHttZW1iZXIubmFtZX1gfVxyXG4gICAgICAgICAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gc2V0TW9kYWwoeyBraW5kOiAndmlldycsIG1lbWJlciB9KX1cclxuICAgICAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgICAgICA8SWNvbiBuYW1lPVwiZXllXCIgc2l6ZT17MTh9IC8+XHJcbiAgICAgICAgICAgICAgICAgICAgPC9idXR0b24+XHJcbiAgICAgICAgICAgICAgICAgICAgPGJ1dHRvblxyXG4gICAgICAgICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwicmVwb3J0LWljb24tYnV0dG9uXCJcclxuICAgICAgICAgICAgICAgICAgICAgIHR5cGU9XCJidXR0b25cIlxyXG4gICAgICAgICAgICAgICAgICAgICAgYXJpYS1sYWJlbD17YEVkaXQgJHttZW1iZXIubmFtZX1gfVxyXG4gICAgICAgICAgICAgICAgICAgICAgb25DbGljaz17KCkgPT4gc2V0TW9kYWwoeyBraW5kOiAnZWRpdCcsIG1lbWJlciB9KX1cclxuICAgICAgICAgICAgICAgICAgICA+XHJcbiAgICAgICAgICAgICAgICAgICAgICA8SWNvbiBuYW1lPVwiZWRpdFwiIHNpemU9ezE4fSAvPlxyXG4gICAgICAgICAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgICAgICAgICAgIHtjdXJyZW50VXNlcj8ucm9sZSA9PT0gJ2FkbWluJyAmJiAoXHJcbiAgICAgICAgICAgICAgICAgICAgICA8UmVjb3JkRGVsZXRlQnV0dG9uXHJcbiAgICAgICAgICAgICAgICAgICAgICAgIGxhYmVsPXtgRGVsZXRlIGFjY291bnQgZm9yICR7bWVtYmVyLm5hbWV9YH1cclxuICAgICAgICAgICAgICAgICAgICAgICAgZGlzYWJsZWQ9e3BlbmRpbmd9XHJcbiAgICAgICAgICAgICAgICAgICAgICAgIG9uQ2xpY2s9eygpID0+IHNldE1vZGFsKHsga2luZDogJ2RlYWN0aXZhdGUtYWNjb3VudCcsIG1lbWJlciB9KX1cclxuICAgICAgICAgICAgICAgICAgICAgIC8+XHJcbiAgICAgICAgICAgICAgICAgICAgKX1cclxuICAgICAgICAgICAgICAgICAgPC90ZD5cclxuICAgICAgICAgICAgICAgIDwvdHI+XHJcbiAgICAgICAgICAgICAgKVxyXG4gICAgICAgICAgICB9KX1cclxuICAgICAgICA8L0RhdGFUYWJsZT5cclxuICAgICAgPC9hcnRpY2xlPlxyXG4gIClcclxufVxyXG4iXSwiZmlsZSI6IkM6L1VzZXJzL2dlZXplL0Rvd25sb2Fkcy9MQU5ESU5HLVBBR0Uvc3JjL2NvbXBvbmVudHMvYWRtaW4vQWRtaW5NZW1iZXJzU2VjdGlvbi5qc3gifQ==

@@ -1,0 +1,6 @@
+2026/11/22-00:02:18.815 1140c Reusing MANIFEST C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/11/22-00:02:18.819 1140c Recovering log #32
+2026/11/22-00:02:18.820 1140c Reusing old log C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default\EdgeCoupons/coupons_data.db/000032.log 
+2026/11/22-00:02:19.434 11b34 Level-0 table #37: started
+2026/11/22-00:02:19.446 11b34 Level-0 table #37: 683376 bytes OK
+2026/11/22-00:02:19.450 11b34 Delete type=0 #32

@@ -96,8 +96,7 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
   }
 
   function goBack() {
-    if (busy) return
-    if (step === 'details') return onClose()
+    if (busy || step === 'details') return
     if (step === 'id') return moveTo('details')
     if (step === 'face') return resetIdScan()
     if (step === 'closeup') {
@@ -268,6 +267,8 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
       error={localError || error}
       invalidField={fieldError}
       onClose={onClose}
+      dismissOnBackdrop={false}
+      dismissOnEscape={false}
     >
       <p className="fp-verification-subtitle">Step {stepNumber} of 4 · {subtitle}</p>
       <Progress current={active} />

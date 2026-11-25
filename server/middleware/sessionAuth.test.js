@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { createSessionAuth } from './sessionAuth.js'
+import { MEMBER_TERMS_VERSION } from '../../shared/memberTerms.js'
 
 const makeAccount = (overrides = {}) => ({
   id: 'test-user', name: 'Test User', email: 'member@example.test', role: 'member',
@@ -32,7 +33,7 @@ test('session middleware rejects missing credentials', async () => {
 })
 
 test('active member token continues with current role', async () => {
-  const account=makeAccount(), auth=middleware(account), req=request(auth.createSession(account).token), res=response()
+  const account=makeAccount(), auth=middleware(account), req=request(auth.createSession(account, MEMBER_TERMS_VERSION).token), res=response()
   let called=false
   await auth.authenticate(req,res,()=>{called=true})
   assert.equal(called,true)
@@ -40,8 +41,16 @@ test('active member token continues with current role', async () => {
   assert.equal(res.statusCode,200)
 })
 
+test('member sessions issued before the terms requirement must sign in again', async () => {
+  const account = makeAccount()
+  const auth = middleware(account)
+  const res = response()
+  await auth.authenticate(request(auth.createSession(account).token), res, () => assert.fail('member was authorized'))
+  assert.equal(res.statusCode, 401)
+})
+
 test('session invalidated when account version increments or account deactivates', async () => {
-  const account=makeAccount(), auth=middleware(account), token=auth.createSession(account).token
+  const account=makeAccount(), auth=middleware(account), token=auth.createSession(account, MEMBER_TERMS_VERSION).token
   account.authVersion=3
   const res=response()
   await auth.authenticate(request(token),res,()=>{})
@@ -54,7 +63,7 @@ test('session invalidated when account version increments or account deactivates
 })
 
 test('temporary password permits only current-user and change-password endpoints', async () => {
-  const account=makeAccount({mustChangePassword:true}), auth=middleware(account), token=auth.createSession(account).token
+  const account=makeAccount({mustChangePassword:true}), auth=middleware(account), token=auth.createSession(account, MEMBER_TERMS_VERSION).token
   const cases=[['GET','/api/me',true],['POST','/api/profile/change-password',true],['GET','/api/payments',false]]
   for(const [method,path,allowed] of cases){
     let called=false

@@ -57,6 +57,7 @@ test('rejects missing or oversized current passwords before database access', as
 
 test('rejects an invalid, mismatched or unchanged new password', async () => {
   await expectRejection({ ...valid, password: 'short', confirmPassword: 'short' }, 'Password policy message')
+  await expectRejection({ ...valid, confirmPassword: undefined }, 'The new passwords do not match.')
   await expectRejection({ ...valid, confirmPassword: 'different' }, 'The new passwords do not match.')
   await expectRejection({ ...valid, password: valid.currentPassword, confirmPassword: valid.currentPassword }, 'Choose a password different from your current password.')
 })

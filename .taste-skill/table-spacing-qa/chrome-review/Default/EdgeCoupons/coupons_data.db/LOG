@@ -1,0 +1,6 @@
+2026/11/25-00:12:29.162 e6bc Reusing MANIFEST C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/11/25-00:12:29.164 e6bc Recovering log #45
+2026/11/25-00:12:29.166 e6bc Reusing old log C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default\EdgeCoupons/coupons_data.db/000045.log 
+2026/11/25-00:12:29.605 103bc Level-0 table #50: started
+2026/11/25-00:12:29.611 103bc Level-0 table #50: 683376 bytes OK
+2026/11/25-00:12:29.613 103bc Delete type=0 #45

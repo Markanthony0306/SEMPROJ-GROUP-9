@@ -14,3 +14,6 @@ data.json
 supabase/.temp/
 # Downloaded, licensed OpenCV face models (see server/biometrics/README.md)
 server/biometrics/models/*.onnx
+
+# Local biometric Python environment
+.venv-id-ocr/

@@ -1,0 +1,504 @@
+✖ only an admin deletes a member and the deleted member loses session access (758.5177ms)
+✖ self-deletion is denied without changing accounts, photos, or Auth (168.1657ms)
+✖ admin can delete a member; staff and other members cannot (333.3549ms)
+✖ only exact case-sensitive confirmation after trimming is accepted (478.1779ms)
+✖ self-deletion, staff targets, and unlinked members are blocked before photo cleanup (42.9239ms)
+✖ the database can reject a stale administrator session (59.0517ms)
+✖ missing migration or changed account link stops before Storage (75.4618ms)
+✖ database or audit failure leaves the account and photos intact (37.7866ms)
+✖ a retry after a Storage failure completes cleanup without deleting twice (25.7897ms)
+✔ a renewed membership can stop scheduled deletion before photos change (10.3538ms)
+✖ scheduled deletion rechecks a membership immediately before removing its login (8.3262ms)
+✖ only gym staff can resend access; rejected email is a failure (97.3825ms)
+✔ SMTP defaults use the authenticated sender and select TLS from the port (22.5466ms)
+✔ invalid sender, port, or TLS settings fail with a safe actionable error (2.1564ms)
+✔ SMTP rejection cannot be reported as email acceptance (1.5905ms)
+✔ email variants compile real MIME messages without sending (230.4163ms)
+✔ timing uses the exact reminder boundary and expiry instant (14.0004ms)
+✔ skips staff, inactive accounts, invalid dates, invalid email and future memberships (1.6102ms)
+✔ worker loads real account mappings, sends the formal reminder and stores a receipt (314.6628ms)
+✔ repeated checks and a restarted worker do not repeat an accepted reminder (185.5281ms)
+✔ overlapping worker instances share the atomic claim (136.6831ms)
+✔ overlapping runs in one process share a single database load (22.5535ms)
+✔ sends one expired reminder and a renewal starts a new reminder period (348.4345ms)
+✔ missing SMTP or disabled preferences send no mail (43.3283ms)
+✔ a changed preference or renewal before claiming suppresses stale reminders (81.3312ms)
+✔ SMTP failures and rejected recipients remain eligible for a later retry (229.9271ms)
+✔ missing migration stops the whole batch before any real reminder is reserved (133.9737ms)
+✔ setup checks validate schema and permissions without sending or reserving reminders (13.5239ms)
+✔ scheduler reports one setup error for three due subscriptions and retries later (44.3236ms)
+✔ a failed receipt keeps its lease; another member still receives a reminder (112.0111ms)
+✔ scheduler checks at startup, waits an hour, recovers from errors and stops (2.212ms)
+✔ legacy email_notifications preference is read and saved without changing its column (6.2233ms)
+✖ delivery status distinguishes failed attempts from SMTP acceptance and preserves receipts (21.715ms)
+✔ notification dismissal persists per administrator and clear-all affects only its group (86.3911ms)
+✖ an expired claim with an unacknowledged SMTP attempt never claims that no email was sent (40.2583ms)
+✔ missing dismissal migration is visible and cannot report a successful clear (19.8659ms)
+✖ notification API enforces roles, confirmation, group scope and SMTP checks without real mail (592.1119ms)
+✔ Report endpoints enforce sign-in, role, kind, and identifier checks (723.2191ms)
+✔ Payment CRUD persists, refreshes totals, and keeps subscription identity (516.5578ms)
+✔ Invalid payments, dates, and unknown members cannot write records (276.6868ms)
+✔ Attendance reports allow corrections but reject manual creation (44.2913ms)
+✔ Maintenance CRUD refreshes log reports without deleting equipment (50.4395ms)
+Report record save failed: Synthetic database failure
+✔ Database failures do not report a successful save (19.0405ms)
+✔ Bulk clearing requires an admin, an allowed category, and explicit confirmation (231.7738ms)
+✔ Bulk clear affects only the selected category and preserves accounts, plans and equipment (98.9759ms)
+Report category clear failed: Synthetic database failure
+Report category clear failed: Missing migration
+✔ A failed bulk operation or missing migration cannot clear fixture records (43.4372ms)
+✔ Charts use Manila calendar boundaries, ignore future/invalid data, and sum real amounts (10.774ms)
+✔ Branded emails escape input and embed a real PNG with a text fallback (145.6724ms)
+✔ Recovery uses Supabase one-time links, branded SMTP delivery, and provider fallback (5.3359ms)
+PASS: Login renders without development credentials.
+PASS: Member credentials render for the administrator.
+PASS: admin dashboard renders its interactive chart and controls.
+PASS: member dashboard renders its interactive chart and controls.
+PASS: Reports render category filters, source records, and accessible actions.
+PASS: Equipment categories require selection, retain saved choices, and preserve legacy values.
+PASS: Delete controls have accessible labels, disabled states, and explicit bulk confirmation.
+PASS: In-app notifications retain scoped admin-only clearing.
+PASS: Account deletion explains permanent data loss and requires typed confirmation.
+PASS: The loading overlay renders the shared circular spinner.
+✔ scripts\test-ui-render.mjs (13172.4735ms)
+✔ app composition retains original route order and methods (12081.7319ms)
+✔ app factory preserves startup workflow, port and final error handler (3003.5727ms)
+✔ account validation normalizes fields without changing existing API messages (58.3778ms)
+✔ payment method preserves Cash default and GCash handling (0.926ms)
+✔ retired and inactive plans are not available (0.6511ms)
+✔ identifies refused OCR connections and DNS failures from fetch causes (3.7026ms)
+✔ extracts only known connection codes from PostgREST details (1.6353ms)
+✔ renewal saves linked subscription and payment (22.6726ms)
+✔ payment failure reveals a partial database write (4.0322ms)
+✔ session middleware rejects missing credentials (4.668ms)
+✔ active member token continues with current role (19.636ms)
+✔ member sessions issued before the terms requirement must sign in again (2.5245ms)
+✔ session invalidated when account version increments or account deactivates (2.4436ms)
+✔ temporary password permits only current-user and change-password endpoints (3.6483ms)
+✔ admin route permissions and rate limits retain existing behavior (1.0789ms)
+✔ returns active for a current membership (14.7498ms)
+✔ returns expired for an expired membership (0.708ms)
+✔ preserves inactive account status (0.4881ms)
+✔ rejects an admin account from member check-in (0.6722ms)
+✔ rejects inactive members (0.5556ms)
+✔ rejects missing membership dates (0.4215ms)
+✔ rejects memberships that have not started (0.6337ms)
+✔ rejects expired memberships during check-in (0.4355ms)
+✔ accepts valid memberships during check-in (1.1098ms)
+✔ adds the requested number of days (1.9789ms)
+✔ sends the correct registration parameters to Supabase (39.6607ms)
+✔ does not request a payment when recordPayment is false (0.8198ms)
+✔ handles a failed registration RPC (3.4654ms)
+✔ identifies database uniqueness conflicts (1.4481ms)
+✔ rejects an unexpectedly empty RPC response (0.668ms)
+✔ saves the verified face in the SAME atomic registration RPC (1.2883ms)
+✔ retrieves the linked Supabase Auth user ID (8.4106ms)
+✔ returns null when no linked Auth account exists (2.3213ms)
+✔ reports a Supabase error during Auth lookup (2.6631ms)
+✔ detects an email used by another profile (0.8739ms)
+✔ allows an email not used by another profile (0.6329ms)
+✔ reports a database error during email lookup (0.9672ms)
+✔ updates member profile fields in Supabase (2.1885ms)
+✔ reports an error when profile update fails (0.7169ms)
+✔ rejects an update when no profile is returned (1.609ms)
+✔ atomically updates profile without changing membership plan (7.2735ms)
+✔ sends the new plan when membership changes (7.1382ms)
+✔ reports an atomic database update failure (4.4131ms)
+MEMBERSHIP RENEWAL RPC ERROR: {
+  code: undefined,
+  message: 'Database unavailable',
+  details: undefined,
+  hint: undefined
+}
+MEMBERSHIP RENEWAL RPC ERROR: {
+  code: undefined,
+  message: 'MEMBERSHIP_RENEWAL_CONFLICT',
+  details: undefined,
+  hint: undefined
+}
+✔ calls the atomic renewal RPC with the correct fields (5.1642ms)
+✔ reports failed RPC writes without pretending the renewal succeeded (7.7712ms)
+✔ identifies a concurrency conflict (1.5481ms)
+✔ gateway keeps the existing loadDatabase/saveDatabase snapshot contract (7.4303ms)
+✔ gateway delegates account lookup to the original Supabase adapter (1.1331ms)
+✔ stream tickets are scoped and alerts are isolated by role and account (740.5029ms)
+✔ equipment routes announce saved changes once and skip a repeated condition (7.0178ms)
+✔ ID scan requires explicit member consent before opening the engine (652.4312ms)
+✔ ID and facial scans issue verified enrollment proof tied to member details (133.251ms)
+✔ member face-login challenge is required for a session, not a caller-supplied flag (124.4888ms)
+✔ face login refuses accounts without an enrolled template (30.7665ms)
+✔ card ID verification requires an explicitly captured back-side image (49.1806ms)
+✔ passport accepts its photo page without an ID-card back (25.7446ms)
+✔ live preview requires authenticated admin and only supplies transient guidance (27.1781ms)
+✔ facial login rejects static three-photo submission without motion evidence (25.9882ms)
+✔ face preview requires signed login challenge before calling the model (36.0058ms)
+✔ a single PDF document is accepted without a separate back image (30.0287ms)
+✔ PDF uploads reject non-PDF data and do not reach biometrics (17.6385ms)
+✔ uploaded image IDs still require both front and back (24.266ms)
+✔ returns HTTP 201 and a temporary password without exposing internal fields (632.9109ms)
+✔ sends a GCash payment request to the workflow (79.1678ms)
+✔ rejects unauthenticated registration before database access (37.2253ms)
+✔ rejects staff registration without admin permission (36.4356ms)
+✔ rejects missing name before loading the database (41.7544ms)
+✔ rejects unsupported recorded payment methods (43.6007ms)
+✔ rejects unavailable membership plans (25.1057ms)
+✔ rejects duplicate emails in loaded accounts (26.0428ms)
+✔ rejects duplicate emails found directly in Supabase (48.3289ms)
+Supabase email lookup failed: Simulated query failure
+✔ does not call the workflow if profile lookup fails (52.6548ms)
+✔ returns HTTP 409 for a confirmed registration conflict (27.135ms)
+✔ returns HTTP 503 when registration outcome is uncertain (13.7628ms)
+Unable to create member: Secret SQL connection information
+✔ hides unexpected internal errors from the client (14.7074ms)
+✔ rejects a member creation without server-verified facial enrollment (20.8404ms)
+✔ rejects ID/name edits after facial verification (19.2599ms)
+✔ returns members sorted by newest first (561.4052ms)
+✔ does not expose private authentication fields (49.7706ms)
+✔ rejects unauthenticated requests (497.0105ms)
+✔ rejects users without admin permissions (133.7132ms)
+Unable to load members: Simulated Supabase failure
+✔ returns HTTP 500 when database loading fails (44.6751ms)
+✔ does not modify the original accounts order (31.9337ms)
+✔ successful renewal returns HTTP 200 and payment (526.6731ms)
+✔ missing authentication returns 401 before database access (108.2599ms)
+✔ member role cannot use admin renewal endpoint (174.3059ms)
+✔ invalid payment amount returns 400 without saving (33.4719ms)
+✔ concurrent renewal produces HTTP 409 (23.4389ms)
+✔ known membership validation error produces HTTP 400 (49.5091ms)
+✔ unexpected repository failure returns generic HTTP 500 (45.1803ms)
+✔ member credentials require acceptance of the current terms before issuing a face challenge (698.9068ms)
+✔ legacy member without enrollment is blocked from password-only sign-in (39.9529ms)
+✔ administrator receives a session after credentials without looking up biometric enrollment (23.5671ms)
+✔ admin cannot sign in after five wrong passwords (78.9404ms)
+✔ member cannot sign in after five wrong passwords (66.2623ms)
+✔ development startup creates the admin without a demo member or sample activity (48.4095ms)
+✔ development startup does not duplicate the admin or create demo activity (1.5405ms)
+✔ production startup does not create demo accounts or demo activity (1.5735ms)
+Password change: linked profile lookup failed: Missing linked Auth user or email.
+Supabase password update failed: Auth unavailable
+✔ rejects missing or oversized current passwords before database access (10.0544ms)
+✔ rejects an invalid, mismatched or unchanged new password (1.7291ms)
+✔ returns 404 when the authenticated account is absent (0.8842ms)
+✔ rejects an unlinked login profile before updating Auth (37.7775ms)
+✔ rejects a mismatched authenticated user ID (1.234ms)
+✔ propagates Auth update failure without changing the profile snapshot (1.7818ms)
+✔ updates Auth, advances account version, clears flag and saves (1.3925ms)
+✔ preserves existing database-save failure behavior after Auth changed (1.1182ms)
+✔ prepares valid registration information (6.7627ms)
+✔ rejects incomplete registration details (2.6635ms)
+✔ rejects unavailable membership plans (0.7314ms)
+✔ rejects unsupported payment methods when recording payment (0.7127ms)
+✔ rejects unconfigured payment methods (0.865ms)
+✔ rejects duplicate email addresses with status 409 (1.3752ms)
+✔ allows registration without recording a payment (0.5224ms)
+✔ creates Auth and saves member without payment (11.4081ms)
+✔ passes optional payment to the repository (0.7474ms)
+✔ does not save if Auth creation fails (30.3423ms)
+✔ cleans up Auth after a confirmed SQL conflict (4.8066ms)
+✔ cleans up Auth after confirmed SQL validation rejection (1.6621ms)
+✔ preserves Auth when database outcome is uncertain (5.812ms)
+✔ reports a failure when Auth cleanup cannot be confirmed (1.7138ms)
+✔ passes completed identity enrollment into persistence layer (0.7944ms)
+✔ prepares a valid member profile update (7.8904ms)
+✔ preserves existing values when fields are omitted (0.8704ms)
+✔ prepares an Auth update when the email changes (3.3287ms)
+✔ does not update Auth when the email is unchanged (0.5309ms)
+✔ prepares a valid password change (0.75ms)
+✔ ignores an empty password (0.3953ms)
+✔ rejects invalid member information (2.1083ms)
+✔ rejects a password that violates the policy (0.6323ms)
+✔ does not modify the original member object (0.814ms)
+✔ rejects an email already used by another member (1.3461ms)
+✔ allows a member to keep their existing email (0.7591ms)
+✔ allows an email that no other member uses (0.569ms)
+✔ prepares a valid update before database writes (6.9614ms)
+✔ rejects a member without a linked Auth account (2.1348ms)
+✔ rejects an email used by another Supabase profile (0.8456ms)
+✔ stops before database lookups when validation fails (0.8432ms)
+✔ executes a profile-only update successfully (2.0443ms)
+✔ reports a failed profile update (1.3546ms)
+✔ updates the Auth email before saving the profile (1.2461ms)
+✔ does not update the profile when Supabase Auth rejects the email (0.9768ms)
+✔ requires reconciliation if the profile write fails after Auth succeeds (3.524ms)
+✔ updates email and plan through the consolidated workflow (3.064ms)
+✔ updates password and invalidates existing sessions (3.1712ms)
+✔ updates a membership plan through the atomic repository (0.632ms)
+✔ rejects membership-plan changes without an administrator ID (42.7948ms)
+✔ saves one renewal and preserves the original subscription ID (12.6019ms)
+✔ does not modify the original member when saving fails (4.3395ms)
+✔ does not call the repository for invalid renewal details (1.0054ms)
+✔ renews an existing membership (10.9408ms)
+✔ starts a new period immediately for an expired membership (3.9566ms)
+✔ creates a matching renewal payment (1.4602ms)
+✔ rejects inactive membership plans (3.268ms)
+✔ rejects unconfigured payment methods (11.6593ms)
+✔ does not modify the original member object (0.9297ms)
+✔ uses the plan price when no custom amount is supplied (0.8106ms)
+✔ keeps an early-renewed member eligible for QR check-in (0.8558ms)
+✔ throws a MembershipError for invalid payment amounts (4.5756ms)
+Supabase password reset failed: fixture Auth failure
+✔ forgot-password does not reveal missing or inactive accounts (6.8157ms)
+✔ email contains an opaque token and the original expiry survives repeated checks (12.6989ms)
+✔ expiry during the database lookup prevents an Auth update (21.5911ms)
+✔ concurrent redemption uses the link once and invalidates older links for the account (3.4362ms)
+✔ a missing or mismatched confirmation cannot consume a valid link (4.0689ms)
+✔ delivery failure invalidates the token immediately (1.7183ms)
+✔ a consumed link cannot be replayed after an uncertain Auth failure (6.87ms)
+Attendance notification failed: Error
+✔ attendance only succeeds when storage confirms a record (5.7045ms)
+✔ a notification failure cannot hide a saved attendance record (4.6123ms)
+✔ manual deletion validates the target while automatic deletion stays disabled (4.2201ms)
+✔ admin deletion requires confirmation and password before deleting a member (11.8335ms)
+ℹ tests 219
+ℹ suites 0
+ℹ pass 205
+ℹ fail 14
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 15781.0145
+
+✖ failing tests:
+
+test at scripts\test-account-deletion.mjs:167:1
+✖ only an admin deletes a member and the deleted member loses session access (758.5177ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      body: {
+  +     message: 'Enter your current password.'
+  -     message: 'Member account deleted.'
+      },
+  +   status: 400
+  -   status: 200
+    }
+  
+      at file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:169:12
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:160:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { status: 400, body: { message: 'Enter your current password.' } },
+    expected: { status: 200, body: { message: 'Member account deleted.' } },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts\test-account-deletion.mjs:183:1
+✖ self-deletion is denied without changing accounts, photos, or Auth (168.1657ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Only an administrator/. Input:
+  
+  'Member accounts cannot be permanently deleted. Contact the gym.'
+  
+      at file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:189:14
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:160:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Member accounts cannot be permanently deleted. Contact the gym.',
+    expected: /Only an administrator/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at scripts\test-account-deletion.mjs:200:1
+✖ admin can delete a member; staff and other members cannot (333.3549ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  401 !== 403
+  
+      at file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:203:14
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:160:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 401,
+    expected: 403,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts\test-account-deletion.mjs:213:1
+✖ only exact case-sensitive confirmation after trimming is accepted (478.1779ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  400 !== 200
+  
+      at file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:219:12
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:160:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts\test-account-deletion.mjs:222:1
+✖ self-deletion, staff targets, and unlinked members are blocked before photo cleanup (42.9239ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  400 !== 403
+  
+      at file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:224:12
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:160:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 403,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts\test-account-deletion.mjs:233:1
+✖ the database can reject a stale administrator session (59.0517ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  400 !== 403
+  
+      at file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:236:12
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:160:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 403,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts\test-account-deletion.mjs:241:1
+✖ missing migration or changed account link stops before Storage (75.4618ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  400 !== 503
+  
+      at file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:245:12
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:160:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 503,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts\test-account-deletion.mjs:254:1
+✖ database or audit failure leaves the account and photos intact (37.7866ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  400 !== 503
+  
+      at file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:258:12
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:160:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 503,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts\test-account-deletion.mjs:268:1
+✖ a retry after a Storage failure completes cleanup without deleting twice (25.7897ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  400 !== 503
+  
+      at file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:272:12
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:160:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 400,
+    expected: 503,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts\test-account-deletion.mjs:302:1
+✖ scheduled deletion rechecks a membership immediately before removing its login (8.3262ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+  + []
+  - [
+  -   '11111111-1111-4111-8111-111111111111/profile.jpg'
+  - ]
+  
+      at file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:315:12
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async fixture (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-account-deletion.mjs:160:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [],
+    expected: [ '11111111-1111-4111-8111-111111111111/profile.jpg' ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at scripts\test-account-deletion.mjs:320:1
+✖ only gym staff can resend access; rejected email is a failure (97.3825ms)
+  SyntaxError [Error]: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+      at JSON.parse (<anonymous>)
+      at parseJSONFromBytes (node:internal/deps/undici/undici:3226:19)
+      at successSteps (node:internal/deps/undici/undici:7169:27)
+      at readAllBytes (node:internal/deps/undici/undici:4682:13)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+test at scripts\test-membership-reminders.mjs:508:1
+✖ delivery status distinguishes failed attempts from SMTP acceptance and preserves receipts (21.715ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'state')
+      at TestContext.<anonymous> (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-membership-reminders.mjs:512:74)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts\test-membership-reminders.mjs:557:1
+✖ an expired claim with an unacknowledged SMTP attempt never claims that no email was sent (40.2583ms)
+  TypeError [Error]: Cannot read properties of undefined (reading 'state')
+      at TestContext.<anonymous> (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-membership-reminders.mjs:565:47)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts\test-membership-reminders.mjs:583:1
+✖ notification API enforces roles, confirmation, group scope and SMTP checks without real mail (592.1119ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  403 !== 200
+  
+      at TestContext.<anonymous> (file:///C:/Users/geeze/Downloads/LANDING-PAGE/scripts/test-membership-reminders.mjs:628:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 403,
+    expected: 200,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

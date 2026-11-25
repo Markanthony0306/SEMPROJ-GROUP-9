@@ -1,0 +1,172 @@
+2026-11-24 16:01:08.585: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:01:08.585: [INFO] Profiles total count: 1
+2026-11-24 16:01:08.585: [INFO] Profile: name=Profile 1 path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=null
+2026-11-24 16:01:08.586: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:01:08.586: [INFO] VisibilityChanged: 0
+2026-11-24 16:01:08.642: [INFO] BookmarkNodeAdded, ABU: 0
+2026-11-24 16:01:08.642: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:01:08.642: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:01:08.642: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:01:08.642: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:01:08.736: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-24 16:01:11.239: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-24 16:01:11.248: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-24 16:01:11.259: [INFO] Primary account changed.
+2026-11-24 16:01:11.259: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-11-24 16:01:11.280: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-24 16:01:11.284: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-24 16:01:14.777: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:02:49.321: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:02:49.321: [INFO] Profiles total count: 1
+2026-11-24 16:02:49.321: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:01:08.608Z
+2026-11-24 16:02:49.321: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:02:49.321: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:01:08.608Z
+2026-11-24 16:02:49.321: [INFO] VisibilityChanged: 0
+2026-11-24 16:02:49.464: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:02:49.464: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:02:49.464: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:02:49.464: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:02:56.892: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:03:25.048: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:03:25.048: [INFO] Profiles total count: 1
+2026-11-24 16:03:25.048: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:02:49.353Z
+2026-11-24 16:03:25.048: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:03:25.048: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:02:49.353Z
+2026-11-24 16:03:25.048: [INFO] VisibilityChanged: 0
+2026-11-24 16:03:25.130: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:03:25.130: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:03:25.130: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:03:25.130: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:03:32.002: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:03:46.386: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:03:46.386: [INFO] Profiles total count: 1
+2026-11-24 16:03:46.386: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:03:25.078Z
+2026-11-24 16:03:46.386: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:03:46.386: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:03:25.078Z
+2026-11-24 16:03:46.386: [INFO] VisibilityChanged: 0
+2026-11-24 16:03:46.468: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:03:46.468: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:03:46.468: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:03:46.468: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:03:51.723: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:04:07.685: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:04:07.685: [INFO] Profiles total count: 1
+2026-11-24 16:04:07.685: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:03:46.414Z
+2026-11-24 16:04:07.685: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:04:07.685: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:03:46.414Z
+2026-11-24 16:04:07.685: [INFO] VisibilityChanged: 0
+2026-11-24 16:04:07.755: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:04:07.755: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:04:07.755: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:04:07.755: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:04:13.430: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:04:29.004: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:04:29.004: [INFO] Profiles total count: 1
+2026-11-24 16:04:29.004: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:04:07.707Z
+2026-11-24 16:04:29.004: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:04:29.004: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:04:07.707Z
+2026-11-24 16:04:29.004: [INFO] VisibilityChanged: 0
+2026-11-24 16:04:29.092: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:04:29.092: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:04:29.092: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:04:29.092: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:04:36.259: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:05:39.259: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:05:39.259: [INFO] Profiles total count: 1
+2026-11-24 16:05:39.259: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:04:29.036Z
+2026-11-24 16:05:39.259: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:05:39.259: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:04:29.036Z
+2026-11-24 16:05:39.259: [INFO] VisibilityChanged: 0
+2026-11-24 16:05:39.352: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:05:39.352: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:05:39.352: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:05:39.352: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:05:45.121: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:06:00.632: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:06:00.632: [INFO] Profiles total count: 1
+2026-11-24 16:06:00.632: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:05:39.292Z
+2026-11-24 16:06:00.632: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:06:00.632: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:05:39.292Z
+2026-11-24 16:06:00.632: [INFO] VisibilityChanged: 0
+2026-11-24 16:06:00.706: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:06:00.706: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:06:00.706: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:06:00.706: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:06:07.309: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:06:21.998: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:06:21.998: [INFO] Profiles total count: 1
+2026-11-24 16:06:21.999: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:06:00.656Z
+2026-11-24 16:06:21.999: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:06:21.999: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:06:00.656Z
+2026-11-24 16:06:21.999: [INFO] VisibilityChanged: 0
+2026-11-24 16:06:22.088: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:06:22.088: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:06:22.088: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:06:22.088: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:06:27.736: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:06:43.614: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:06:43.614: [INFO] Profiles total count: 1
+2026-11-24 16:06:43.614: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:06:22.029Z
+2026-11-24 16:06:43.614: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:06:43.614: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:06:22.029Z
+2026-11-24 16:06:43.614: [INFO] VisibilityChanged: 0
+2026-11-24 16:06:43.701: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:06:43.701: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:06:43.701: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:06:43.701: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:06:49.739: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:07:04.968: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:07:04.968: [INFO] Profiles total count: 1
+2026-11-24 16:07:04.968: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:06:43.644Z
+2026-11-24 16:07:04.968: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:07:04.968: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:06:43.644Z
+2026-11-24 16:07:04.968: [INFO] VisibilityChanged: 0
+2026-11-24 16:07:05.049: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:07:05.049: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:07:05.049: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:07:05.049: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:07:11.621: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:07:26.348: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:07:26.348: [INFO] Profiles total count: 1
+2026-11-24 16:07:26.348: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:07:04.993Z
+2026-11-24 16:07:26.348: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:07:26.348: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:07:04.993Z
+2026-11-24 16:07:26.348: [INFO] VisibilityChanged: 0
+2026-11-24 16:07:26.438: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:07:26.438: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:07:26.438: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:07:26.438: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:07:33.103: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:08:21.045: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:08:21.045: [INFO] Profiles total count: 1
+2026-11-24 16:08:21.045: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:07:26.378Z
+2026-11-24 16:08:21.045: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:08:21.045: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:07:26.378Z
+2026-11-24 16:08:21.045: [INFO] VisibilityChanged: 0
+2026-11-24 16:08:21.114: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:08:21.114: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:08:21.114: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:08:21.115: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:08:24.021: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:08:42.331: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:08:42.331: [INFO] Profiles total count: 1
+2026-11-24 16:08:42.331: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:08:21.067Z
+2026-11-24 16:08:42.331: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:08:42.331: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:08:21.067Z
+2026-11-24 16:08:42.331: [INFO] VisibilityChanged: 0
+2026-11-24 16:08:42.402: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:08:42.402: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:08:42.402: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:08:42.402: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:08:45.239: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:12:26.966: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:12:26.966: [INFO] Profiles total count: 1
+2026-11-24 16:12:26.966: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:12:05.382Z
+2026-11-24 16:12:26.966: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default
+2026-11-24 16:12:26.966: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\table-spacing-qa\chrome-review\Default lastActive=2026-11-24T16:12:05.382Z
+2026-11-24 16:12:26.966: [INFO] VisibilityChanged: 0
+2026-11-24 16:12:27.041: [INFO] OnDoneLoading sync enabled: 0
+2026-11-24 16:12:27.041: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-24 16:12:27.041: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-24 16:12:27.041: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-24 16:12:30.543: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1

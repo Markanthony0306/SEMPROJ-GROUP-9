@@ -1,0 +1,15 @@
+2026/11/25-01:26:42.432 181e4 Reusing MANIFEST C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\fitpulse-review\chrome\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/11/25-01:26:42.438 181e4 Recovering log #31
+2026/11/25-01:26:42.442 181e4 Reusing old log C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\fitpulse-review\chrome\Default\EdgeCoupons/coupons_data.db/000031.log 
+2026/11/25-01:26:46.190 19634 Level-0 table #35: started
+2026/11/25-01:26:46.213 19634 Level-0 table #35: 683376 bytes OK
+2026/11/25-01:26:46.221 19634 Delete type=0 #31
+2026/11/25-01:26:46.228 19634 Compacting 4@0 + 1@1 files
+2026/11/25-01:26:46.276 19634 Generated table #36@0: 4 keys, 683399 bytes
+2026/11/25-01:26:46.277 19634 Compacted 4@0 + 1@1 files => 683399 bytes
+2026/11/25-01:26:46.280 19634 compacted to: files[ 0 1 0 0 0 0 0 ]
+2026/11/25-01:26:46.283 19634 Delete type=2 #24
+2026/11/25-01:26:46.283 19634 Delete type=2 #26
+2026/11/25-01:26:46.283 19634 Delete type=2 #29
+2026/11/25-01:26:46.283 19634 Delete type=2 #32
+2026/11/25-01:26:46.283 19634 Delete type=2 #35

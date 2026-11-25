@@ -61,14 +61,16 @@ export default function MobileLayout({
           <div className="logo brand">
             <Brand />
           </div>
-          <button
-            type="button"
-            className="ib fitpulse-icon-button"
-            onClick={toggle}
-            aria-label={dark ? 'Use light theme' : 'Use dark theme'}
-          >
-            <Icon name={dark ? 'sun' : 'moon'} />
-          </button>
+          <div className="fitpulse-header-actions">
+            <button
+              type="button"
+              className="ib fitpulse-icon-button"
+              onClick={toggle}
+              aria-label={dark ? 'Use light theme' : 'Use dark theme'}
+            >
+              <Icon name={dark ? 'sun' : 'moon'} />
+            </button>
+          </div>
         </header>
         <main className="fitpulse-mobile-scroll" ref={scroller}>
           <div className="fitpulse-mobile-content" aria-busy={loading}>
@@ -95,14 +97,6 @@ export default function MobileLayout({
                   />
                 ))}
                 <MoreRow
-                  icon={<Icon name={dark ? 'sun' : 'moon'} />}
-                  label="Dark mode"
-                  role="switch"
-                  aria-checked={dark}
-                  trailing={dark ? 'On' : 'Off'}
-                  onClick={toggle}
-                />
-                <MoreRow
                   icon={<Icon name="out" />}
                   label="Sign out"
                   trailing=""
@@ -123,7 +117,7 @@ export default function MobileLayout({
           Icon={Icon}
         />
         {dialogs}
-        {sheet === 'qr' && (
+        {!admin && sheet === 'qr' && (
           <BottomSheet title="My QR" onClose={() => setSheet('')}>
             {qr}
           </BottomSheet>

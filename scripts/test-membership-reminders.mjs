@@ -274,7 +274,7 @@ test('worker loads real account mappings, sends the formal reminder and stores a
   assert.equal(f.state.messages.length, 1)
   const message = f.state.messages[0]
   assert.equal(message.subject, 'Membership Expiry Reminder')
-  assert.equal(message.text, 'Dear Test Member, your FitPulse membership expires on Oct 22, 2026. Please renew before this date to continue your access. Thank you. - FitPulse')
+  assert.equal(message.text, 'Dear Test Member, your FitPulse membership expires on 22/10/2026. Please renew before this date to continue your access. Thank you. - FitPulse')
   assert.equal(message.html, `<p>${message.text}</p>`)
   assert.ok([...f.state.receipts.values()][0].sent_at)
 })

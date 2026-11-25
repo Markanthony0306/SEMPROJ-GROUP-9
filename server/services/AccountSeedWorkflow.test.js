@@ -76,3 +76,28 @@ test('production startup does not create demo accounts or demo activity', async 
   assert.equal(state.attendance.length, 0)
   assert.equal(state.payments.length, 0)
 })
+
+test('startup reuses the configured administrator email instead of creating the default admin', async () => {
+  const { state, authUsers, repository } = makeFakeRepository()
+  state.accounts.push({
+    id: 'existing-admin',
+    authUserId: 'existing-auth',
+    email: 'owner@example.com',
+    role: 'admin',
+    status: 'active'
+  })
+  authUsers.push({ id: 'existing-auth', email: 'owner@example.com' })
+  const previous = process.env.ADMIN_EMAIL
+  process.env.ADMIN_EMAIL = ' Owner@Example.com '
+  try {
+    const workflow = makeWorkflow(repository, true)
+    await workflow.run()
+    await workflow.run()
+  } finally {
+    if (previous === undefined) delete process.env.ADMIN_EMAIL
+    else process.env.ADMIN_EMAIL = previous
+  }
+  assert.equal(state.accounts.length, 1)
+  assert.equal(state.accounts[0].id, 'existing-admin')
+  assert.equal(authUsers.length, 1)
+})

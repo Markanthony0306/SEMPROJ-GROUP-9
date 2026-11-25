@@ -1,39 +1,32 @@
 /** Supabase access needed by existing password recovery API endpoints. */
 export class PasswordRecoveryRepository {
-  constructor({ supabase, createAuthClient }) {
+  constructor({ supabase, sendResetEmail }) {
     this.supabase = supabase
-    this.createAuthClient = createAuthClient
+    this.sendResetEmail = sendResetEmail
   }
 
   async findProfileByEmail(email) {
     return this.supabase
       .from('users')
-      .select('email, status')
-      .ilike('email', email)
+      .select('id, auth_user_id, auth_version, name, email, status')
+      .eq('email', email)
       .maybeSingle()
   }
 
-  async sendResetLink(email, redirectTo) {
-    return this.createAuthClient().auth.resetPasswordForEmail(email, { redirectTo })
-  }
-
-  async exchangeCode(code) {
-    return this.createAuthClient().auth.exchangeCodeForSession(code)
-  }
-
-  async getAuthUser(accessToken) {
-    return this.createAuthClient().auth.getUser(accessToken)
+  async sendResetLink(profile, recoveryUrl) {
+    return this.sendResetEmail({ email: profile.email, name: profile.name, recoveryUrl })
   }
 
   async findLinkedProfile(authUserId) {
     return this.supabase
       .from('users')
-      .select('id, auth_user_id, auth_version')
+      .select('id, auth_user_id, auth_version, email, status')
       .eq('auth_user_id', authUserId)
       .maybeSingle()
   }
 
   async setAuthPassword(authUserId, password) {
+    // Supabase Auth hashes the password on its server. FitPulse never stores it.
     return this.supabase.auth.admin.updateUserById(authUserId, { password })
   }
 

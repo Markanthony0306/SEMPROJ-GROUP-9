@@ -18,6 +18,7 @@ import { gorillaEvents, useGorilla } from '../components/gorilla/GorillaAssistan
 import { MobileActivities, MobileMembers, MobileOverview } from '../components/mobile/MobileScreens'
 import { activityRows, useReminderActivity } from '../components/mobile/activity'
 import useIsMobile from '../components/mobile/useIsMobile'
+import { formatDate as date, formatDateTime as dateTime, manilaDateKey } from '../../shared/formatDate.js'
 import './AdminStaffPage.css'
 
 const money = (value) =>
@@ -26,26 +27,6 @@ const planOptionLabel = (plan) => {
   const studentRate = /student/i.test(plan.plan_name) && !/non[-\s]?student/i.test(plan.plan_name)
   return `${plan.plan_name} - ${money(plan.price)}${studentRate ? ' (student discount)' : ''}`
 }
-const date = (value) =>
-  value
-    ? new Date(value).toLocaleDateString('en-PH', {
-      timeZone: 'Asia/Manila',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-    : '—'
-const dateTime = (value) =>
-  value
-    ? new Date(value).toLocaleString('en-PH', {
-      timeZone: 'Asia/Manila',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit'
-    })
-    : '—'
 export default function AdminStaffPage({ user, onSignOut, startMemberCreation = false }) {
   const { token } = useAuth()
   const { notify, latestEvent } = useGorilla() || {}
@@ -216,13 +197,13 @@ export default function AdminStaffPage({ user, onSignOut, startMemberCreation = 
   const reminderList = reminderMembers(members, data.settings.remind)
   const expiring = reminderList.filter((member) => membershipState(member).status === 'active')
   const renewals = data.payments.filter((payment) => payment.type === 'Renewal')
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' })
+  const today = manilaDateKey(new Date())
   const revenue = data.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
   const reminderActivity = useReminderActivity(token, mobile, latestEvent)
   const activity = mobile ? activityRows({
     ...data, members, reminders: reminderActivity.reminders, money, staff: true
   }) : []
-  const onManilaDay = (row) => new Date(row.date).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }) === today
+  const onManilaDay = (row) => manilaDateKey(row.date) === today
   const showMember = (member) => setModal({ kind: 'view', member })
   const selectSection = useCallback((nextSection) => {
     if (nextSection === 'Members') setOnlyExpiring(false)

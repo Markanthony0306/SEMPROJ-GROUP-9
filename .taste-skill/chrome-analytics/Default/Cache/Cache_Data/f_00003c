@@ -1,0 +1,344 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/mobile/MobileScreens.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=bdf2c8f1"; const Fragment = __vite__cjsImport0_react_jsxDevRuntime["Fragment"]; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx");
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+import { Icon } from "/src/components/DashboardShell.jsx";
+import { filterMemberRecords } from "/src/utils/membership.js";
+import StatCard from "/src/components/mobile/StatCard.jsx";
+import SectionHeader from "/src/components/mobile/SectionHeader.jsx";
+import MemberRow from "/src/components/mobile/MemberRow.jsx";
+import ActivityRow from "/src/components/mobile/ActivityRow.jsx";
+export function MobileOverview({
+  stats,
+  summary,
+  expiring,
+  date,
+  onMember,
+  onExpiring,
+  rows,
+  onActivities,
+  loading
+}) {
+  return /* @__PURE__ */ jsxDEV(Fragment, { children: [
+    summary || /* @__PURE__ */ jsxDEV("section", { className: "fitpulse-stat-grid", "aria-label": "Overview totals", children: stats.map(
+      ([label, value, icon]) => /* @__PURE__ */ jsxDEV(
+        StatCard,
+        {
+          label,
+          value: loading ? "—" : value,
+          icon: /* @__PURE__ */ jsxDEV(Icon, { name: icon, size: 20 }, void 0, false, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+            lineNumber: 48,
+            columnNumber: 17
+          }, this)
+        },
+        label,
+        false,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+          lineNumber: 44,
+          columnNumber: 9
+        },
+        this
+      )
+    ) }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+      lineNumber: 42,
+      columnNumber: 7
+    }, this),
+    expiring && /* @__PURE__ */ jsxDEV("section", { children: [
+      /* @__PURE__ */ jsxDEV(SectionHeader, { title: "Expiring soon", onViewAll: onExpiring }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+        lineNumber: 55,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("ul", { className: "fitpulse-rows", children: expiring.length ? expiring.slice(0, 3).map(
+        (member) => /* @__PURE__ */ jsxDEV(
+          MemberRow,
+          {
+            member,
+            expiring: true,
+            date,
+            onSelect: onMember
+          },
+          member.id,
+          false,
+          {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+            lineNumber: 61,
+            columnNumber: 11
+          },
+          this
+        )
+      ) : !loading && /* @__PURE__ */ jsxDEV("li", { className: "fitpulse-empty", children: "No memberships expiring soon." }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+        lineNumber: 69,
+        columnNumber: 23
+      }, this) }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+        lineNumber: 56,
+        columnNumber: 11
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+      lineNumber: 54,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("section", { children: [
+      /* @__PURE__ */ jsxDEV(SectionHeader, { title: "Recent activity", onViewAll: onActivities }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+        lineNumber: 74,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV(ActivityList, { rows: rows.slice(0, 4), loading }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+        lineNumber: 75,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+      lineNumber: 73,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+    lineNumber: 40,
+    columnNumber: 5
+  }, this);
+}
+_c = MobileOverview;
+export function MobileMembers({
+  members,
+  expiring,
+  date,
+  query,
+  setQuery,
+  onMember,
+  filter,
+  setFilter,
+  loading
+}) {
+  const expiringIds = new Set(expiring.map((member) => member.id));
+  const records = filterMemberRecords(filter ? expiring : members, query);
+  return /* @__PURE__ */ jsxDEV(Fragment, { children: [
+    /* @__PURE__ */ jsxDEV("label", { className: "fitpulse-search", children: [
+      /* @__PURE__ */ jsxDEV(Icon, { name: "search" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+        lineNumber: 97,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV(
+        "input",
+        {
+          type: "search",
+          "aria-label": "Search members",
+          placeholder: "Search members",
+          value: query,
+          onChange: (event) => setQuery(event.target.value)
+        },
+        void 0,
+        false,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+          lineNumber: 98,
+          columnNumber: 9
+        },
+        this
+      )
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+      lineNumber: 96,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("div", { className: "fitpulse-screen-actions", children: [
+      /* @__PURE__ */ jsxDEV(
+        "button",
+        {
+          type: "button",
+          className: "btn ghost fitpulse-secondary",
+          "aria-pressed": !filter,
+          onClick: () => setFilter(false),
+          children: "All members"
+        },
+        void 0,
+        false,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+          lineNumber: 107,
+          columnNumber: 9
+        },
+        this
+      ),
+      /* @__PURE__ */ jsxDEV(
+        "button",
+        {
+          type: "button",
+          className: "btn ghost fitpulse-secondary",
+          "aria-pressed": filter,
+          onClick: () => setFilter(true),
+          children: "Expiring soon"
+        },
+        void 0,
+        false,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+          lineNumber: 115,
+          columnNumber: 9
+        },
+        this
+      )
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+      lineNumber: 106,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("ul", { className: "fitpulse-rows", children: [
+      records.map(
+        (member) => /* @__PURE__ */ jsxDEV(
+          MemberRow,
+          {
+            member,
+            date,
+            expiring: expiringIds.has(member.id),
+            onSelect: onMember
+          },
+          member.id,
+          false,
+          {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+            lineNumber: 126,
+            columnNumber: 9
+          },
+          this
+        )
+      ),
+      !loading && !records.length && /* @__PURE__ */ jsxDEV("li", { className: "fitpulse-empty", children: "No matching members." }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+        lineNumber: 134,
+        columnNumber: 41
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+      lineNumber: 124,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+    lineNumber: 95,
+    columnNumber: 5
+  }, this);
+}
+_c2 = MobileMembers;
+function ActivityList({ rows, loading }) {
+  return /* @__PURE__ */ jsxDEV("ul", { className: "fitpulse-rows", children: [
+    rows.map(
+      (row) => /* @__PURE__ */ jsxDEV(ActivityRow, { row, Icon }, row.id, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+        lineNumber: 144,
+        columnNumber: 7
+      }, this)
+    ),
+    !loading && !rows.length && /* @__PURE__ */ jsxDEV("li", { className: "fitpulse-empty", children: "No activity recorded yet." }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+      lineNumber: 146,
+      columnNumber: 36
+    }, this)
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+    lineNumber: 142,
+    columnNumber: 5
+  }, this);
+}
+_c3 = ActivityList;
+export function MobileActivities({ rows, loading, reminderError, select }) {
+  return /* @__PURE__ */ jsxDEV(Fragment, { children: [
+    /* @__PURE__ */ jsxDEV("div", { className: "fitpulse-screen-actions", children: [
+      /* @__PURE__ */ jsxDEV(
+        "button",
+        {
+          className: "btn ghost fitpulse-secondary",
+          type: "button",
+          onClick: () => select("Attendance"),
+          children: "Attendance"
+        },
+        void 0,
+        false,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+          lineNumber: 155,
+          columnNumber: 9
+        },
+        this
+      ),
+      /* @__PURE__ */ jsxDEV(
+        "button",
+        {
+          className: "btn ghost fitpulse-secondary",
+          type: "button",
+          onClick: () => select("Payments"),
+          children: "Payments"
+        },
+        void 0,
+        false,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+          lineNumber: 162,
+          columnNumber: 9
+        },
+        this
+      )
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+      lineNumber: 154,
+      columnNumber: 7
+    }, this),
+    reminderError && /* @__PURE__ */ jsxDEV("p", { className: "fitpulse-empty", role: "status", children: reminderError }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+      lineNumber: 171,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV(ActivityList, { rows, loading }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+      lineNumber: 175,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx",
+    lineNumber: 153,
+    columnNumber: 5
+  }, this);
+}
+_c4 = MobileActivities;
+var _c, _c2, _c3, _c4;
+$RefreshReg$(_c, "MobileOverview");
+$RefreshReg$(_c2, "MobileMembers");
+$RefreshReg$(_c3, "ActivityList");
+$RefreshReg$(_c4, "MobileActivities");
+if (import.meta.hot && !inWebWorker) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+if (import.meta.hot && !inWebWorker) {
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/MobileScreens.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,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RjtBQUFBO0FBQUE7QUFBQTtBQUFBLFdBZUE7QUFBQSxJQUNDRCxpQkFDQyx1QkFBQyxPQUFFLFdBQVUsa0JBQWlCLE1BQUssVUFDaENBLDJCQURIO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FFQTtBQUFBLElBRUYsdUJBQUMsZ0JBQWEsTUFBWSxXQUExQjtBQUFBO0FBQUE7QUFBQTtBQUFBLFdBQTJDO0FBQUEsT0F0QjdDO0FBQUE7QUFBQTtBQUFBO0FBQUEsU0F1QkE7QUFFSjtBQUFDRSxNQTNCZUg7QUFBZ0IsSUFBQWpCLElBQUFhLEtBQUFHLEtBQUFJO0FBQUEsYUFBQXBCLElBQUE7QUFBQSxhQUFBYSxLQUFBO0FBQUEsYUFBQUcsS0FBQTtBQUFBLGFBQUFJLEtBQUEiLCJuYW1lcyI6WyJJY29uIiwiZmlsdGVyTWVtYmVyUmVjb3JkcyIsIlN0YXRDYXJkIiwiU2VjdGlvbkhlYWRlciIsIk1lbWJlclJvdyIsIkFjdGl2aXR5Um93IiwiTW9iaWxlT3ZlcnZpZXciLCJzdGF0cyIsInN1bW1hcnkiLCJleHBpcmluZyIsImRhdGUiLCJvbk1lbWJlciIsIm9uRXhwaXJpbmciLCJyb3dzIiwib25BY3Rpdml0aWVzIiwibG9hZGluZyIsIm1hcCIsImxhYmVsIiwidmFsdWUiLCJpY29uIiwibGVuZ3RoIiwic2xpY2UiLCJtZW1iZXIiLCJpZCIsIl9jIiwiTW9iaWxlTWVtYmVycyIsIm1lbWJlcnMiLCJxdWVyeSIsInNldFF1ZXJ5IiwiZmlsdGVyIiwic2V0RmlsdGVyIiwiZXhwaXJpbmdJZHMiLCJTZXQiLCJyZWNvcmRzIiwiZXZlbnQiLCJ0YXJnZXQiLCJoYXMiLCJfYzIiLCJBY3Rpdml0eUxpc3QiLCJyb3ciLCJfYzMiLCJNb2JpbGVBY3Rpdml0aWVzIiwicmVtaW5kZXJFcnJvciIsInNlbGVjdCIsIl9jNCJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyJNb2JpbGVTY3JlZW5zLmpzeCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBJY29uIH0gZnJvbSAnLi4vRGFzaGJvYXJkU2hlbGwnXG5pbXBvcnQgeyBmaWx0ZXJNZW1iZXJSZWNvcmRzIH0gZnJvbSAnLi4vLi4vdXRpbHMvbWVtYmVyc2hpcCdcbmltcG9ydCBTdGF0Q2FyZCBmcm9tICcuL1N0YXRDYXJkJ1xuaW1wb3J0IFNlY3Rpb25IZWFkZXIgZnJvbSAnLi9TZWN0aW9uSGVhZGVyJ1xuaW1wb3J0IE1lbWJlclJvdyBmcm9tICcuL01lbWJlclJvdydcbmltcG9ydCBBY3Rpdml0eVJvdyBmcm9tICcuL0FjdGl2aXR5Um93J1xuXG4vLyBBZG1pbiBhbmQgbWVtYmVyIHNjcmVlbnMgY29uc3VtZSB0aGUgc2FtZSByZWNvcmRzIGFuZCBkYXNoYm9hcmQgYWN0aW9ucyBhcyBkZXNrdG9wLlxuZXhwb3J0IGZ1bmN0aW9uIE1vYmlsZU92ZXJ2aWV3KHtcbiAgc3RhdHMsXG4gIHN1bW1hcnksXG4gIGV4cGlyaW5nLFxuICBkYXRlLFxuICBvbk1lbWJlcixcbiAgb25FeHBpcmluZyxcbiAgcm93cyxcbiAgb25BY3Rpdml0aWVzLFxuICBsb2FkaW5nXG59KSB7XG4gIHJldHVybiAoXG4gICAgPD5cbiAgICAgIHtzdW1tYXJ5IHx8IChcbiAgICAgICAgPHNlY3Rpb24gY2xhc3NOYW1lPVwiZml0cHVsc2Utc3RhdC1ncmlkXCIgYXJpYS1sYWJlbD1cIk92ZXJ2aWV3IHRvdGFsc1wiPlxuICAgICAgICAgIHtzdGF0cy5tYXAoKFtsYWJlbCwgdmFsdWUsIGljb25dKSA9PiAoXG4gICAgICAgICAgICA8U3RhdENhcmRcbiAgICAgICAgICAgICAga2V5PXtsYWJlbH1cbiAgICAgICAgICAgICAgbGFiZWw9e2xhYmVsfVxuICAgICAgICAgICAgICB2YWx1ZT17bG9hZGluZyA/ICfigJQnIDogdmFsdWV9XG4gICAgICAgICAgICAgIGljb249ezxJY29uIG5hbWU9e2ljb259IHNpemU9ezIwfSAvPn1cbiAgICAgICAgICAgIC8+XG4gICAgICAgICAgKSl9XG4gICAgICAgIDwvc2VjdGlvbj5cbiAgICAgICl9XG4gICAgICB7ZXhwaXJpbmcgJiYgKFxuICAgICAgICA8c2VjdGlvbj5cbiAgICAgICAgICA8U2VjdGlvbkhlYWRlciB0aXRsZT1cIkV4cGlyaW5nIHNvb25cIiBvblZpZXdBbGw9e29uRXhwaXJpbmd9IC8+XG4gICAgICAgICAgPHVsIGNsYXNzTmFtZT1cImZpdHB1bHNlLXJvd3NcIj5cbiAgICAgICAgICAgIHtleHBpcmluZy5sZW5ndGhcbiAgICAgICAgICAgICAgPyBleHBpcmluZ1xuICAgICAgICAgICAgICAgICAgLnNsaWNlKDAsIDMpXG4gICAgICAgICAgICAgICAgICAubWFwKChtZW1iZXIpID0+IChcbiAgICAgICAgICAgICAgICAgICAgPE1lbWJlclJvd1xuICAgICAgICAgICAgICAgICAgICAgIGtleT17bWVtYmVyLmlkfVxuICAgICAgICAgICAgICAgICAgICAgIG1lbWJlcj17bWVtYmVyfVxuICAgICAgICAgICAgICAgICAgICAgIGV4cGlyaW5nXG4gICAgICAgICAgICAgICAgICAgICAgZGF0ZT17ZGF0ZX1cbiAgICAgICAgICAgICAgICAgICAgICBvblNlbGVjdD17b25NZW1iZXJ9XG4gICAgICAgICAgICAgICAgICAgIC8+XG4gICAgICAgICAgICAgICAgICApKVxuICAgICAgICAgICAgICA6ICFsb2FkaW5nICYmIDxsaSBjbGFzc05hbWU9XCJmaXRwdWxzZS1lbXB0eVwiPk5vIG1lbWJlcnNoaXBzIGV4cGlyaW5nIHNvb24uPC9saT59XG4gICAgICAgICAgPC91bD5cbiAgICAgICAgPC9zZWN0aW9uPlxuICAgICAgKX1cbiAgICAgIDxzZWN0aW9uPlxuICAgICAgICA8U2VjdGlvbkhlYWRlciB0aXRsZT1cIlJlY2VudCBhY3Rpdml0eVwiIG9uVmlld0FsbD17b25BY3Rpdml0aWVzfSAvPlxuICAgICAgICA8QWN0aXZpdHlMaXN0IHJvd3M9e3Jvd3Muc2xpY2UoMCwgNCl9IGxvYWRpbmc9e2xvYWRpbmd9IC8+XG4gICAgICA8L3NlY3Rpb24+XG4gICAgPC8+XG4gIClcbn1cblxuZXhwb3J0IGZ1bmN0aW9uIE1vYmlsZU1lbWJlcnMoe1xuICBtZW1iZXJzLFxuICBleHBpcmluZyxcbiAgZGF0ZSxcbiAgcXVlcnksXG4gIHNldFF1ZXJ5LFxuICBvbk1lbWJlcixcbiAgZmlsdGVyLFxuICBzZXRGaWx0ZXIsXG4gIGxvYWRpbmdcbn0pIHtcbiAgY29uc3QgZXhwaXJpbmdJZHMgPSBuZXcgU2V0KGV4cGlyaW5nLm1hcCgobWVtYmVyKSA9PiBtZW1iZXIuaWQpKVxuICBjb25zdCByZWNvcmRzID0gZmlsdGVyTWVtYmVyUmVjb3JkcyhmaWx0ZXIgPyBleHBpcmluZyA6IG1lbWJlcnMsIHF1ZXJ5KVxuICByZXR1cm4gKFxuICAgIDw+XG4gICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZml0cHVsc2Utc2VhcmNoXCI+XG4gICAgICAgIDxJY29uIG5hbWU9XCJzZWFyY2hcIiAvPlxuICAgICAgICA8aW5wdXRcbiAgICAgICAgICB0eXBlPVwic2VhcmNoXCJcbiAgICAgICAgICBhcmlhLWxhYmVsPVwiU2VhcmNoIG1lbWJlcnNcIlxuICAgICAgICAgIHBsYWNlaG9sZGVyPVwiU2VhcmNoIG1lbWJlcnNcIlxuICAgICAgICAgIHZhbHVlPXtxdWVyeX1cbiAgICAgICAgICBvbkNoYW5nZT17KGV2ZW50KSA9PiBzZXRRdWVyeShldmVudC50YXJnZXQudmFsdWUpfVxuICAgICAgICAvPlxuICAgICAgPC9sYWJlbD5cbiAgICAgIDxkaXYgY2xhc3NOYW1lPVwiZml0cHVsc2Utc2NyZWVuLWFjdGlvbnNcIj5cbiAgICAgICAgPGJ1dHRvblxuICAgICAgICAgIHR5cGU9XCJidXR0b25cIlxuICAgICAgICAgIGNsYXNzTmFtZT1cImJ0biBnaG9zdCBmaXRwdWxzZS1zZWNvbmRhcnlcIlxuICAgICAgICAgIGFyaWEtcHJlc3NlZD17IWZpbHRlcn1cbiAgICAgICAgICBvbkNsaWNrPXsoKSA9PiBzZXRGaWx0ZXIoZmFsc2UpfVxuICAgICAgICA+XG4gICAgICAgICAgQWxsIG1lbWJlcnNcbiAgICAgICAgPC9idXR0b24+XG4gICAgICAgIDxidXR0b25cbiAgICAgICAgICB0eXBlPVwiYnV0dG9uXCJcbiAgICAgICAgICBjbGFzc05hbWU9XCJidG4gZ2hvc3QgZml0cHVsc2Utc2Vjb25kYXJ5XCJcbiAgICAgICAgICBhcmlhLXByZXNzZWQ9e2ZpbHRlcn1cbiAgICAgICAgICBvbkNsaWNrPXsoKSA9PiBzZXRGaWx0ZXIodHJ1ZSl9XG4gICAgICAgID5cbiAgICAgICAgICBFeHBpcmluZyBzb29uXG4gICAgICAgIDwvYnV0dG9uPlxuICAgICAgPC9kaXY+XG4gICAgICA8dWwgY2xhc3NOYW1lPVwiZml0cHVsc2Utcm93c1wiPlxuICAgICAgICB7cmVjb3Jkcy5tYXAoKG1lbWJlcikgPT4gKFxuICAgICAgICAgIDxNZW1iZXJSb3dcbiAgICAgICAgICAgIGtleT17bWVtYmVyLmlkfVxuICAgICAgICAgICAgbWVtYmVyPXttZW1iZXJ9XG4gICAgICAgICAgICBkYXRlPXtkYXRlfVxuICAgICAgICAgICAgZXhwaXJpbmc9e2V4cGlyaW5nSWRzLmhhcyhtZW1iZXIuaWQpfVxuICAgICAgICAgICAgb25TZWxlY3Q9e29uTWVtYmVyfVxuICAgICAgICAgIC8+XG4gICAgICAgICkpfVxuICAgICAgICB7IWxvYWRpbmcgJiYgIXJlY29yZHMubGVuZ3RoICYmIDxsaSBjbGFzc05hbWU9XCJmaXRwdWxzZS1lbXB0eVwiPk5vIG1hdGNoaW5nIG1lbWJlcnMuPC9saT59XG4gICAgICA8L3VsPlxuICAgIDwvPlxuICApXG59XG5cbmZ1bmN0aW9uIEFjdGl2aXR5TGlzdCh7IHJvd3MsIGxvYWRpbmcgfSkge1xuICByZXR1cm4gKFxuICAgIDx1bCBjbGFzc05hbWU9XCJmaXRwdWxzZS1yb3dzXCI+XG4gICAgICB7cm93cy5tYXAoKHJvdykgPT4gKFxuICAgICAgICA8QWN0aXZpdHlSb3cga2V5PXtyb3cuaWR9IHJvdz17cm93fSBJY29uPXtJY29ufSAvPlxuICAgICAgKSl9XG4gICAgICB7IWxvYWRpbmcgJiYgIXJvd3MubGVuZ3RoICYmIDxsaSBjbGFzc05hbWU9XCJmaXRwdWxzZS1lbXB0eVwiPk5vIGFjdGl2aXR5IHJlY29yZGVkIHlldC48L2xpPn1cbiAgICA8L3VsPlxuICApXG59XG5cbmV4cG9ydCBmdW5jdGlvbiBNb2JpbGVBY3Rpdml0aWVzKHsgcm93cywgbG9hZGluZywgcmVtaW5kZXJFcnJvciwgc2VsZWN0IH0pIHtcbiAgcmV0dXJuIChcbiAgICA8PlxuICAgICAgPGRpdiBjbGFzc05hbWU9XCJmaXRwdWxzZS1zY3JlZW4tYWN0aW9uc1wiPlxuICAgICAgICA8YnV0dG9uXG4gICAgICAgICAgY2xhc3NOYW1lPVwiYnRuIGdob3N0IGZpdHB1bHNlLXNlY29uZGFyeVwiXG4gICAgICAgICAgdHlwZT1cImJ1dHRvblwiXG4gICAgICAgICAgb25DbGljaz17KCkgPT4gc2VsZWN0KCdBdHRlbmRhbmNlJyl9XG4gICAgICAgID5cbiAgICAgICAgICBBdHRlbmRhbmNlXG4gICAgICAgIDwvYnV0dG9uPlxuICAgICAgICA8YnV0dG9uXG4gICAgICAgICAgY2xhc3NOYW1lPVwiYnRuIGdob3N0IGZpdHB1bHNlLXNlY29uZGFyeVwiXG4gICAgICAgICAgdHlwZT1cImJ1dHRvblwiXG4gICAgICAgICAgb25DbGljaz17KCkgPT4gc2VsZWN0KCdQYXltZW50cycpfVxuICAgICAgICA+XG4gICAgICAgICAgUGF5bWVudHNcbiAgICAgICAgPC9idXR0b24+XG4gICAgICA8L2Rpdj5cbiAgICAgIHtyZW1pbmRlckVycm9yICYmIChcbiAgICAgICAgPHAgY2xhc3NOYW1lPVwiZml0cHVsc2UtZW1wdHlcIiByb2xlPVwic3RhdHVzXCI+XG4gICAgICAgICAge3JlbWluZGVyRXJyb3J9XG4gICAgICAgIDwvcD5cbiAgICAgICl9XG4gICAgICA8QWN0aXZpdHlMaXN0IHJvd3M9e3Jvd3N9IGxvYWRpbmc9e2xvYWRpbmd9IC8+XG4gICAgPC8+XG4gIClcbn1cbiJdLCJmaWxlIjoiQzovVXNlcnMvZ2VlemUvRG93bmxvYWRzL0xBTkRJTkctUEFHRS9zcmMvY29tcG9uZW50cy9tb2JpbGUvTW9iaWxlU2NyZWVucy5qc3gifQ==

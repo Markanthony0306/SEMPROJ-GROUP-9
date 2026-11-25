@@ -1,0 +1,259 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/admin/AdminSettingsSection.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=bdf2c8f1"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx");
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+import ProfilePhoto from "/src/components/ProfilePhoto.jsx";
+import PasswordChangeForm from "/src/components/PasswordChangeForm.jsx";
+import { RockyPreference } from "/src/components/gorilla/GorillaAssistant.jsx";
+export default function AdminSettingsSection({ currentUser, setCurrentUser, profile, pending, loading, setModal, settings, data }) {
+  return /* @__PURE__ */ jsxDEV("section", { className: "grid g2", children: [
+    /* @__PURE__ */ jsxDEV("article", { className: "card clay", children: [
+      /* @__PURE__ */ jsxDEV("h2", { children: "Profile" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+        lineNumber: 28,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV(ProfilePhoto, { user: currentUser, onSaved: setCurrentUser }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+        lineNumber: 29,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("form", { onSubmit: profile, className: "mf", children: [
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Full name",
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              className: "clay-in",
+              name: "name",
+              defaultValue: currentUser?.name,
+              autoComplete: "name",
+              required: true
+            },
+            void 0,
+            false,
+            {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+              lineNumber: 33,
+              columnNumber: 15
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+          lineNumber: 31,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Email",
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              className: "clay-in",
+              name: "email",
+              defaultValue: currentUser?.email,
+              type: "email",
+              autoComplete: "email",
+              required: true
+            },
+            void 0,
+            false,
+            {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+              lineNumber: 43,
+              columnNumber: 15
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+          lineNumber: 41,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("button", { className: "btn", disabled: pending || loading, children: pending ? "Saving..." : "Save profile" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+          lineNumber: 52,
+          columnNumber: 13
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+        lineNumber: 30,
+        columnNumber: 11
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+      lineNumber: 27,
+      columnNumber: 9
+    }, this),
+    /* @__PURE__ */ jsxDEV("article", { className: "card clay", children: [
+      /* @__PURE__ */ jsxDEV("h2", { children: "Change Password" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+        lineNumber: 58,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV(PasswordChangeForm, {}, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+        lineNumber: 59,
+        columnNumber: 11
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+      lineNumber: 57,
+      columnNumber: 9
+    }, this),
+    /* @__PURE__ */ jsxDEV(RockyPreference, {}, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+      lineNumber: 61,
+      columnNumber: 9
+    }, this),
+    /* @__PURE__ */ jsxDEV("article", { className: "card clay", children: [
+      /* @__PURE__ */ jsxDEV("h2", { children: "Face verification" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+        lineNumber: 63,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV(
+        "button",
+        {
+          type: "button",
+          className: "btn ghost",
+          disabled: !currentUser?.id,
+          onClick: () => setModal({ kind: "face", member: currentUser }),
+          children: "Set up face sign-in"
+        },
+        void 0,
+        false,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+          lineNumber: 64,
+          columnNumber: 11
+        },
+        this
+      )
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+      lineNumber: 62,
+      columnNumber: 9
+    }, this),
+    /* @__PURE__ */ jsxDEV("article", { className: "card clay", children: [
+      /* @__PURE__ */ jsxDEV("h2", { children: "Gym Preferences" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+        lineNumber: 74,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("form", { onSubmit: settings, className: "mf", children: [
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Gym name",
+          /* @__PURE__ */ jsxDEV("input", { className: "clay-in", name: "gym", defaultValue: data.settings.gym }, void 0, false, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+            lineNumber: 78,
+            columnNumber: 15
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+          lineNumber: 76,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Staff expiry alert",
+          /* @__PURE__ */ jsxDEV("select", { className: "clay-in", name: "remind", defaultValue: data.settings.remind, children: [
+            /* @__PURE__ */ jsxDEV("option", { value: "3", children: "3 days" }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+              lineNumber: 83,
+              columnNumber: 17
+            }, this),
+            /* @__PURE__ */ jsxDEV("option", { value: "5", children: "5 days" }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+              lineNumber: 84,
+              columnNumber: 17
+            }, this),
+            /* @__PURE__ */ jsxDEV("option", { value: "7", children: "7 days" }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+              lineNumber: 85,
+              columnNumber: 17
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+            lineNumber: 82,
+            columnNumber: 15
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+          lineNumber: 80,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("label", { className: "set", children: [
+          "Email members 3 days before expiry",
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              type: "checkbox",
+              name: "emailOn",
+              defaultChecked: Boolean(data.settings.emailOn)
+            },
+            String(data.settings.emailOn),
+            false,
+            {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+              lineNumber: 90,
+              columnNumber: 15
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+          lineNumber: 88,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("button", { className: "btn", disabled: pending || loading, children: pending ? "Saving..." : "Save preferences" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+          lineNumber: 93,
+          columnNumber: 13
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+        lineNumber: 75,
+        columnNumber: 11
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+      lineNumber: 73,
+      columnNumber: 9
+    }, this)
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx",
+    lineNumber: 26,
+    columnNumber: 5
+  }, this);
+}
+_c = AdminSettingsSection;
+var _c;
+$RefreshReg$(_c, "AdminSettingsSection");
+if (import.meta.hot && !inWebWorker) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+if (import.meta.hot && !inWebWorker) {
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminSettingsSection.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJtYXBwaW5ncyI6IkFBUVU7Ozs7Ozs7Ozs7Ozs7Ozs7QUFSVixPQUFPQSxrQkFBa0I7QUFDekIsT0FBT0Msd0JBQXdCO0FBQy9CLFNBQVNDLHVCQUF1QjtBQUVoQyx3QkFBd0JDLHFCQUFxQixFQUFFQyxhQUFhQyxnQkFBZ0JDLFNBQVNDLFNBQVNDLFNBQVNDLFVBQVVDLFVBQVVDLEtBQUssR0FBRztBQUNqSSxTQUNJLHVCQUFDLGFBQVEsV0FBVSxXQUNqQjtBQUFBLDJCQUFDLGFBQVEsV0FBVSxhQUNqQjtBQUFBLDZCQUFDLFFBQUcsdUJBQUo7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQUFXO0FBQUEsTUFDWCx1QkFBQyxnQkFBYSxNQUFNUCxhQUFhLFNBQVNDLGtCQUExQztBQUFBO0FBQUE7QUFBQTtBQUFBLGFBQXlEO0FBQUEsTUFDekQsdUJBQUMsVUFBSyxVQUFVQyxTQUFTLFdBQVUsTUFDakM7QUFBQSwrQkFBQyxXQUFNLFdBQVUsU0FBUTtBQUFBO0FBQUEsVUFFdkI7QUFBQSxZQUFDO0FBQUE7QUFBQSxjQUNDLFdBQVU7QUFBQSxjQUNWLE1BQUs7QUFBQSxjQUNMLGNBQWNGLGFBQWFRO0FBQUFBLGNBQzNCLGNBQWE7QUFBQSxjQUNiLFVBQVE7QUFBQTtBQUFBLFlBTFY7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLFVBS1U7QUFBQSxhQVBaO0FBQUE7QUFBQTtBQUFBO0FBQUEsZUFTQTtBQUFBLFFBQ0EsdUJBQUMsV0FBTSxXQUFVLFNBQVE7QUFBQTtBQUFBLFVBRXZCO0FBQUEsWUFBQztBQUFBO0FBQUEsY0FDQyxXQUFVO0FBQUEsY0FDVixNQUFLO0FBQUEsY0FDTCxjQUFjUixhQUFhUztBQUFBQSxjQUMzQixNQUFLO0FBQUEsY0FDTCxjQUFhO0FBQUEsY0FDYixVQUFRO0FBQUE7QUFBQSxZQU5WO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxVQU1VO0FBQUEsYUFSWjtBQUFBO0FBQUE7QUFBQTtBQUFBLGVBVUE7QUFBQSxRQUNBLHVCQUFDLFlBQU8sV0FBVSxPQUFNLFVBQVVOLFdBQVdDLFNBQzFDRCxvQkFBVSxjQUFjLGtCQUQzQjtBQUFBO0FBQUE7QUFBQTtBQUFBLGVBRUE7QUFBQSxXQXhCRjtBQUFBO0FBQUE7QUFBQTtBQUFBLGFBeUJBO0FBQUEsU0E1QkY7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQTZCQTtBQUFBLElBQ0EsdUJBQUMsYUFBUSxXQUFVLGFBQ2pCO0FBQUEsNkJBQUMsUUFBRywrQkFBSjtBQUFBO0FBQUE7QUFBQTtBQUFBLGFBQW1CO0FBQUEsTUFDbkIsdUJBQUMsd0JBQUQ7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQUFtQjtBQUFBLFNBRnJCO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FHQTtBQUFBLElBQ0EsdUJBQUMscUJBQUQ7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQUFnQjtBQUFBLElBQ2hCLHVCQUFDLGFBQVEsV0FBVSxhQUNqQjtBQUFBLDZCQUFDLFFBQUcsaUNBQUo7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQUFxQjtBQUFBLE1BQ3JCO0FBQUEsUUFBQztBQUFBO0FBQUEsVUFDQyxNQUFLO0FBQUEsVUFDTCxXQUFVO0FBQUEsVUFDVixVQUFVLENBQUNILGFBQWFVO0FBQUFBLFVBQ3hCLFNBQVMsTUFBTUwsU0FBUyxFQUFFTSxNQUFNLFFBQVFDLFFBQVFaLFlBQVksQ0FBQztBQUFBLFVBQUU7QUFBQTtBQUFBLFFBSmpFO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxNQU9BO0FBQUEsU0FURjtBQUFBO0FBQUE7QUFBQTtBQUFBLFdBVUE7QUFBQSxJQUNBLHVCQUFDLGFBQVEsV0FBVSxhQUNqQjtBQUFBLDZCQUFDLFFBQUcsK0JBQUo7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQUFtQjtBQUFBLE1BQ25CLHVCQUFDLFVBQUssVUFBVU0sVUFBVSxXQUFVLE1BQ2xDO0FBQUEsK0JBQUMsV0FBTSxXQUFVLFNBQVE7QUFBQTtBQUFBLFVBRXZCLHVCQUFDLFdBQU0sV0FBVSxXQUFVLE1BQUssT0FBTSxjQUFjQyxLQUFLRCxTQUFTTyxPQUFsRTtBQUFBO0FBQUE7QUFBQTtBQUFBLGlCQUFzRTtBQUFBLGFBRnhFO0FBQUE7QUFBQTtBQUFBO0FBQUEsZUFHQTtBQUFBLFFBQ0EsdUJBQUMsV0FBTSxXQUFVLFNBQVE7QUFBQTtBQUFBLFVBRXZCLHVCQUFDLFlBQU8sV0FBVSxXQUFVLE1BQUssVUFBUyxjQUFjTixLQUFLRCxTQUFTUSxRQUNwRTtBQUFBLG1DQUFDLFlBQU8sT0FBTSxLQUFJLHNCQUFsQjtBQUFBO0FBQUE7QUFBQTtBQUFBLG1CQUF3QjtBQUFBLFlBQ3hCLHVCQUFDLFlBQU8sT0FBTSxLQUFJLHNCQUFsQjtBQUFBO0FBQUE7QUFBQTtBQUFBLG1CQUF3QjtBQUFBLFlBQ3hCLHVCQUFDLFlBQU8sT0FBTSxLQUFJLHNCQUFsQjtBQUFBO0FBQUE7QUFBQTtBQUFBLG1CQUF3QjtBQUFBLGVBSDFCO0FBQUE7QUFBQTtBQUFBO0FBQUEsaUJBSUE7QUFBQSxhQU5GO0FBQUE7QUFBQTtBQUFBO0FBQUEsZUFPQTtBQUFBLFFBQ0EsdUJBQUMsV0FBTSxXQUFVLE9BQU07QUFBQTtBQUFBLFVBRXJCO0FBQUEsWUFBQztBQUFBO0FBQUEsY0FBMEMsTUFBSztBQUFBLGNBQVcsTUFBSztBQUFBLGNBQzlELGdCQUFnQkMsUUFBUVIsS0FBS0QsU0FBU1UsT0FBTztBQUFBO0FBQUEsWUFEbkNDLE9BQU9WLEtBQUtELFNBQVNVLE9BQU87QUFBQSxZQUF4QztBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLFVBQ2lEO0FBQUEsYUFIbkQ7QUFBQTtBQUFBO0FBQUE7QUFBQSxlQUlBO0FBQUEsUUFDQSx1QkFBQyxZQUFPLFdBQVUsT0FBTSxVQUFVYixXQUFXQyxTQUMxQ0Qsb0JBQVUsY0FBYyxzQkFEM0I7QUFBQTtBQUFBO0FBQUE7QUFBQSxlQUVBO0FBQUEsV0FwQkY7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQXFCQTtBQUFBLFNBdkJGO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0F3QkE7QUFBQSxPQXZFRjtBQUFBO0FBQUE7QUFBQTtBQUFBLFNBd0VBO0FBRU47QUFBQ2UsS0E1RXVCbkI7QUFBb0IsSUFBQW1CO0FBQUEsYUFBQUEsSUFBQSIsIm5hbWVzIjpbIlByb2ZpbGVQaG90byIsIlBhc3N3b3JkQ2hhbmdlRm9ybSIsIlJvY2t5UHJlZmVyZW5jZSIsIkFkbWluU2V0dGluZ3NTZWN0aW9uIiwiY3VycmVudFVzZXIiLCJzZXRDdXJyZW50VXNlciIsInByb2ZpbGUiLCJwZW5kaW5nIiwibG9hZGluZyIsInNldE1vZGFsIiwic2V0dGluZ3MiLCJkYXRhIiwibmFtZSIsImVtYWlsIiwiaWQiLCJraW5kIiwibWVtYmVyIiwiZ3ltIiwicmVtaW5kIiwiQm9vbGVhbiIsImVtYWlsT24iLCJTdHJpbmciLCJfYyJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyJBZG1pblNldHRpbmdzU2VjdGlvbi5qc3giXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IFByb2ZpbGVQaG90byBmcm9tICcuLi9Qcm9maWxlUGhvdG8nXHJcbmltcG9ydCBQYXNzd29yZENoYW5nZUZvcm0gZnJvbSAnLi4vUGFzc3dvcmRDaGFuZ2VGb3JtJ1xyXG5pbXBvcnQgeyBSb2NreVByZWZlcmVuY2UgfSBmcm9tICcuLi9nb3JpbGxhL0dvcmlsbGFBc3Npc3RhbnQnXHJcblxyXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbiBBZG1pblNldHRpbmdzU2VjdGlvbih7IGN1cnJlbnRVc2VyLCBzZXRDdXJyZW50VXNlciwgcHJvZmlsZSwgcGVuZGluZywgbG9hZGluZywgc2V0TW9kYWwsIHNldHRpbmdzLCBkYXRhIH0pIHtcclxuICByZXR1cm4gKFxyXG4gICAgICA8c2VjdGlvbiBjbGFzc05hbWU9XCJncmlkIGcyXCI+XHJcbiAgICAgICAgPGFydGljbGUgY2xhc3NOYW1lPVwiY2FyZCBjbGF5XCI+XHJcbiAgICAgICAgICA8aDI+UHJvZmlsZTwvaDI+XHJcbiAgICAgICAgICA8UHJvZmlsZVBob3RvIHVzZXI9e2N1cnJlbnRVc2VyfSBvblNhdmVkPXtzZXRDdXJyZW50VXNlcn0gLz5cclxuICAgICAgICAgIDxmb3JtIG9uU3VibWl0PXtwcm9maWxlfSBjbGFzc05hbWU9XCJtZlwiPlxyXG4gICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZmllbGRcIj5cclxuICAgICAgICAgICAgICBGdWxsIG5hbWVcclxuICAgICAgICAgICAgICA8aW5wdXRcclxuICAgICAgICAgICAgICAgIGNsYXNzTmFtZT1cImNsYXktaW5cIlxyXG4gICAgICAgICAgICAgICAgbmFtZT1cIm5hbWVcIlxyXG4gICAgICAgICAgICAgICAgZGVmYXVsdFZhbHVlPXtjdXJyZW50VXNlcj8ubmFtZX1cclxuICAgICAgICAgICAgICAgIGF1dG9Db21wbGV0ZT1cIm5hbWVcIlxyXG4gICAgICAgICAgICAgICAgcmVxdWlyZWRcclxuICAgICAgICAgICAgICAvPlxyXG4gICAgICAgICAgICA8L2xhYmVsPlxyXG4gICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZmllbGRcIj5cclxuICAgICAgICAgICAgICBFbWFpbFxyXG4gICAgICAgICAgICAgIDxpbnB1dFxyXG4gICAgICAgICAgICAgICAgY2xhc3NOYW1lPVwiY2xheS1pblwiXHJcbiAgICAgICAgICAgICAgICBuYW1lPVwiZW1haWxcIlxyXG4gICAgICAgICAgICAgICAgZGVmYXVsdFZhbHVlPXtjdXJyZW50VXNlcj8uZW1haWx9XHJcbiAgICAgICAgICAgICAgICB0eXBlPVwiZW1haWxcIlxyXG4gICAgICAgICAgICAgICAgYXV0b0NvbXBsZXRlPVwiZW1haWxcIlxyXG4gICAgICAgICAgICAgICAgcmVxdWlyZWRcclxuICAgICAgICAgICAgICAvPlxyXG4gICAgICAgICAgICA8L2xhYmVsPlxyXG4gICAgICAgICAgICA8YnV0dG9uIGNsYXNzTmFtZT1cImJ0blwiIGRpc2FibGVkPXtwZW5kaW5nIHx8IGxvYWRpbmd9PlxyXG4gICAgICAgICAgICAgIHtwZW5kaW5nID8gJ1NhdmluZy4uLicgOiAnU2F2ZSBwcm9maWxlJ31cclxuICAgICAgICAgICAgPC9idXR0b24+XHJcbiAgICAgICAgICA8L2Zvcm0+XHJcbiAgICAgICAgPC9hcnRpY2xlPlxyXG4gICAgICAgIDxhcnRpY2xlIGNsYXNzTmFtZT1cImNhcmQgY2xheVwiPlxyXG4gICAgICAgICAgPGgyPkNoYW5nZSBQYXNzd29yZDwvaDI+XHJcbiAgICAgICAgICA8UGFzc3dvcmRDaGFuZ2VGb3JtIC8+XHJcbiAgICAgICAgPC9hcnRpY2xlPlxyXG4gICAgICAgIDxSb2NreVByZWZlcmVuY2UgLz5cclxuICAgICAgICA8YXJ0aWNsZSBjbGFzc05hbWU9XCJjYXJkIGNsYXlcIj5cclxuICAgICAgICAgIDxoMj5GYWNlIHZlcmlmaWNhdGlvbjwvaDI+XHJcbiAgICAgICAgICA8YnV0dG9uXHJcbiAgICAgICAgICAgIHR5cGU9XCJidXR0b25cIlxyXG4gICAgICAgICAgICBjbGFzc05hbWU9XCJidG4gZ2hvc3RcIlxyXG4gICAgICAgICAgICBkaXNhYmxlZD17IWN1cnJlbnRVc2VyPy5pZH1cclxuICAgICAgICAgICAgb25DbGljaz17KCkgPT4gc2V0TW9kYWwoeyBraW5kOiAnZmFjZScsIG1lbWJlcjogY3VycmVudFVzZXIgfSl9XHJcbiAgICAgICAgICA+XHJcbiAgICAgICAgICAgIFNldCB1cCBmYWNlIHNpZ24taW5cclxuICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgIDwvYXJ0aWNsZT5cclxuICAgICAgICA8YXJ0aWNsZSBjbGFzc05hbWU9XCJjYXJkIGNsYXlcIj5cclxuICAgICAgICAgIDxoMj5HeW0gUHJlZmVyZW5jZXM8L2gyPlxyXG4gICAgICAgICAgPGZvcm0gb25TdWJtaXQ9e3NldHRpbmdzfSBjbGFzc05hbWU9XCJtZlwiPlxyXG4gICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZmllbGRcIj5cclxuICAgICAgICAgICAgICBHeW0gbmFtZVxyXG4gICAgICAgICAgICAgIDxpbnB1dCBjbGFzc05hbWU9XCJjbGF5LWluXCIgbmFtZT1cImd5bVwiIGRlZmF1bHRWYWx1ZT17ZGF0YS5zZXR0aW5ncy5neW19IC8+XHJcbiAgICAgICAgICAgIDwvbGFiZWw+XHJcbiAgICAgICAgICAgIDxsYWJlbCBjbGFzc05hbWU9XCJmaWVsZFwiPlxyXG4gICAgICAgICAgICAgIFN0YWZmIGV4cGlyeSBhbGVydFxyXG4gICAgICAgICAgICAgIDxzZWxlY3QgY2xhc3NOYW1lPVwiY2xheS1pblwiIG5hbWU9XCJyZW1pbmRcIiBkZWZhdWx0VmFsdWU9e2RhdGEuc2V0dGluZ3MucmVtaW5kfT5cclxuICAgICAgICAgICAgICAgIDxvcHRpb24gdmFsdWU9XCIzXCI+MyBkYXlzPC9vcHRpb24+XHJcbiAgICAgICAgICAgICAgICA8b3B0aW9uIHZhbHVlPVwiNVwiPjUgZGF5czwvb3B0aW9uPlxyXG4gICAgICAgICAgICAgICAgPG9wdGlvbiB2YWx1ZT1cIjdcIj43IGRheXM8L29wdGlvbj5cclxuICAgICAgICAgICAgICA8L3NlbGVjdD5cclxuICAgICAgICAgICAgPC9sYWJlbD5cclxuICAgICAgICAgICAgPGxhYmVsIGNsYXNzTmFtZT1cInNldFwiPlxyXG4gICAgICAgICAgICAgIEVtYWlsIG1lbWJlcnMgMyBkYXlzIGJlZm9yZSBleHBpcnlcclxuICAgICAgICAgICAgICA8aW5wdXQga2V5PXtTdHJpbmcoZGF0YS5zZXR0aW5ncy5lbWFpbE9uKX0gdHlwZT1cImNoZWNrYm94XCIgbmFtZT1cImVtYWlsT25cIlxyXG4gICAgICAgICAgICAgICAgZGVmYXVsdENoZWNrZWQ9e0Jvb2xlYW4oZGF0YS5zZXR0aW5ncy5lbWFpbE9uKX0gLz5cclxuICAgICAgICAgICAgPC9sYWJlbD5cclxuICAgICAgICAgICAgPGJ1dHRvbiBjbGFzc05hbWU9XCJidG5cIiBkaXNhYmxlZD17cGVuZGluZyB8fCBsb2FkaW5nfT5cclxuICAgICAgICAgICAgICB7cGVuZGluZyA/ICdTYXZpbmcuLi4nIDogJ1NhdmUgcHJlZmVyZW5jZXMnfVxyXG4gICAgICAgICAgICA8L2J1dHRvbj5cclxuICAgICAgICAgIDwvZm9ybT5cclxuICAgICAgICA8L2FydGljbGU+XHJcbiAgICAgIDwvc2VjdGlvbj5cclxuICApXHJcbn1cclxuIl0sImZpbGUiOiJDOi9Vc2Vycy9nZWV6ZS9Eb3dubG9hZHMvTEFORElORy1QQUdFL3NyYy9jb21wb25lbnRzL2FkbWluL0FkbWluU2V0dGluZ3NTZWN0aW9uLmpzeCJ9

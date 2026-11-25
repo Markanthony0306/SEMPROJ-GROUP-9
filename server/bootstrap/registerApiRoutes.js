@@ -16,7 +16,7 @@ import { memberRoutes } from '../routes/members.js'
 import { demoAccountRoutes } from '../routes/demo-accounts.js'
 import { reportRoutes } from '../routes/reports.js'
 import { notificationRoutes } from '../routes/notifications.js'
-import { passwordLoginHandler } from '../routes/passwordLogin.js'
+import { acceptMemberTermsHandler, passwordLoginHandler } from '../routes/passwordLogin.js'
 import { membershipRenewalRoutes } from '../routes/membershipRenewal.js'
 import { memberRegistrationRoutes } from '../routes/memberRegistration.js'
 import { eventRoutes } from '../routes/events.js'
@@ -124,11 +124,11 @@ export function registerApiRoutes(app, dependencies, config) {
     createAuthClient: createSupabaseAuthClient,
     supabase,
     loadAccount,
-    createSession,
-    jwtSecret: biometricJwtSecret
+    createSession
   }))
+  app.post('/api/auth/member-terms', rateLimit({ max: 20 }), acceptMemberTermsHandler({ jwtSecret }))
 
-  registerPasswordRecoveryRoutes(app, { rateLimit, emailPattern, passwordPolicy, passwordPolicyMessage, supabase, createAuthClient: createSupabaseAuthClient, clientUrl })
+  registerPasswordRecoveryRoutes(app, { rateLimit, emailPattern, passwordPolicy, passwordPolicyMessage, supabase, clientUrl })
 
   registerCurrentUserRoutes(app, { authenticate, loadAccount, publicAccount })
 

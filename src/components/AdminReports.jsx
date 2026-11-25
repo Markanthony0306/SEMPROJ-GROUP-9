@@ -5,18 +5,15 @@ import ProfileAvatar from './ProfileAvatar'
 import { Icon } from './DashboardShell'
 import { useAuth } from '../auth/AuthContext'
 import { apiRequest } from '../utils/api'
-import { REPORT_TYPES, buildReport } from '../utils/reports'
+import { REPORT_TYPES, buildReport, parseReportDateTime } from '../utils/reports'
+import { formatDate, formatTime } from '../../shared/formatDate.js'
 import { downloadCsvRows } from '../utils/paymentExport'
 import RecordDeleteDialog, { RecordDeleteButton } from './RecordDeleteControls'
-
-function localDateTime(value = new Date()) {
-  const date = new Date(value)
-  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
-}
 
 function RecordForm({ kind, record, data, busy, onSubmit, onClose }) {
   const maintenance = kind === 'maintenance'
   const payment = kind === 'payments'
+  const recordedAt = record?.date || new Date()
   return (
     <form className="mf" onSubmit={onSubmit}>
       <fieldset className="report-form-fields" disabled={busy}>
@@ -105,18 +102,19 @@ function RecordForm({ kind, record, data, busy, onSubmit, onClose }) {
             )}
           </>
         )}
-        <label className="field">
-          Date and time (your local time)
-          <input
-            className="clay-in"
-            type="datetime-local"
-            name="date"
-            required
-            min="2000-01-01T00:00"
-            max={localDateTime()}
-            defaultValue={localDateTime(record?.date)}
-          />
-        </label>
+        <div className="report-form-row">
+          <label className="field">
+            Date (dd/mm/yyyy)
+            <input className="clay-in" name="date" placeholder="dd/mm/yyyy"
+              pattern="[0-9]{2}/[0-9]{2}/[0-9]{4}" maxLength={10} required
+              defaultValue={formatDate(recordedAt, '')} />
+          </label>
+          <label className="field">
+            Time (Asia/Manila)
+            <input className="clay-in" type="time" name="time" required
+              defaultValue={formatTime(recordedAt, { hour12: false })} />
+          </label>
+        </div>
         <p className="form-help">
           {payment
             ? 'This records money already received. It does not charge a member or extend their membership.'
@@ -169,8 +167,8 @@ export default function AdminReports({ data, onChanged, onMemberAction }) {
     setBusy(true)
     setError('')
     try {
-      const input = Object.fromEntries(new FormData(event.currentTarget))
-      input.date = new Date(input.date).toISOString()
+      const { date, time, ...input } = Object.fromEntries(new FormData(event.currentTarget))
+      input.date = parseReportDateTime(date, time)
       await apiRequest(
         `/admin/reports/${collection}${dialog.record ? `/${dialog.record.id}` : ''}`,
         {

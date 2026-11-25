@@ -1,19 +1,23 @@
 import { useCallback } from 'react'
+import { formatDate } from '../../../../shared/formatDate.js'
 import ChartCard from './ChartCard'
 import useAnalyticsChart, { chartOptions, pesos } from './useAnalyticsChart'
+
+const monthStart = (month) => formatDate(`${month}-01`)
 
 export default function RevenueChart({ data, loading, error, onRetry }) {
   const createConfig = useCallback(
     (colors) => {
       const options = chartOptions(colors, { currency: true })
       options.plugins.tooltip.callbacks = {
+        title: ([point]) => `Month starting ${point?.label || '—'}`,
         label: (context) => `Revenue: ${pesos(context.parsed.y)}`
       }
       // Six zero-filled calendar months keep gaps honest, including this partial month.
       return {
         type: 'line',
         data: {
-          labels: data.months.map((month) => month.label),
+          labels: data.months.map((month) => monthStart(month.month)),
           datasets: [
             {
               label: 'Revenue',
@@ -57,7 +61,7 @@ export default function RevenueChart({ data, loading, error, onRetry }) {
         <canvas
           ref={canvasRef}
           role="img"
-          aria-label={`Monthly revenue: ${data?.months.map((month) => `${month.label} ${pesos(month.amount)}`).join(', ')}`}
+          aria-label={`Monthly revenue by start date: ${data?.months.map((month) => `${monthStart(month.month)} ${pesos(month.amount)}`).join(', ')}`}
         />
       </div>
     </ChartCard>

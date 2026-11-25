@@ -149,7 +149,7 @@
   border-collapse: separate;
   border-spacing: 0;
   table-layout: auto;
-  min-width: 560px;
+  min-width: var(--table-min-width, 100%);
 }
 .app .table-wrap {
   overflow-x: auto;
@@ -159,7 +159,7 @@
 .app .data-table th {
   background: var(--card2);
   border: 0;
-  padding: 12px 16px;
+  padding: 8px 16px;
   font-size: 11px;
   letter-spacing: 0.7px;
   text-transform: uppercase;
@@ -173,9 +173,9 @@
   background: var(--card);
   border: 0;
   border-top: 1px solid var(--id);
-  padding: 18px 16px;
+  padding: 16px;
   line-height: 1.6;
-  min-width: 110px;
+  min-width: 112px;
   max-width: 290px;
   transition: background 0.2s;
 }
@@ -195,12 +195,17 @@
   white-space: nowrap;
 }
 .app .data-table .table-number button {
+  justify-content: flex-end;
   text-align: right;
 }
 .app .table-actions-heading {
-  min-width: 150px;
+  min-width: 0;
 }
 .app .table-record-count {
+  display: flex;
+  align-items: center;
+  justify-self: start;
+  min-height: 44px;
   padding: 8px 12px;
   border-radius: 10px;
   background: var(--card2);
@@ -208,15 +213,16 @@
   white-space: nowrap;
 }
 .app .table-toolbar {
-  gap: 12px 20px;
+  gap: 16px;
 }
 .app .member-table-person {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-width: 0;
+  min-width: 160px;
 }
 .app .member-table-person .av {
+  flex-shrink: 0;
   width: 35px;
   height: 35px;
   font-size: 12px;
@@ -293,21 +299,6 @@
 }
 .app .reports-card .data-table {
   margin-top: 24px;
-}
-.app .reports-card .table-toolbar {
-  display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(160px, 220px) minmax(140px, 180px) auto;
-  align-items: end;
-  gap: 16px;
-}
-.app .reports-card .table-toolbar label {
-  width: auto;
-  min-width: 0;
-}
-.app .reports-card .table-record-count {
-  display: flex;
-  align-items: center;
-  min-height: 44px;
 }
 .app .reports-card .table-cell-actions {
   width: max-content;
@@ -519,14 +510,6 @@
 .app .btn.report-clear-button:disabled {
   box-shadow: 0 2px 6px #00192d1a;
 }
-@media (min-width: 761px) {
-  .app .reports-card .data-table th {
-    padding: 10px 16px;
-  }
-  .app .reports-card .data-table td:not(.acts) {
-    padding: 14px 16px;
-  }
-}
 @media (min-width: 1100px) {
   .app .reports-card .data-table th:first-child {
     width: 23%;
@@ -546,13 +529,6 @@
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 8px;
-  }
-  .app:not(.admin-app) .reports-card .table-toolbar {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 12px;
-  }
-  .app:not(.admin-app) .reports-card .table-toolbar > label:first-child {
-    grid-column: 1 / -1;
   }
   .app:not(.admin-app) .reports-card .data-table td.acts {
     grid-template-columns: minmax(0, 1fr);
@@ -615,6 +591,15 @@ dialog.experience-modal::backdrop {
   backdrop-filter: blur(16px);
 }
 
+body:has(dialog.experience-modal[open]) {
+  overflow: hidden;
+}
+
+/* An outer highlight looks like a halo against the dark backdrop. Keep clay depth inside. */
+dialog.experience-modal[open] > .experience-dialog.clay {
+  box-shadow: 6px 8px 20px var(--sd), inset 2px 2px 4px var(--il), inset -2px -2px 6px var(--id);
+}
+
 dialog.experience-modal:has(> .account-delete-dialog) {
   --account-delete-overlay-color: 5, 15, 30;
   --account-delete-overlay-opacity: 0.9;
@@ -633,11 +618,10 @@ dialog.experience-modal:has(> .account-delete-dialog)::backdrop {
   box-shadow: 4px 4px 14px var(--sd);
 }
 
-.app .experience-modal .dialog-close,
-#login .experience-modal .dialog-close {
+.experience-modal .dialog-close {
   flex: 0 0 auto;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--id);
   background: var(--card2);
   color: var(--text);
@@ -645,8 +629,7 @@ dialog.experience-modal:has(> .account-delete-dialog)::backdrop {
   line-height: 1;
 }
 
-.app .experience-modal .dialog-close:is(:hover, :focus-visible):not(:disabled),
-#login .experience-modal .dialog-close:is(:hover, :focus-visible):not(:disabled) {
+.experience-modal .dialog-close:hover:not(:disabled) {
   background: var(--ui-action-red);
   border-color: var(--ui-action-red);
   color: #fff;
@@ -658,13 +641,43 @@ dialog.experience-modal:has(> .account-delete-dialog)::backdrop {
   color: var(--ui-error);
 }
 
-.app .experience-modal .dialog-close:focus-visible,
-#login .experience-modal .dialog-close:focus-visible,
 .app .cancel-button:focus-visible,
 .app .dashboard-feedback button:focus-visible,
 #login :is(.cancel-button, .forgot-link):focus-visible {
   outline: 2px solid var(--ui-action-red);
   outline-offset: 3px;
+}
+
+/* Keep recessed clay controls and use a solid keyboard outline inside dialogs. */
+.app dialog.experience-modal .field :is(input, select, textarea):focus,
+#login dialog.experience-modal .field :is(input, select, textarea):focus {
+  box-shadow: inset 3px 3px 8px var(--id), inset -3px -3px 8px var(--sl);
+}
+.app dialog.experience-modal :focus-visible,
+#login dialog.experience-modal :focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+dialog.experience-modal .rocky-delete-error svg {
+  filter: none;
+}
+.app dialog.experience-modal > .privacy-policy-dialog {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.privacy-policy-copy {
+  display: grid;
+  gap: 8px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.privacy-policy-copy h3 {
+  margin-top: 8px;
+  font-size: 1rem;
 }
 
 .app aside .nav {
@@ -696,10 +709,4 @@ dialog.experience-modal:has(> .account-delete-dialog)::backdrop {
   top: 0;
   z-index: 1;
   background: var(--card2);
-}
-
-@media (max-width: 760px) {
-  .app .data-table table {
-    min-width: 36rem;
-  }
 }

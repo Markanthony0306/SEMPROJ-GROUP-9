@@ -2,6 +2,7 @@ import { ChangePasswordService, ChangePasswordError } from '../services/ChangePa
 import { ChangePasswordRepository } from '../repositories/ChangePasswordRepository.js'
 import { ChangePasswordWorkflow } from '../services/ChangePasswordWorkflow.js'
 import { authenticatePassword, PasswordAuthenticationError } from '../services/passwordAuthentication.js'
+import { withMemberAccountLock } from '../lib/memberAccountLock.js'
 
 export function registerChangePasswordRoutes(app, { authenticate, rateLimit, passwordPolicy, passwordPolicyMessage, supabase, loadDatabase, saveDatabase, createAuthClient, createSession }) {
   const changePasswordWorkflow = new ChangePasswordWorkflow({
@@ -17,13 +18,13 @@ export function registerChangePasswordRoutes(app, { authenticate, rateLimit, pas
     rateLimit({ max: 10 }),
     async (req, res) => {
       try {
-        const account = await changePasswordWorkflow.execute({
+        const account = await withMemberAccountLock(req.user.id, () => changePasswordWorkflow.execute({
           actorId: req.user.id,
           body: req.body
-        })
+        }))
         return res.json({
           message: 'Password updated.',
-          session: createSession(account)
+          session: createSession(account, req.user.termsVersion)
         })
       } catch (error) {
         if (error instanceof ChangePasswordError) {

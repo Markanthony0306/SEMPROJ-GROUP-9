@@ -1,0 +1,265 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/mobile/CreateMemberSheet.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=bdf2c8f1"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx");
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+var _s = $RefreshSig$();
+import __vite__cjsImport3_react from "/node_modules/.vite/deps/react.js?v=bdf2c8f1"; const useContext = __vite__cjsImport3_react["useContext"];
+import MemberIdWizard from "/src/components/admin/MemberIdWizard.jsx";
+import { Modal } from "/src/components/admin/AdminDialogParts.jsx";
+import { DashboardSheetContext } from "/src/components/Dialog.jsx";
+export default function CreateMemberSheet({
+  verifyIdentity,
+  token,
+  plans,
+  planOptionLabel,
+  pending,
+  error,
+  fieldError,
+  onClose,
+  onCreate
+}) {
+  _s();
+  const mobile = useContext(DashboardSheetContext);
+  if (!verifyIdentity) {
+    return /* @__PURE__ */ jsxDEV(Modal, { title: "Create Member Account", onClose, children: [
+      /* @__PURE__ */ jsxDEV("p", { className: "form-error", role: "alert", children: "Member creation requires ID and face verification. Ask the administrator to configure it." }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+        lineNumber: 41,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("div", { className: "ma", children: /* @__PURE__ */ jsxDEV("button", { className: "btn ghost", type: "button", onClick: onClose, children: "Close" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+        lineNumber: 45,
+        columnNumber: 11
+      }, this) }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+        lineNumber: 44,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+      lineNumber: 40,
+      columnNumber: 7
+    }, this);
+  }
+  if (verifyIdentity) {
+    return /* @__PURE__ */ jsxDEV(
+      MemberIdWizard,
+      {
+        token,
+        plans,
+        planOptionLabel,
+        pending,
+        error,
+        fieldError,
+        onClose,
+        onCreate
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+        lineNumber: 52,
+        columnNumber: 7
+      },
+      this
+    );
+  }
+  return /* @__PURE__ */ jsxDEV(
+    Modal,
+    {
+      busy: pending,
+      error,
+      invalidField: fieldError,
+      title: "Create Member Account",
+      onClose,
+      children: /* @__PURE__ */ jsxDEV("form", { onSubmit: onCreate, className: "mf", children: [
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Full name",
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              className: "clay-in",
+              name: "name",
+              required: true,
+              maxLength: mobile ? 100 : void 0,
+              pattern: mobile ? ".*\\S.*" : void 0
+            },
+            void 0,
+            false,
+            {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+              lineNumber: 75,
+              columnNumber: 11
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+          lineNumber: 73,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Contact number",
+          /* @__PURE__ */ jsxDEV("input", { className: "clay-in", name: "phone", type: "tel", placeholder: "Optional" }, void 0, false, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+            lineNumber: 85,
+            columnNumber: 11
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+          lineNumber: 83,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Email",
+          /* @__PURE__ */ jsxDEV(
+            "input",
+            {
+              className: "clay-in",
+              name: "email",
+              type: "email",
+              required: true,
+              placeholder: mobile ? "john123@gmail.com" : void 0
+            },
+            void 0,
+            false,
+            {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+              lineNumber: 89,
+              columnNumber: 11
+            },
+            this
+          )
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+          lineNumber: 87,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("p", { className: "form-help", children: "A temporary password will be shown once so you can give it to the member." }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+          lineNumber: 97,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Plan",
+          /* @__PURE__ */ jsxDEV("select", { className: "clay-in", name: "plan", defaultValue: "", required: true, children: [
+            /* @__PURE__ */ jsxDEV("option", { value: "", disabled: true, children: "Select a membership plan" }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+              lineNumber: 103,
+              columnNumber: 13
+            }, this),
+            plans.map(
+              (plan) => /* @__PURE__ */ jsxDEV("option", { value: plan.plan_name, children: planOptionLabel(plan) }, plan.plan_id, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+                lineNumber: 107,
+                columnNumber: 13
+              }, this)
+            )
+          ] }, void 0, true, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+            lineNumber: 102,
+            columnNumber: 11
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+          lineNumber: 100,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("p", { className: "form-help", children: "Choose the Student plan to apply its configured student rate. Confirm eligibility before selecting it." }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+          lineNumber: 113,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+          "Payment",
+          /* @__PURE__ */ jsxDEV("select", { className: "clay-in", name: "method", children: [
+            /* @__PURE__ */ jsxDEV("option", { children: "Cash" }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+              lineNumber: 120,
+              columnNumber: 13
+            }, this),
+            /* @__PURE__ */ jsxDEV("option", { children: "GCash" }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+              lineNumber: 121,
+              columnNumber: 13
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+            lineNumber: 119,
+            columnNumber: 11
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+          lineNumber: 117,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("p", { className: "form-help", children: "Record the payment separately after receiving it." }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+          lineNumber: 124,
+          columnNumber: 9
+        }, this),
+        /* @__PURE__ */ jsxDEV("div", { className: "ma", children: [
+          /* @__PURE__ */ jsxDEV("button", { className: "btn ghost", type: "button", onClick: onClose, children: "Cancel" }, void 0, false, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+            lineNumber: 128,
+            columnNumber: 11
+          }, this),
+          /* @__PURE__ */ jsxDEV("button", { className: "btn", type: "submit", children: "Create" }, void 0, false, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+            lineNumber: 131,
+            columnNumber: 11
+          }, this)
+        ] }, void 0, true, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+          lineNumber: 127,
+          columnNumber: 9
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+        lineNumber: 72,
+        columnNumber: 7
+      }, this)
+    },
+    void 0,
+    false,
+    {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx",
+      lineNumber: 65,
+      columnNumber: 5
+    },
+    this
+  );
+}
+_s(CreateMemberSheet, "B0IYrD4M7EuX9/nNZsW+kMWnv04=");
+_c = CreateMemberSheet;
+var _c;
+$RefreshReg$(_c, "CreateMemberSheet");
+if (import.meta.hot && !inWebWorker) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+if (import.meta.hot && !inWebWorker) {
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/mobile/CreateMemberSheet.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,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QUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsRUF1RUE7QUFFSjtBQUFDRSxHQWhIdUJWLG1CQUFpQjtBQUFBLEtBQWpCQTtBQUFpQixJQUFBaUI7QUFBQSxhQUFBQSxJQUFBIiwibmFtZXMiOlsidXNlQ29udGV4dCIsIk1lbWJlcklkV2l6YXJkIiwiTW9kYWwiLCJEYXNoYm9hcmRTaGVldENvbnRleHQiLCJDcmVhdGVNZW1iZXJTaGVldCIsInZlcmlmeUlkZW50aXR5IiwidG9rZW4iLCJwbGFucyIsInBsYW5PcHRpb25MYWJlbCIsInBlbmRpbmciLCJlcnJvciIsImZpZWxkRXJyb3IiLCJvbkNsb3NlIiwib25DcmVhdGUiLCJfcyIsIm1vYmlsZSIsInVuZGVmaW5lZCIsIm1hcCIsInBsYW4iLCJwbGFuX25hbWUiLCJwbGFuX2lkIiwiX2MiXSwiaWdub3JlTGlzdCI6W10sInNvdXJjZXMiOlsiQ3JlYXRlTWVtYmVyU2hlZXQuanN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IHVzZUNvbnRleHQgfSBmcm9tICdyZWFjdCdcbmltcG9ydCBNZW1iZXJJZFdpemFyZCBmcm9tICcuLi9hZG1pbi9NZW1iZXJJZFdpemFyZCdcbmltcG9ydCB7IE1vZGFsIH0gZnJvbSAnLi4vYWRtaW4vQWRtaW5EaWFsb2dQYXJ0cydcbmltcG9ydCB7IERhc2hib2FyZFNoZWV0Q29udGV4dCB9IGZyb20gJy4uL0RpYWxvZydcblxuLy8gS2VlcCBib3RoIGZlYXR1cmUtZmxhZyBwYXRocyBvbiB0aGUgc2FtZSBleGlzdGluZyByZWdpc3RyYXRpb24gd29ya2Zsb3cuXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbiBDcmVhdGVNZW1iZXJTaGVldCh7XG4gIHZlcmlmeUlkZW50aXR5LFxuICB0b2tlbixcbiAgcGxhbnMsXG4gIHBsYW5PcHRpb25MYWJlbCxcbiAgcGVuZGluZyxcbiAgZXJyb3IsXG4gIGZpZWxkRXJyb3IsXG4gIG9uQ2xvc2UsXG4gIG9uQ3JlYXRlXG59KSB7XG4gIGNvbnN0IG1vYmlsZSA9IHVzZUNvbnRleHQoRGFzaGJvYXJkU2hlZXRDb250ZXh0KVxuICBpZiAoIXZlcmlmeUlkZW50aXR5KSB7XG4gICAgcmV0dXJuIChcbiAgICAgIDxNb2RhbCB0aXRsZT1cIkNyZWF0ZSBNZW1iZXIgQWNjb3VudFwiIG9uQ2xvc2U9e29uQ2xvc2V9PlxuICAgICAgICA8cCBjbGFzc05hbWU9XCJmb3JtLWVycm9yXCIgcm9sZT1cImFsZXJ0XCI+XG4gICAgICAgICAgTWVtYmVyIGNyZWF0aW9uIHJlcXVpcmVzIElEIGFuZCBmYWNlIHZlcmlmaWNhdGlvbi4gQXNrIHRoZSBhZG1pbmlzdHJhdG9yIHRvIGNvbmZpZ3VyZSBpdC5cbiAgICAgICAgPC9wPlxuICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cIm1hXCI+XG4gICAgICAgICAgPGJ1dHRvbiBjbGFzc05hbWU9XCJidG4gZ2hvc3RcIiB0eXBlPVwiYnV0dG9uXCIgb25DbGljaz17b25DbG9zZX0+Q2xvc2U8L2J1dHRvbj5cbiAgICAgICAgPC9kaXY+XG4gICAgICA8L01vZGFsPlxuICAgIClcbiAgfVxuICBpZiAodmVyaWZ5SWRlbnRpdHkpIHtcbiAgICByZXR1cm4gKFxuICAgICAgPE1lbWJlcklkV2l6YXJkXG4gICAgICAgIHRva2VuPXt0b2tlbn1cbiAgICAgICAgcGxhbnM9e3BsYW5zfVxuICAgICAgICBwbGFuT3B0aW9uTGFiZWw9e3BsYW5PcHRpb25MYWJlbH1cbiAgICAgICAgcGVuZGluZz17cGVuZGluZ31cbiAgICAgICAgZXJyb3I9e2Vycm9yfVxuICAgICAgICBmaWVsZEVycm9yPXtmaWVsZEVycm9yfVxuICAgICAgICBvbkNsb3NlPXtvbkNsb3NlfVxuICAgICAgICBvbkNyZWF0ZT17b25DcmVhdGV9XG4gICAgICAvPlxuICAgIClcbiAgfVxuICByZXR1cm4gKFxuICAgIDxNb2RhbFxuICAgICAgYnVzeT17cGVuZGluZ31cbiAgICAgIGVycm9yPXtlcnJvcn1cbiAgICAgIGludmFsaWRGaWVsZD17ZmllbGRFcnJvcn1cbiAgICAgIHRpdGxlPVwiQ3JlYXRlIE1lbWJlciBBY2NvdW50XCJcbiAgICAgIG9uQ2xvc2U9e29uQ2xvc2V9XG4gICAgPlxuICAgICAgPGZvcm0gb25TdWJtaXQ9e29uQ3JlYXRlfSBjbGFzc05hbWU9XCJtZlwiPlxuICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZmllbGRcIj5cbiAgICAgICAgICBGdWxsIG5hbWVcbiAgICAgICAgICA8aW5wdXRcbiAgICAgICAgICAgIGNsYXNzTmFtZT1cImNsYXktaW5cIlxuICAgICAgICAgICAgbmFtZT1cIm5hbWVcIlxuICAgICAgICAgICAgcmVxdWlyZWRcbiAgICAgICAgICAgIG1heExlbmd0aD17bW9iaWxlID8gMTAwIDogdW5kZWZpbmVkfVxuICAgICAgICAgICAgcGF0dGVybj17bW9iaWxlID8gJy4qXFxcXFMuKicgOiB1bmRlZmluZWR9XG4gICAgICAgICAgLz5cbiAgICAgICAgPC9sYWJlbD5cbiAgICAgICAgPGxhYmVsIGNsYXNzTmFtZT1cImZpZWxkXCI+XG4gICAgICAgICAgQ29udGFjdCBudW1iZXJcbiAgICAgICAgICA8aW5wdXQgY2xhc3NOYW1lPVwiY2xheS1pblwiIG5hbWU9XCJwaG9uZVwiIHR5cGU9XCJ0ZWxcIiBwbGFjZWhvbGRlcj1cIk9wdGlvbmFsXCIgLz5cbiAgICAgICAgPC9sYWJlbD5cbiAgICAgICAgPGxhYmVsIGNsYXNzTmFtZT1cImZpZWxkXCI+XG4gICAgICAgICAgRW1haWxcbiAgICAgICAgICA8aW5wdXRcbiAgICAgICAgICAgIGNsYXNzTmFtZT1cImNsYXktaW5cIlxuICAgICAgICAgICAgbmFtZT1cImVtYWlsXCJcbiAgICAgICAgICAgIHR5cGU9XCJlbWFpbFwiXG4gICAgICAgICAgICByZXF1aXJlZFxuICAgICAgICAgICAgcGxhY2Vob2xkZXI9e21vYmlsZSA/ICdqb2huMTIzQGdtYWlsLmNvbScgOiB1bmRlZmluZWR9XG4gICAgICAgICAgLz5cbiAgICAgICAgPC9sYWJlbD5cbiAgICAgICAgPHAgY2xhc3NOYW1lPVwiZm9ybS1oZWxwXCI+XG4gICAgICAgICAgQSB0ZW1wb3JhcnkgcGFzc3dvcmQgd2lsbCBiZSBzaG93biBvbmNlIHNvIHlvdSBjYW4gZ2l2ZSBpdCB0byB0aGUgbWVtYmVyLlxuICAgICAgICA8L3A+XG4gICAgICAgIDxsYWJlbCBjbGFzc05hbWU9XCJmaWVsZFwiPlxuICAgICAgICAgIFBsYW5cbiAgICAgICAgICA8c2VsZWN0IGNsYXNzTmFtZT1cImNsYXktaW5cIiBuYW1lPVwicGxhblwiIGRlZmF1bHRWYWx1ZT1cIlwiIHJlcXVpcmVkPlxuICAgICAgICAgICAgPG9wdGlvbiB2YWx1ZT1cIlwiIGRpc2FibGVkPlxuICAgICAgICAgICAgICBTZWxlY3QgYSBtZW1iZXJzaGlwIHBsYW5cbiAgICAgICAgICAgIDwvb3B0aW9uPlxuICAgICAgICAgICAge3BsYW5zLm1hcCgocGxhbikgPT4gKFxuICAgICAgICAgICAgICA8b3B0aW9uIGtleT17cGxhbi5wbGFuX2lkfSB2YWx1ZT17cGxhbi5wbGFuX25hbWV9PlxuICAgICAgICAgICAgICAgIHtwbGFuT3B0aW9uTGFiZWwocGxhbil9XG4gICAgICAgICAgICAgIDwvb3B0aW9uPlxuICAgICAgICAgICAgKSl9XG4gICAgICAgICAgPC9zZWxlY3Q+XG4gICAgICAgIDwvbGFiZWw+XG4gICAgICAgIDxwIGNsYXNzTmFtZT1cImZvcm0taGVscFwiPlxuICAgICAgICAgIENob29zZSB0aGUgU3R1ZGVudCBwbGFuIHRvIGFwcGx5IGl0cyBjb25maWd1cmVkIHN0dWRlbnQgcmF0ZS4gQ29uZmlybSBlbGlnaWJpbGl0eSBiZWZvcmVcbiAgICAgICAgICBzZWxlY3RpbmcgaXQuXG4gICAgICAgIDwvcD5cbiAgICAgICAgPGxhYmVsIGNsYXNzTmFtZT1cImZpZWxkXCI+XG4gICAgICAgICAgUGF5bWVudFxuICAgICAgICAgIDxzZWxlY3QgY2xhc3NOYW1lPVwiY2xheS1pblwiIG5hbWU9XCJtZXRob2RcIj5cbiAgICAgICAgICAgIDxvcHRpb24+Q2FzaDwvb3B0aW9uPlxuICAgICAgICAgICAgPG9wdGlvbj5HQ2FzaDwvb3B0aW9uPlxuICAgICAgICAgIDwvc2VsZWN0PlxuICAgICAgICA8L2xhYmVsPlxuICAgICAgICA8cCBjbGFzc05hbWU9XCJmb3JtLWhlbHBcIj5cbiAgICAgICAgICBSZWNvcmQgdGhlIHBheW1lbnQgc2VwYXJhdGVseSBhZnRlciByZWNlaXZpbmcgaXQuXG4gICAgICAgIDwvcD5cbiAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJtYVwiPlxuICAgICAgICAgIDxidXR0b24gY2xhc3NOYW1lPVwiYnRuIGdob3N0XCIgdHlwZT1cImJ1dHRvblwiIG9uQ2xpY2s9e29uQ2xvc2V9PlxuICAgICAgICAgICAgQ2FuY2VsXG4gICAgICAgICAgPC9idXR0b24+XG4gICAgICAgICAgPGJ1dHRvbiBjbGFzc05hbWU9XCJidG5cIiB0eXBlPVwic3VibWl0XCI+XG4gICAgICAgICAgICBDcmVhdGVcbiAgICAgICAgICA8L2J1dHRvbj5cbiAgICAgICAgPC9kaXY+XG4gICAgICA8L2Zvcm0+XG4gICAgPC9Nb2RhbD5cbiAgKVxufVxuIl0sImZpbGUiOiJDOi9Vc2Vycy9nZWV6ZS9Eb3dubG9hZHMvTEFORElORy1QQUdFL3NyYy9jb21wb25lbnRzL21vYmlsZS9DcmVhdGVNZW1iZXJTaGVldC5qc3gifQ==

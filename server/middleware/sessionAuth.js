@@ -1,7 +1,8 @@
 import jwt from 'jsonwebtoken'
+import { MEMBER_TERMS_VERSION } from '../../shared/memberTerms.js'
 
 export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus }) {
-  function createSession(account) {
+  function createSession(account, termsVersion) {
     const user = {
       id: account.id,
       name: account.name,
@@ -14,7 +15,8 @@ export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus }) 
       avatarId: account.avatarId,
       membershipStart: account.membershipStart,
       membershipEnd: account.membershipEnd,
-      mustChangePassword: Boolean(account.mustChangePassword)
+      mustChangePassword: Boolean(account.mustChangePassword),
+      ...(termsVersion && { termsVersion })
     }
     return {
       user,
@@ -47,6 +49,8 @@ export function createSessionAuth({ jwtSecret, loadAccount, membershipStatus }) 
         return res.status(401).json({ message: 'Your session has expired. Please log in again.' })
       if (claims.role !== account.role)
         return res.status(401).json({ message: 'Your permissions changed. Please log in again.' })
+      if (['user', 'member'].includes(account.role) && claims.termsVersion !== MEMBER_TERMS_VERSION)
+        return res.status(401).json({ message: 'Log in again to accept the current member terms and complete facial verification.' })
       const passwordChangeAllowed =
         (req.method === 'GET' && req.path === '/api/me') ||
         (req.method === 'POST' && req.path === '/api/profile/change-password')

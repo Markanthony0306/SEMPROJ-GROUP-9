@@ -1,14 +1,8 @@
 import { Icon } from './DashboardShell'
 import { RecordDeleteButton } from './RecordDeleteControls'
+import { formatDateTime } from '../../shared/formatDate.js'
 
-const formatDate = (value) =>
-  value
-    ? new Date(value).toLocaleString('en-PH', {
-        timeZone: 'Asia/Manila',
-        dateStyle: 'medium',
-        timeStyle: 'short'
-      })
-    : 'Not recorded'
+const recordedAt = (value) => formatDateTime(value, 'Not recorded')
 export default function AdminNotifications({
   state,
   canManage,
@@ -54,7 +48,7 @@ export default function AdminNotifications({
                     <small>{item.email}</small>
                     <small>
                       {item.type === 'expired' ? 'Expired' : 'Expiring soon'} ·{' '}
-                      {formatDate(item.membershipEnd)}
+                      {recordedAt(item.membershipEnd)}
                     </small>
                   </div>
                   {deleteButton(item)}
@@ -76,7 +70,7 @@ export default function AdminNotifications({
                 <li key={item.id}>
                   <div>
                     <strong>{item.name}</strong>
-                    <small>Last inspected: {formatDate(item.lastInspected)}</small>
+                    <small>Last inspected: {recordedAt(item.lastInspected)}</small>
                     <small>{item.condition}</small>
                   </div>
                   <div className="notification-row-actions">

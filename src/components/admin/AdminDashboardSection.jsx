@@ -2,6 +2,7 @@ import { Icon } from '../DashboardShell'
 import ActivityChart from '../ActivityChart'
 import AdminAnalytics from './analytics/AdminAnalytics'
 import { membershipState } from '../../utils/membership'
+import { manilaDateKey } from '../../../shared/formatDate.js'
 
 export default function AdminDashboardSection({ currentUser, setModal, setSection, members, active, data, today, money, revenue, loading, expiredMembers, renewals, reminderList, date }) {
   return (
@@ -38,11 +39,7 @@ export default function AdminDashboardSection({ currentUser, setModal, setSectio
                 ['Active Memberships', active, 'card', 'b2'],
                 [
                   "Today's Check-ins",
-                  data.attendance.filter(
-                    (item) =>
-                      new Date(item.date).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' }) ===
-                      today
-                  ).length,
+                  data.attendance.filter((item) => manilaDateKey(item.date) === today).length,
                   'qr',
                   'b3'
                 ],

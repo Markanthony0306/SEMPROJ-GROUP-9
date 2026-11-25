@@ -1,0 +1,150 @@
+2026-11-21 15:40:18.393: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:40:18.394: [INFO] Profiles total count: 1
+2026-11-21 15:40:18.394: [INFO] Profile: name=Profile 1 path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=null
+2026-11-21 15:40:18.394: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:40:18.394: [INFO] VisibilityChanged: 0
+2026-11-21 15:40:18.532: [INFO] BookmarkNodeAdded, ABU: 0
+2026-11-21 15:40:18.532: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 15:40:18.532: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 15:40:18.532: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 15:40:18.532: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:40:18.549: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-21 15:40:20.759: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-21 15:40:20.766: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-21 15:40:20.772: [INFO] Primary account changed.
+2026-11-21 15:40:20.772: [INFO] OnPrimaryAccountChanged PrimaryAccountChangeEvent::Type::kSet
+2026-11-21 15:40:20.794: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-21 15:40:20.800: [INFO] RecordSyncInitDuration has_sync_been_enabled: 0 state: 0
+2026-11-21 15:40:41.237: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:41:47.232: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:41:47.232: [INFO] Profiles total count: 1
+2026-11-21 15:41:47.232: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:40:18.455Z
+2026-11-21 15:41:47.232: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:41:47.232: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:40:18.455Z
+2026-11-21 15:41:47.232: [INFO] VisibilityChanged: 0
+2026-11-21 15:41:47.325: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 15:41:47.325: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 15:41:47.325: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 15:41:47.325: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:42:07.591: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:43:08.071: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:43:08.071: [INFO] Profiles total count: 1
+2026-11-21 15:43:08.071: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:41:47.274Z
+2026-11-21 15:43:08.071: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:43:08.071: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:41:47.274Z
+2026-11-21 15:43:08.071: [INFO] VisibilityChanged: 0
+2026-11-21 15:43:08.224: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 15:43:08.224: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 15:43:08.224: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 15:43:08.224: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:45:10.347: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:46:54.210: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:46:54.210: [INFO] Profiles total count: 1
+2026-11-21 15:46:54.210: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:43:08.164Z
+2026-11-21 15:46:54.210: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:46:54.210: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:43:08.164Z
+2026-11-21 15:46:54.210: [INFO] VisibilityChanged: 0
+2026-11-21 15:46:54.390: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 15:46:54.390: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 15:46:54.390: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 15:46:54.390: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:49:24.494: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:49:38.357: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:49:38.357: [INFO] Profiles total count: 1
+2026-11-21 15:49:38.358: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:46:54.319Z
+2026-11-21 15:49:38.358: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:49:38.358: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:46:54.319Z
+2026-11-21 15:49:38.358: [INFO] VisibilityChanged: 0
+2026-11-21 15:49:38.518: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 15:49:38.518: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 15:49:38.518: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 15:49:38.518: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:50:44.044: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:51:07.429: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:51:07.429: [INFO] Profiles total count: 1
+2026-11-21 15:51:07.429: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:49:38.457Z
+2026-11-21 15:51:07.429: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:51:07.429: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:49:38.457Z
+2026-11-21 15:51:07.429: [INFO] VisibilityChanged: 0
+2026-11-21 15:51:07.537: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 15:51:07.537: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 15:51:07.537: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 15:51:07.537: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:51:35.532: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:54:00.691: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:54:00.691: [INFO] Profiles total count: 1
+2026-11-21 15:54:00.691: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:51:07.467Z
+2026-11-21 15:54:00.691: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:54:00.691: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:51:07.467Z
+2026-11-21 15:54:00.691: [INFO] VisibilityChanged: 0
+2026-11-21 15:54:00.805: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 15:54:00.805: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 15:54:00.805: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 15:54:00.805: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:54:26.744: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:56:47.919: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:56:47.920: [INFO] Profiles total count: 1
+2026-11-21 15:56:47.920: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:54:00.734Z
+2026-11-21 15:56:47.920: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:56:47.920: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:54:00.734Z
+2026-11-21 15:56:47.920: [INFO] VisibilityChanged: 0
+2026-11-21 15:56:48.013: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 15:56:48.013: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 15:56:48.013: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 15:56:48.013: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:57:08.931: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:59:11.030: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:59:11.030: [INFO] Profiles total count: 1
+2026-11-21 15:59:11.030: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:56:47.964Z
+2026-11-21 15:59:11.030: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:59:11.030: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:56:47.964Z
+2026-11-21 15:59:11.030: [INFO] VisibilityChanged: 0
+2026-11-21 15:59:11.124: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 15:59:11.124: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 15:59:11.124: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 15:59:11.124: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:59:27.781: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 15:59:44.851: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:59:44.851: [INFO] Profiles total count: 1
+2026-11-21 15:59:44.851: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:59:11.058Z
+2026-11-21 15:59:44.851: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 15:59:44.851: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:59:11.058Z
+2026-11-21 15:59:44.851: [INFO] VisibilityChanged: 0
+2026-11-21 15:59:44.956: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 15:59:44.956: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 15:59:44.956: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 15:59:44.956: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 16:00:01.647: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 16:00:28.362: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 16:00:28.362: [INFO] Profiles total count: 1
+2026-11-21 16:00:28.362: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:59:44.884Z
+2026-11-21 16:00:28.362: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 16:00:28.362: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T15:59:44.884Z
+2026-11-21 16:00:28.362: [INFO] VisibilityChanged: 0
+2026-11-21 16:00:28.451: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 16:00:28.451: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 16:00:28.451: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 16:00:28.451: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 16:00:49.317: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 16:01:43.526: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 16:01:43.526: [INFO] Profiles total count: 1
+2026-11-21 16:01:43.526: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T16:00:28.391Z
+2026-11-21 16:01:43.526: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 16:01:43.526: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T16:00:28.391Z
+2026-11-21 16:01:43.526: [INFO] VisibilityChanged: 0
+2026-11-21 16:01:43.658: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 16:01:43.658: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 16:01:43.658: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 16:01:43.658: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 16:02:04.547: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 16:02:14.323: [INFO] CurrentProfilePath: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 16:02:14.323: [INFO] Profiles total count: 1
+2026-11-21 16:02:14.323: [INFO] Profile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T16:01:43.568Z
+2026-11-21 16:02:14.323: [INFO] LastUsedProfileDir: C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default
+2026-11-21 16:02:14.323: [INFO] MostRecentlyActiveProfile: name=Personal path=C:\Users\geeze\Downloads\LANDING-PAGE\.taste-skill\chrome-analytics\Default lastActive=2026-11-21T16:01:43.568Z
+2026-11-21 16:02:14.323: [INFO] VisibilityChanged: 0
+2026-11-21 16:02:14.550: [INFO] OnDoneLoading sync enabled: 0
+2026-11-21 16:02:14.550: [INFO] BookmarkModelLoaded, ids_reassigned: 0
+2026-11-21 16:02:14.550: [INFO] BookmarksLoadDropped droppedNodes=0
+2026-11-21 16:02:14.550: [INFO] BookmarksSnapshot Startup total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1
+2026-11-21 16:02:35.201: [INFO] BookmarksSnapshot Shutdown total=1 bar=1 other=0 mobile=0 showBar=0 showBarNTP=1

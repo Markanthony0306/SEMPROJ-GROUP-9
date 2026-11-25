@@ -9,7 +9,7 @@ export const gorillaTitles = {
   equipmentBroken: 'Equipment out of service',
   payment: 'Payment recorded',
   qrCheckIn: 'QR check-in recorded',
-  loginLocked: 'OOPS! Too many attempts'
+  loginLocked: 'Too many sign-in attempts'
 }
 
 const pesos = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' })
@@ -72,6 +72,6 @@ export const gorillaEvents = {
   loginLocked: () => ({
     type: 'error',
     title: gorillaTitles.loginLocked,
-    message: 'Please refresh the page to try again.'
+    message: 'Wait up to 15 minutes before trying to sign in to this account again.'
   })
 }

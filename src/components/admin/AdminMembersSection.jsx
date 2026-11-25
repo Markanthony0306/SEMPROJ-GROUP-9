@@ -1,5 +1,6 @@
 import DataTable from '../DataTable'
 import ProfileAvatar from '../ProfileAvatar'
+import { RecordDeleteButton } from '../RecordDeleteControls'
 import { Icon } from '../DashboardShell'
 import { Pill, memberBadge } from './AdminStaffDialogs'
 import { filterMemberRecords } from '../../utils/membership'
@@ -76,15 +77,11 @@ export default function AdminMembersSection({ query, setQuery, currentUser, setM
                       <Icon name="edit" size={18} />
                     </button>
                     {currentUser?.role === 'admin' && (
-                      <button
-                        className="btn sm danger"
-                        type="button"
-                        aria-label={`Delete account for ${member.name}`}
+                      <RecordDeleteButton
+                        label={`Delete account for ${member.name}`}
                         disabled={pending}
                         onClick={() => setModal({ kind: 'delete-account', member })}
-                      >
-                        Delete
-                      </button>
+                      />
                     )}
                   </td>
                 </tr>

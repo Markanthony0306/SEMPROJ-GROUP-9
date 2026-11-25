@@ -1,0 +1,254 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/admin/AdminOperationsDialogs.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=bdf2c8f1"; const Fragment = __vite__cjsImport0_react_jsxDevRuntime["Fragment"]; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx");
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+import EquipmentCategorySelect from "/src/components/EquipmentCategorySelect.jsx";
+import { FaceEnrollmentForm, Modal } from "/src/components/admin/AdminDialogParts.jsx";
+export default function AdminOperationsDialogs({ modal, setModal, pending, error, act, currentUser, enrollFace, requestFaceChallenge }) {
+  return /* @__PURE__ */ jsxDEV(Fragment, { children: [
+    modal?.kind === "maintenance" && /* @__PURE__ */ jsxDEV(
+      Modal,
+      {
+        busy: pending,
+        error,
+        title: "Log maintenance or repair",
+        onClose: () => setModal(null),
+        children: /* @__PURE__ */ jsxDEV(
+          "form",
+          {
+            className: "mf",
+            onSubmit: (event) => {
+              event.preventDefault();
+              const values = Object.fromEntries(new FormData(event.currentTarget));
+              act(
+                `/admin/equipment/${modal.item.id}`,
+                { method: "PATCH", body: JSON.stringify(values) },
+                "Maintenance recorded."
+              );
+            },
+            children: [
+              /* @__PURE__ */ jsxDEV("p", { className: "form-help", children: modal.item.name }, void 0, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+                lineNumber: 45,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+                "Work completed",
+                /* @__PURE__ */ jsxDEV(
+                  "textarea",
+                  {
+                    className: "clay-in",
+                    name: "maintenanceNote",
+                    rows: "4",
+                    maxLength: "500",
+                    placeholder: "Describe the inspection, maintenance, or repair.",
+                    required: true
+                  },
+                  void 0,
+                  false,
+                  {
+                    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+                    lineNumber: 48,
+                    columnNumber: 15
+                  },
+                  this
+                )
+              ] }, void 0, true, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+                lineNumber: 46,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+                "Condition after work",
+                /* @__PURE__ */ jsxDEV("select", { className: "clay-in", name: "condition", defaultValue: modal.item.condition, children: [
+                  /* @__PURE__ */ jsxDEV("option", { children: "Good" }, void 0, false, {
+                    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+                    lineNumber: 60,
+                    columnNumber: 17
+                  }, this),
+                  /* @__PURE__ */ jsxDEV("option", { children: "Needs Maintenance" }, void 0, false, {
+                    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+                    lineNumber: 61,
+                    columnNumber: 17
+                  }, this),
+                  /* @__PURE__ */ jsxDEV("option", { children: "Out of Service" }, void 0, false, {
+                    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+                    lineNumber: 62,
+                    columnNumber: 17
+                  }, this)
+                ] }, void 0, true, {
+                  fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+                  lineNumber: 59,
+                  columnNumber: 15
+                }, this)
+              ] }, void 0, true, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+                lineNumber: 57,
+                columnNumber: 13
+              }, this),
+              /* @__PURE__ */ jsxDEV("div", { className: "ma", children: /* @__PURE__ */ jsxDEV("button", { className: "btn", type: "submit", children: "Save maintenance" }, void 0, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+                lineNumber: 66,
+                columnNumber: 15
+              }, this) }, void 0, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+                lineNumber: 65,
+                columnNumber: 13
+              }, this)
+            ]
+          },
+          void 0,
+          true,
+          {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+            lineNumber: 33,
+            columnNumber: 11
+          },
+          this
+        )
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+        lineNumber: 27,
+        columnNumber: 7
+      },
+      this
+    ),
+    modal?.kind === "face" && /* @__PURE__ */ jsxDEV(
+      Modal,
+      {
+        busy: pending,
+        error,
+        title: `Face enrollment: ${modal.member.name}`,
+        className: "face-enrollment-dialog",
+        onClose: () => setModal(null),
+        children: /* @__PURE__ */ jsxDEV(
+          FaceEnrollmentForm,
+          {
+            selfEnrollment: modal.member.id === currentUser?.id,
+            onEnroll: enrollFace,
+            getChallenge: requestFaceChallenge,
+            busy: pending
+          },
+          void 0,
+          false,
+          {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+            lineNumber: 81,
+            columnNumber: 11
+          },
+          this
+        )
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+        lineNumber: 74,
+        columnNumber: 7
+      },
+      this
+    ),
+    modal?.kind === "equipment" && /* @__PURE__ */ jsxDEV(Modal, { busy: pending, error, title: "Add Equipment", onClose: () => setModal(null), children: /* @__PURE__ */ jsxDEV(
+      "form",
+      {
+        onSubmit: (event) => {
+          event.preventDefault();
+          act(
+            "/admin/equipment",
+            {
+              method: "POST",
+              body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget)))
+            },
+            "Equipment added."
+          );
+        },
+        className: "mf",
+        children: [
+          /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+            "Equipment name",
+            /* @__PURE__ */ jsxDEV("input", { className: "clay-in", name: "name", required: true }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+              lineNumber: 107,
+              columnNumber: 15
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+            lineNumber: 105,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+            "Category",
+            /* @__PURE__ */ jsxDEV(EquipmentCategorySelect, {}, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+              lineNumber: 111,
+              columnNumber: 15
+            }, this)
+          ] }, void 0, true, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+            lineNumber: 109,
+            columnNumber: 13
+          }, this),
+          /* @__PURE__ */ jsxDEV("div", { className: "ma", children: /* @__PURE__ */ jsxDEV("button", { className: "btn", children: "Add" }, void 0, false, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+            lineNumber: 114,
+            columnNumber: 15
+          }, this) }, void 0, false, {
+            fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+            lineNumber: 113,
+            columnNumber: 13
+          }, this)
+        ]
+      },
+      void 0,
+      true,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+        lineNumber: 91,
+        columnNumber: 11
+      },
+      this
+    ) }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+      lineNumber: 90,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx",
+    lineNumber: 25,
+    columnNumber: 5
+  }, this);
+}
+_c = AdminOperationsDialogs;
+var _c;
+$RefreshReg$(_c, "AdminOperationsDialogs");
+if (import.meta.hot && !inWebWorker) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+if (import.meta.hot && !inWebWorker) {
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminOperationsDialogs.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,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QTtBQUFBO0FBQUE7QUFBQSxJQXlCQSxLQTFCRjtBQUFBO0FBQUE7QUFBQTtBQUFBLFdBMkJBO0FBQUEsT0E1Rko7QUFBQTtBQUFBO0FBQUE7QUFBQSxTQThGQTtBQUVKO0FBQUNVLEtBbEd1QjFCO0FBQXNCLElBQUEwQjtBQUFBLGFBQUFBLElBQUEiLCJuYW1lcyI6WyJFcXVpcG1lbnRDYXRlZ29yeVNlbGVjdCIsIkZhY2VFbnJvbGxtZW50Rm9ybSIsIk1vZGFsIiwiQWRtaW5PcGVyYXRpb25zRGlhbG9ncyIsIm1vZGFsIiwic2V0TW9kYWwiLCJwZW5kaW5nIiwiZXJyb3IiLCJhY3QiLCJjdXJyZW50VXNlciIsImVucm9sbEZhY2UiLCJyZXF1ZXN0RmFjZUNoYWxsZW5nZSIsImtpbmQiLCJldmVudCIsInByZXZlbnREZWZhdWx0IiwidmFsdWVzIiwiT2JqZWN0IiwiZnJvbUVudHJpZXMiLCJGb3JtRGF0YSIsImN1cnJlbnRUYXJnZXQiLCJpdGVtIiwiaWQiLCJtZXRob2QiLCJib2R5IiwiSlNPTiIsInN0cmluZ2lmeSIsIm5hbWUiLCJjb25kaXRpb24iLCJtZW1iZXIiLCJfYyJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyJBZG1pbk9wZXJhdGlvbnNEaWFsb2dzLmpzeCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgRXF1aXBtZW50Q2F0ZWdvcnlTZWxlY3QgZnJvbSAnLi4vRXF1aXBtZW50Q2F0ZWdvcnlTZWxlY3QnXHJcbmltcG9ydCB7IEZhY2VFbnJvbGxtZW50Rm9ybSwgTW9kYWwgfSBmcm9tICcuL0FkbWluRGlhbG9nUGFydHMnXHJcblxyXG5leHBvcnQgZGVmYXVsdCBmdW5jdGlvbiBBZG1pbk9wZXJhdGlvbnNEaWFsb2dzKHsgbW9kYWwsIHNldE1vZGFsLCBwZW5kaW5nLCBlcnJvciwgYWN0LCBjdXJyZW50VXNlciwgZW5yb2xsRmFjZSwgcmVxdWVzdEZhY2VDaGFsbGVuZ2UgfSkge1xyXG4gIHJldHVybiAoXHJcbiAgICA8PlxyXG4gICAgICB7bW9kYWw/LmtpbmQgPT09ICdtYWludGVuYW5jZScgJiYgKFxyXG4gICAgICAgIDxNb2RhbFxyXG4gICAgICAgICAgYnVzeT17cGVuZGluZ31cclxuICAgICAgICAgIGVycm9yPXtlcnJvcn1cclxuICAgICAgICAgIHRpdGxlPVwiTG9nIG1haW50ZW5hbmNlIG9yIHJlcGFpclwiXHJcbiAgICAgICAgICBvbkNsb3NlPXsoKSA9PiBzZXRNb2RhbChudWxsKX1cclxuICAgICAgICA+XHJcbiAgICAgICAgICA8Zm9ybVxyXG4gICAgICAgICAgICBjbGFzc05hbWU9XCJtZlwiXHJcbiAgICAgICAgICAgIG9uU3VibWl0PXsoZXZlbnQpID0+IHtcclxuICAgICAgICAgICAgICBldmVudC5wcmV2ZW50RGVmYXVsdCgpXHJcbiAgICAgICAgICAgICAgY29uc3QgdmFsdWVzID0gT2JqZWN0LmZyb21FbnRyaWVzKG5ldyBGb3JtRGF0YShldmVudC5jdXJyZW50VGFyZ2V0KSlcclxuICAgICAgICAgICAgICBhY3QoXHJcbiAgICAgICAgICAgICAgICBgL2FkbWluL2VxdWlwbWVudC8ke21vZGFsLml0ZW0uaWR9YCxcclxuICAgICAgICAgICAgICAgIHsgbWV0aG9kOiAnUEFUQ0gnLCBib2R5OiBKU09OLnN0cmluZ2lmeSh2YWx1ZXMpIH0sXHJcbiAgICAgICAgICAgICAgICAnTWFpbnRlbmFuY2UgcmVjb3JkZWQuJ1xyXG4gICAgICAgICAgICAgIClcclxuICAgICAgICAgICAgfX1cclxuICAgICAgICAgID5cclxuICAgICAgICAgICAgPHAgY2xhc3NOYW1lPVwiZm9ybS1oZWxwXCI+e21vZGFsLml0ZW0ubmFtZX08L3A+XHJcbiAgICAgICAgICAgIDxsYWJlbCBjbGFzc05hbWU9XCJmaWVsZFwiPlxyXG4gICAgICAgICAgICAgIFdvcmsgY29tcGxldGVkXHJcbiAgICAgICAgICAgICAgPHRleHRhcmVhXHJcbiAgICAgICAgICAgICAgICBjbGFzc05hbWU9XCJjbGF5LWluXCJcclxuICAgICAgICAgICAgICAgIG5hbWU9XCJtYWludGVuYW5jZU5vdGVcIlxyXG4gICAgICAgICAgICAgICAgcm93cz1cIjRcIlxyXG4gICAgICAgICAgICAgICAgbWF4TGVuZ3RoPVwiNTAwXCJcclxuICAgICAgICAgICAgICAgIHBsYWNlaG9sZGVyPVwiRGVzY3JpYmUgdGhlIGluc3BlY3Rpb24sIG1haW50ZW5hbmNlLCBvciByZXBhaXIuXCJcclxuICAgICAgICAgICAgICAgIHJlcXVpcmVkXHJcbiAgICAgICAgICAgICAgLz5cclxuICAgICAgICAgICAgPC9sYWJlbD5cclxuICAgICAgICAgICAgPGxhYmVsIGNsYXNzTmFtZT1cImZpZWxkXCI+XHJcbiAgICAgICAgICAgICAgQ29uZGl0aW9uIGFmdGVyIHdvcmtcclxuICAgICAgICAgICAgICA8c2VsZWN0IGNsYXNzTmFtZT1cImNsYXktaW5cIiBuYW1lPVwiY29uZGl0aW9uXCIgZGVmYXVsdFZhbHVlPXttb2RhbC5pdGVtLmNvbmRpdGlvbn0+XHJcbiAgICAgICAgICAgICAgICA8b3B0aW9uPkdvb2Q8L29wdGlvbj5cclxuICAgICAgICAgICAgICAgIDxvcHRpb24+TmVlZHMgTWFpbnRlbmFuY2U8L29wdGlvbj5cclxuICAgICAgICAgICAgICAgIDxvcHRpb24+T3V0IG9mIFNlcnZpY2U8L29wdGlvbj5cclxuICAgICAgICAgICAgICA8L3NlbGVjdD5cclxuICAgICAgICAgICAgPC9sYWJlbD5cclxuICAgICAgICAgICAgPGRpdiBjbGFzc05hbWU9XCJtYVwiPlxyXG4gICAgICAgICAgICAgIDxidXR0b24gY2xhc3NOYW1lPVwiYnRuXCIgdHlwZT1cInN1Ym1pdFwiPlxyXG4gICAgICAgICAgICAgICAgU2F2ZSBtYWludGVuYW5jZVxyXG4gICAgICAgICAgICAgIDwvYnV0dG9uPlxyXG4gICAgICAgICAgICA8L2Rpdj5cclxuICAgICAgICAgIDwvZm9ybT5cclxuICAgICAgICA8L01vZGFsPlxyXG4gICAgICApfVxyXG4gICAgICB7bW9kYWw/LmtpbmQgPT09ICdmYWNlJyAmJiAoXHJcbiAgICAgICAgPE1vZGFsXHJcbiAgICAgICAgICBidXN5PXtwZW5kaW5nfVxyXG4gICAgICAgICAgZXJyb3I9e2Vycm9yfVxyXG4gICAgICAgICAgdGl0bGU9e2BGYWNlIGVucm9sbG1lbnQ6ICR7bW9kYWwubWVtYmVyLm5hbWV9YH1cclxuICAgICAgICAgIGNsYXNzTmFtZT1cImZhY2UtZW5yb2xsbWVudC1kaWFsb2dcIlxyXG4gICAgICAgICAgb25DbG9zZT17KCkgPT4gc2V0TW9kYWwobnVsbCl9XHJcbiAgICAgICAgPlxyXG4gICAgICAgICAgPEZhY2VFbnJvbGxtZW50Rm9ybVxyXG4gICAgICAgICAgICBzZWxmRW5yb2xsbWVudD17bW9kYWwubWVtYmVyLmlkID09PSBjdXJyZW50VXNlcj8uaWR9XHJcbiAgICAgICAgICAgIG9uRW5yb2xsPXtlbnJvbGxGYWNlfVxyXG4gICAgICAgICAgICBnZXRDaGFsbGVuZ2U9e3JlcXVlc3RGYWNlQ2hhbGxlbmdlfVxyXG4gICAgICAgICAgICBidXN5PXtwZW5kaW5nfVxyXG4gICAgICAgICAgLz5cclxuICAgICAgICA8L01vZGFsPlxyXG4gICAgICApfVxyXG4gICAgICB7bW9kYWw/LmtpbmQgPT09ICdlcXVpcG1lbnQnICYmIChcclxuICAgICAgICA8TW9kYWwgYnVzeT17cGVuZGluZ30gZXJyb3I9e2Vycm9yfSB0aXRsZT1cIkFkZCBFcXVpcG1lbnRcIiBvbkNsb3NlPXsoKSA9PiBzZXRNb2RhbChudWxsKX0+XHJcbiAgICAgICAgICA8Zm9ybVxyXG4gICAgICAgICAgICBvblN1Ym1pdD17KGV2ZW50KSA9PiB7XHJcbiAgICAgICAgICAgICAgZXZlbnQucHJldmVudERlZmF1bHQoKVxyXG4gICAgICAgICAgICAgIGFjdChcclxuICAgICAgICAgICAgICAgICcvYWRtaW4vZXF1aXBtZW50JyxcclxuICAgICAgICAgICAgICAgIHtcclxuICAgICAgICAgICAgICAgICAgbWV0aG9kOiAnUE9TVCcsXHJcbiAgICAgICAgICAgICAgICAgIGJvZHk6IEpTT04uc3RyaW5naWZ5KE9iamVjdC5mcm9tRW50cmllcyhuZXcgRm9ybURhdGEoZXZlbnQuY3VycmVudFRhcmdldCkpKVxyXG4gICAgICAgICAgICAgICAgfSxcclxuICAgICAgICAgICAgICAgICdFcXVpcG1lbnQgYWRkZWQuJ1xyXG4gICAgICAgICAgICAgIClcclxuICAgICAgICAgICAgfX1cclxuICAgICAgICAgICAgY2xhc3NOYW1lPVwibWZcIlxyXG4gICAgICAgICAgPlxyXG4gICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZmllbGRcIj5cclxuICAgICAgICAgICAgICBFcXVpcG1lbnQgbmFtZVxyXG4gICAgICAgICAgICAgIDxpbnB1dCBjbGFzc05hbWU9XCJjbGF5LWluXCIgbmFtZT1cIm5hbWVcIiByZXF1aXJlZCAvPlxyXG4gICAgICAgICAgICA8L2xhYmVsPlxyXG4gICAgICAgICAgICA8bGFiZWwgY2xhc3NOYW1lPVwiZmllbGRcIj5cclxuICAgICAgICAgICAgICBDYXRlZ29yeVxyXG4gICAgICAgICAgICAgIDxFcXVpcG1lbnRDYXRlZ29yeVNlbGVjdCAvPlxyXG4gICAgICAgICAgICA8L2xhYmVsPlxyXG4gICAgICAgICAgICA8ZGl2IGNsYXNzTmFtZT1cIm1hXCI+XHJcbiAgICAgICAgICAgICAgPGJ1dHRvbiBjbGFzc05hbWU9XCJidG5cIj5BZGQ8L2J1dHRvbj5cclxuICAgICAgICAgICAgPC9kaXY+XHJcbiAgICAgICAgICA8L2Zvcm0+XHJcbiAgICAgICAgPC9Nb2RhbD5cclxuICAgICAgKX1cclxuICAgIDwvPlxyXG4gIClcclxufVxyXG4iXSwiZmlsZSI6IkM6L1VzZXJzL2dlZXplL0Rvd25sb2Fkcy9MQU5ESU5HLVBBR0Uvc3JjL2NvbXBvbmVudHMvYWRtaW4vQWRtaW5PcGVyYXRpb25zRGlhbG9ncy5qc3gifQ==

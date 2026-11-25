@@ -1,11 +1,37 @@
-import { PasswordRecoveryWorkflowError } from './PasswordRecoveryService.js'
+import { PasswordRecoveryWorkflowError, RESET_LINK_LIFETIME_SECONDS } from './PasswordRecoveryService.js'
+import { createHash, randomBytes } from 'node:crypto'
+import { withMemberAccountLock } from '../lib/memberAccountLock.js'
 
-/** Coordinates existing forgot/reset flows without changing response semantics. */
+const RESET_LIFETIME_MS = RESET_LINK_LIFETIME_SECONDS * 1000
+const tokenDigest = (token) => createHash('sha256').update(token).digest('hex')
+
 export class PasswordRecoveryWorkflow {
-  constructor({ service, repository, clientUrl }) {
+  constructor({ service, repository, clientUrl, now = Date.now }) {
     this.service = service
     this.repository = repository
     this.clientUrl = clientUrl
+    this.now = now
+  }
+
+  // The localhost API is a single process. A restart discards outstanding reset links.
+  #links = new Map()
+
+  #forget(digest) {
+    clearTimeout(this.#links.get(digest)?.timer)
+    this.#links.delete(digest)
+  }
+
+  #validLink(token) {
+    const digest = typeof token === 'string' && /^[A-Za-z0-9_-]{43}$/.test(token)
+      ? tokenDigest(token)
+      : null
+    const link = this.#links.get(digest)
+    const serverNow = this.now()
+    if (!link || serverNow >= link.expiresAt) {
+      if (link) this.#forget(digest)
+      throw new PasswordRecoveryWorkflowError('This link has expired or already been used.', 410)
+    }
+    return { link, digest, serverNow }
   }
 
   async forgotPassword(body) {
@@ -24,55 +50,60 @@ export class PasswordRecoveryWorkflow {
       )
     }
 
-    if (!profile || profile.status !== 'active') return response
+    if (profile?.status !== 'active' || !profile.auth_user_id) return response
 
-    const { error } = await this.repository.sendResetLink(
-      profile.email,
-      `${this.clientUrl}/reset-password`
-    )
-    if (error) throw error
+    const token = randomBytes(32).toString('base64url')
+    const expiresAt = this.now() + RESET_LIFETIME_MS
+    const digest = tokenDigest(token)
+    const timer = setTimeout(() => this.#forget(digest), RESET_LIFETIME_MS)
+    timer.unref()
+    this.#links.set(digest, { profile, expiresAt, timer })
+    try {
+      // The fragment stays out of HTTP access logs and referrer URLs.
+      await this.repository.sendResetLink(profile, `${this.clientUrl}/reset-password#token=${token}`)
+    } catch (error) {
+      this.#forget(digest)
+      throw error
+    }
     return response
   }
 
-  async exchangeSession(body) {
-    const code = this.service.requireCode(body)
-    const { data, error } = await this.repository.exchangeCode(code)
-    if (error || !data?.session?.access_token) {
-      throw new PasswordRecoveryWorkflowError(
-        'This reset link is invalid or expired. Request a new one.',
-        401
-      )
-    }
-    return { accessToken: data.session.access_token }
+  checkLink(body) {
+    const { link, serverNow } = this.#validLink(body?.token)
+    return { expiresAt: link.expiresAt, serverNow }
   }
 
-  async resetPassword({ body, authorization }) {
+  async resetPassword(body) {
     const password = this.service.requirePassword(body)
-    const accessToken = this.service.requireToken(authorization)
+    const { link } = this.#validLink(body.token)
+    return withMemberAccountLock(link.profile.id, () => this.#applyPassword(body.token, password))
+  }
 
-    const { data: authData, error: authError } =
-      await this.repository.getAuthUser(accessToken)
-    if (authError || !authData?.user) {
-      throw new PasswordRecoveryWorkflowError(
-        'Your reset link is invalid or expired. Request a new one.',
-        401
-      )
-    }
-    const authUserId = authData.user.id
+  async #applyPassword(token, password) {
+    const { link, digest } = this.#validLink(token)
+    const authUserId = link.profile.auth_user_id
     const { data: profile, error: profileError } =
       await this.repository.findLinkedProfile(authUserId)
 
-    if (profileError || !profile) {
-      console.error('Reset-password profile lookup failed:', profileError?.message)
-      throw new PasswordRecoveryWorkflowError('Unable to find your FitPulse account.', 400)
+    if (profileError) {
+      throw new PasswordRecoveryWorkflowError('Unable to verify your account. Please try again.', 503)
     }
+    if (profile?.status !== 'active' || profile.id !== link.profile.id ||
+      profile.email !== link.profile.email || profile.auth_version !== link.profile.auth_version) {
+      this.#forget(digest)
+      throw new PasswordRecoveryWorkflowError('This link has expired or already been used.', 410)
+    }
+
+    // Recheck after database work, then consume the link before calling Auth.
+    this.#validLink(token)
+    this.#forget(digest)
 
     const { error: updateError } =
       await this.repository.setAuthPassword(authUserId, password)
     if (updateError) {
       console.error('Supabase password reset failed:', updateError.message)
       throw new PasswordRecoveryWorkflowError(
-        'Unable to reset your password. Please try again.',
+        'Unable to reset your password. Request a new link to try again.',
         500
       )
     }

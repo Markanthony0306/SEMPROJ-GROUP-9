@@ -1,3 +1,5 @@
+export const RESET_LINK_LIFETIME_SECONDS = 60
+
 export class PasswordRecoveryWorkflowError extends Error {
   constructor(message, status) {
     super(message)
@@ -15,34 +17,18 @@ export class PasswordRecoveryService {
   }
 
   normalizedEmail(body) {
-    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
+    const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
     return this.emailPattern.test(email) ? email : null
   }
 
-  requireCode(body) {
-    const code = typeof body.code === 'string' ? body.code : ''
-    if (!code) {
-      throw new PasswordRecoveryWorkflowError('The reset authorization code is missing.', 400)
-    }
-    return code
-  }
-
   requirePassword(body) {
-    const password = typeof body.password === 'string' ? body.password : ''
+    const password = typeof body?.password === 'string' ? body.password : ''
     if (!this.passwordPolicy(password)) {
       throw new PasswordRecoveryWorkflowError(this.passwordPolicyMessage, 400)
     }
-    return password
-  }
-
-  requireToken(authorization) {
-    const accessToken = authorization.replace(/^Bearer\s+/i, '')
-    if (!accessToken) {
-      throw new PasswordRecoveryWorkflowError(
-        'Your reset link is invalid or expired. Request a new one.',
-        401
-      )
+    if (body.confirmPassword !== password) {
+      throw new PasswordRecoveryWorkflowError('The new passwords do not match.', 400)
     }
-    return accessToken
+    return password
   }
 }

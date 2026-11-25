@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { verifyBiometric, BiometricError } from '../services/biometricEngine.js'
 import { ensurePhoto, ensureIdPdf, ensureFrames, ensureMotion, issueProof, readProof, issueEnrollmentTicket, readEnrollmentTicket, consumeFaceChallenge, validEmbedding } from '../services/identityProof.js'
+import { MEMBER_TERMS_VERSION } from '../../shared/memberTerms.js'
 
 const TYPE_SET = new Set(['philid', 'ephilid', 'drivers_license', 'passport', 'umid'])
 
@@ -14,6 +15,12 @@ function respondFailure(res, error) {
 /** All evidence is ephemeral. Only a normalized face embedding is stored after registration. */
 export function identityVerificationRoutes({ authenticate, requireRole, rateLimit, jwtSecret, supabase, loadAccount, createSession, engine = verifyBiometric }) {
   const router = Router()
+  function readMemberFaceProof(challenge) {
+    const proof = readProof(challenge, 'face_login', jwtSecret)
+    if (proof.termsVersion !== MEMBER_TERMS_VERSION)
+      throw new BiometricError('Accept the current member terms before facial verification.', 'TERMS_REQUIRED', 403)
+    return proof
+  }
   // Live previews run in memory; they do not enroll members or write camera images.
   router.post('/admin/identity/id-guidance', authenticate, requireRole('admin'), rateLimit({ max: 400 }), async (req, res) => {
     try {
@@ -35,7 +42,7 @@ export function identityVerificationRoutes({ authenticate, requireRole, rateLimi
 
   router.post('/auth/face-guidance', rateLimit({ max: 400 }), async (req, res) => {
     try {
-      readProof(req.body?.challenge, 'face_login', jwtSecret)
+      readMemberFaceProof(req.body?.challenge)
       const result = await engine({ task: 'face-guidance', image: ensurePhoto(req.body?.image) })
       res.set('Cache-Control', 'no-store')
       return res.json(result)
@@ -80,7 +87,7 @@ export function identityVerificationRoutes({ authenticate, requireRole, rateLimi
   router.post('/auth/face-login', rateLimit({ max: 10 }), async (req, res) => {
     try {
       const { challenge, frames, motion } = req.body || {}
-      const proof = readProof(challenge, 'face_login', jwtSecret)
+      const proof = readMemberFaceProof(challenge)
       const account = await loadAccount(proof.memberId)
       if (!account || account.status !== 'active' || account.role !== 'user' || (account.authVersion || 0) !== proof.authVersion)
         return res.status(403).json({ message: 'The member account is no longer available.' })
@@ -90,7 +97,7 @@ export function identityVerificationRoutes({ authenticate, requireRole, rateLimi
       await engine({ task: 'face', frames: ensureFrames(frames), motion: ensureMotion(motion), embedding: enrollment.embedding })
       consumeFaceChallenge(proof.nonce, proof.exp)
       res.set('Cache-Control', 'no-store')
-      return res.json(createSession(account))
+      return res.json(createSession(account, proof.termsVersion))
     } catch (error) { return respondFailure(res, error) }
   })
   return router

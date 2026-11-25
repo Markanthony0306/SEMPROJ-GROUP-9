@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url'
+import { formatDate } from '../../shared/formatDate.js'
 
 const logoPath = fileURLToPath(new URL('../../public/fitpulse-email-logo.png', import.meta.url))
 const escapeHtml = (value) =>
@@ -81,9 +82,10 @@ export function welcomeEmail({ name, email, temporaryPassword, loginUrl }) {
 }
 
 export function expiryEmail({ name, expiryDate, expired }) {
+  const date = formatDate(expiryDate)
   const message = expired
-    ? `Dear ${name}, your FitPulse membership expired on ${expiryDate}. Please renew to restore your access. Thank you. - FitPulse`
-    : `Dear ${name}, your FitPulse membership expires on ${expiryDate}. Please renew before this date to continue your access. Thank you. - FitPulse`
+    ? `Dear ${name}, your FitPulse membership expired on ${date}. Please renew to restore your access. Thank you. - FitPulse`
+    : `Dear ${name}, your FitPulse membership expires on ${date}. Please renew before this date to continue your access. Thank you. - FitPulse`
   return {
     subject: 'Membership Expiry Reminder',
     text: message,
@@ -91,12 +93,15 @@ export function expiryEmail({ name, expiryDate, expired }) {
   }
 }
 
-export function recoveryEmail({ name, recoveryUrl }) {
+export function recoveryEmail({ name, recoveryUrl, expiresInSeconds }) {
   const message =
     'We received a request to reset your FitPulse password. Use the button below to choose a new one and get back to your fitness journey.'
+  const expiry = expiresInSeconds
+    ? `This link expires ${expiresInSeconds} seconds after it was generated and can only be used once.`
+    : 'This link is time-limited and can only be used once.'
   return {
     subject: 'Reset your FitPulse password',
-    text: `Hi ${name || 'there'},\n\n${message}\n\nReset password: ${recoveryUrl}\n\nThis link is time-limited and can only be used once. If you didn’t request a reset, ignore this email; your password stays unchanged. Never share this link.`,
+    text: `Hi ${name || 'there'},\n\n${message}\n\nReset password: ${recoveryUrl}\n\n${expiry} If you didn’t request a reset, ignore this email. Never share this link.`,
     ...emailLayout({
       eyebrow: 'LET’S GET YOU BACK IN',
       title: 'A fresh start for your password.',
@@ -104,7 +109,7 @@ export function recoveryEmail({ name, recoveryUrl }) {
       message,
       actionUrl: recoveryUrl,
       actionLabel: 'Choose a new password',
-      note: 'This link is time-limited and can only be used once. If you didn’t request this reset, you can safely ignore this email. Never share this link.'
+      note: `${expiry} If you didn’t request this reset, you can safely ignore this email. Never share this link.`
     })
   }
 }

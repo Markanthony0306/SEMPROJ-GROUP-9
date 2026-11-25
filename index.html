@@ -7,8 +7,8 @@
     <meta name="description" content="FitPulse gym membership and attendance management" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="icon" type="image/svg+xml" href="./fitpulse-logo.svg" />
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+    <link rel="icon" type="image/svg+xml" href="/fitpulse-logo.svg" />
     <script>
       // Set the <html> data-theme before first paint so the auth screens never
       // flash the wrong colors. Uses the saved choice or the system preference.
@@ -28,8 +28,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Load the pinned UMD global before React creates analytics canvases. -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

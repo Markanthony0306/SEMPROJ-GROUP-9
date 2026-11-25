@@ -1,6 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from '../../brand/useTheme'
 
+let chartLibrary
+
+function loadChartLibrary() {
+  chartLibrary ??= new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js'
+    script.crossOrigin = 'anonymous'
+    script.async = true
+    const failed = () => {
+      script.remove()
+      chartLibrary = undefined
+      reject(new Error('Chart.js is unavailable.'))
+    }
+    script.onload = () => window.Chart ? resolve(window.Chart) : failed()
+    script.onerror = failed
+    document.head.append(script)
+  })
+  return chartLibrary
+}
+
 export const pesos = (value) =>
   new Intl.NumberFormat('en-PH', {
     style: 'currency',
@@ -90,20 +110,25 @@ export default function useAnalyticsChart(createConfig, enabled) {
   useEffect(() => {
     if (!enabled) return
     let chart
+    let active = true
     setChartError('')
     // ThemeProvider updates <html> in an effect; read its CSS on the next frame.
-    const frame = window.requestAnimationFrame(() => {
+    const frame = window.requestAnimationFrame(async () => {
       const canvas = canvasRef.current
       if (!canvas) return
       try {
-        if (!window.Chart) throw new Error('Chart.js is unavailable.')
-        chart = new window.Chart(canvas, createConfig(chartColors(canvas)))
-      } catch {
+        const Chart = await loadChartLibrary()
+        if (!active) return
+        chart = new Chart(canvas, createConfig(chartColors(canvas)))
+      } catch (error) {
+        if (!active) return
         window.Chart?.getChart(canvas)?.destroy()
+        console.error('Unable to render the analytics chart:', error.message)
         setChartError('Charts could not load. Check your connection and reload the page.')
       }
     })
     return () => {
+      active = false
       window.cancelAnimationFrame(frame)
       chart?.destroy()
     }

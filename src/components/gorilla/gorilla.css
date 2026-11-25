@@ -275,6 +275,48 @@ body:has(dialog.experience-modal[open]) .rocky {
   font-size: 0.875rem;
 }
 
+.rocky-preference .rocky-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  cursor: pointer;
+}
+.app .rocky-preference .rocky-switch input {
+  appearance: none;
+  display: grid;
+  align-items: center;
+  width: 52px;
+  height: 28px;
+  padding: 3px;
+  border: 1px solid var(--id);
+  border-radius: 99px;
+  background: var(--muted);
+  cursor: pointer;
+}
+.rocky-switch input::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+}
+.app .rocky-preference .rocky-switch input:checked {
+  background: var(--ui-action-orange);
+}
+.rocky-switch input:checked::before {
+  justify-self: end;
+}
+.rocky-switch input:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 3px;
+}
+.rocky-greeting {
+  margin: 0;
+  line-height: 1.5;
+}
+
 @media (max-width: 768px) {
   .rocky-bubble-header strong {
     min-width: 0;

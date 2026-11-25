@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
+import { MEMBER_TERMS_VERSION } from '../../shared/memberTerms.js'
 
 const AuthContext = createContext(null)
 const SESSION_KEY = 'fitpulse-session'
@@ -28,6 +29,7 @@ export function AuthProvider({ children }) {
       user: session?.user || session,
       role: session?.role || session?.user?.role,
       token: session?.token,
+      memberLoginComplete: session?.user?.termsVersion === MEMBER_TERMS_VERSION,
       login,
       logout
     }),

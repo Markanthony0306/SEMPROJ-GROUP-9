@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import { useTheme } from './brand/useTheme'
 import ProfileAvatar from './ProfileAvatar'
 import Dialog from './Dialog'
-import dayBanner from '../assets/db-day-v.jpg'
-import nightBanner from '../assets/db-night-v.jpg'
+import dayBanner from '../assets/db-day-v.webp'
+import nightBanner from '../assets/db-night-v.webp'
 import '../styles/dashboard-features.css'
 import './DashboardShell.css'
 import MobileLayout from './mobile/MobileLayout'
@@ -220,9 +220,13 @@ export default function DashboardShell({
     setSidebarOpen(false)
     onSectionChange(section)
   }
+  const selectMobile = (section) => {
+    if (section === 'More' || Object.hasOwn(mobileViews, section) ||
+      navigation.some(([label]) => label === section)) select(section)
+  }
   if (isMobile) {
     return (
-      <MobileLayout activeSection={activeSection} onSectionChange={onSectionChange}
+      <MobileLayout activeSection={activeSection} onSectionChange={selectMobile}
         onSignOut={onSignOut} onCreateMember={onCreateMember} role={role} className={className}
         loading={loading} Brand={Brand} Icon={Icon} dark={dark} toggle={toggle}
         content={mobileViews[activeSection] ?? content} dialogs={dialogs} qr={mobileQr}

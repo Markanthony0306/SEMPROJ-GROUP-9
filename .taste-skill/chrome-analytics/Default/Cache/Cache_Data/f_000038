@@ -1,0 +1,209 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/FitnessSculpture.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=bdf2c8f1"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx");
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+var _s = $RefreshSig$();
+import __vite__cjsImport3_react from "/node_modules/.vite/deps/react.js?v=bdf2c8f1"; const useId = __vite__cjsImport3_react["useId"];
+export default function FitnessSculpture({ variant = "weights" }) {
+  _s();
+  const id = useId().replaceAll(":", "");
+  return /* @__PURE__ */ jsxDEV("svg", { className: "fitness-sculpture", viewBox: "0 0 240 180", "aria-hidden": "true", children: [
+    /* @__PURE__ */ jsxDEV("defs", { children: [
+      /* @__PURE__ */ jsxDEV("linearGradient", { id: `${id}-orange`, x1: "0", y1: "0", x2: "1", y2: "1", children: [
+        /* @__PURE__ */ jsxDEV("stop", { stopColor: "#ffcc70" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 28,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("stop", { offset: "0.5", stopColor: "#f77f00" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 29,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("stop", { offset: "1", stopColor: "#c65313" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 30,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 27,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("linearGradient", { id: `${id}-navy`, x1: "0", y1: "0", x2: "1", y2: "1", children: [
+        /* @__PURE__ */ jsxDEV("stop", { stopColor: "#5b829b" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 33,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("stop", { offset: "0.5", stopColor: "#164761" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 34,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("stop", { offset: "1", stopColor: "#003049" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 35,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 32,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+      lineNumber: 26,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("ellipse", { cx: "125", cy: "154", rx: "82", ry: "12", fill: "var(--text)", opacity: "0.08" }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+      lineNumber: 38,
+      columnNumber: 7
+    }, this),
+    variant === "scanner" ? /* @__PURE__ */ jsxDEV("g", { children: [
+      /* @__PURE__ */ jsxDEV("path", { d: "M60 45 157 23 191 43 92 68Z", fill: "#5b829b" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 41,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("path", { d: "M60 45 92 68v80l-32-23Z", fill: "#003049" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 42,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("path", { d: "M92 68 191 43v80l-99 25Z", fill: `url(#${id}-navy)` }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 43,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("path", { d: "m108 78 65-17v46l-65 17Z", fill: "#e7edf7" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 44,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("g", { stroke: "#164761", strokeWidth: "5", fill: "none", children: [
+        /* @__PURE__ */ jsxDEV("path", { d: "m117 83 16-4v15l-16 4ZM146 76l16-4v15l-16 4ZM117 105l16-4v12l-16 4Z" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 46,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("path", { d: "m146 99 6-2v14l11-3" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 47,
+          columnNumber: 13
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 45,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("path", { d: "m98 92 88-23", stroke: "#f77f00", strokeWidth: "3" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 49,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("ellipse", { cx: "179", cy: "118", rx: "4", ry: "3", fill: "#fcbf49" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 50,
+        columnNumber: 11
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+      lineNumber: 40,
+      columnNumber: 7
+    }, this) : /* @__PURE__ */ jsxDEV("g", { transform: "rotate(-18 120 90)", children: [
+      /* @__PURE__ */ jsxDEV("rect", { x: "69", y: "80", width: "104", height: "19", rx: "9", fill: `url(#${id}-navy)` }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 54,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("rect", { x: "31", y: "49", width: "30", height: "80", rx: "14", fill: `url(#${id}-orange)` }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 55,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("rect", { x: "58", y: "39", width: "28", height: "100", rx: "13", fill: `url(#${id}-navy)` }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 56,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("rect", { x: "160", y: "39", width: "28", height: "100", rx: "13", fill: `url(#${id}-navy)` }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 57,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("rect", { x: "186", y: "49", width: "30", height: "80", rx: "14", fill: `url(#${id}-orange)` }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 58,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("g", { fill: "#fff", opacity: "0.28", children: [
+        /* @__PURE__ */ jsxDEV("rect", { x: "37", y: "60", width: "5", height: "48", rx: "2" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 60,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("rect", { x: "64", y: "50", width: "4", height: "66", rx: "2" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 61,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("rect", { x: "166", y: "50", width: "4", height: "66", rx: "2" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 62,
+          columnNumber: 13
+        }, this),
+        /* @__PURE__ */ jsxDEV("rect", { x: "192", y: "60", width: "5", height: "48", rx: "2" }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+          lineNumber: 63,
+          columnNumber: 13
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+        lineNumber: 59,
+        columnNumber: 11
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+      lineNumber: 53,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx",
+    lineNumber: 25,
+    columnNumber: 5
+  }, this);
+}
+_s(FitnessSculpture, "xfMyHNFebGjSN1/YPqrD8z5EdLc=");
+_c = FitnessSculpture;
+var _c;
+$RefreshReg$(_c, "FitnessSculpture");
+if (import.meta.hot && !inWebWorker) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+if (import.meta.hot && !inWebWorker) {
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/FitnessSculpture.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,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QUFLLEdBQUUsT0FBTSxHQUFFLE1BQUssT0FBTSxLQUFJLFFBQU8sTUFBSyxJQUFHLE9BQTlDO0FBQUE7QUFBQTtBQUFBO0FBQUEsZUFBaUQ7QUFBQSxXQUpuRDtBQUFBO0FBQUE7QUFBQTtBQUFBLGFBS0E7QUFBQSxTQVhGO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FZQTtBQUFBLE9BeENKO0FBQUE7QUFBQTtBQUFBO0FBQUEsU0EwQ0E7QUFFSjtBQUFDRCxHQS9DdUJGLGtCQUFnQjtBQUFBLEtBQWhCQTtBQUFnQixJQUFBSztBQUFBLGFBQUFBLElBQUEiLCJuYW1lcyI6WyJ1c2VJZCIsIkZpdG5lc3NTY3VscHR1cmUiLCJ2YXJpYW50IiwiX3MiLCJpZCIsInJlcGxhY2VBbGwiLCJfYyJdLCJpZ25vcmVMaXN0IjpbXSwic291cmNlcyI6WyJGaXRuZXNzU2N1bHB0dXJlLmpzeCJdLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyB1c2VJZCB9IGZyb20gJ3JlYWN0J1xyXG5cclxuZXhwb3J0IGRlZmF1bHQgZnVuY3Rpb24gRml0bmVzc1NjdWxwdHVyZSh7IHZhcmlhbnQgPSAnd2VpZ2h0cycgfSkge1xyXG4gIGNvbnN0IGlkID0gdXNlSWQoKS5yZXBsYWNlQWxsKCc6JywgJycpXHJcbiAgcmV0dXJuIChcclxuICAgIDxzdmcgY2xhc3NOYW1lPVwiZml0bmVzcy1zY3VscHR1cmVcIiB2aWV3Qm94PVwiMCAwIDI0MCAxODBcIiBhcmlhLWhpZGRlbj1cInRydWVcIj5cclxuICAgICAgPGRlZnM+XHJcbiAgICAgICAgPGxpbmVhckdyYWRpZW50IGlkPXtgJHtpZH0tb3JhbmdlYH0geDE9XCIwXCIgeTE9XCIwXCIgeDI9XCIxXCIgeTI9XCIxXCI+XHJcbiAgICAgICAgICA8c3RvcCBzdG9wQ29sb3I9XCIjZmZjYzcwXCIgLz5cclxuICAgICAgICAgIDxzdG9wIG9mZnNldD1cIjAuNVwiIHN0b3BDb2xvcj1cIiNmNzdmMDBcIiAvPlxyXG4gICAgICAgICAgPHN0b3Agb2Zmc2V0PVwiMVwiIHN0b3BDb2xvcj1cIiNjNjUzMTNcIiAvPlxyXG4gICAgICAgIDwvbGluZWFyR3JhZGllbnQ+XHJcbiAgICAgICAgPGxpbmVhckdyYWRpZW50IGlkPXtgJHtpZH0tbmF2eWB9IHgxPVwiMFwiIHkxPVwiMFwiIHgyPVwiMVwiIHkyPVwiMVwiPlxyXG4gICAgICAgICAgPHN0b3Agc3RvcENvbG9yPVwiIzViODI5YlwiIC8+XHJcbiAgICAgICAgICA8c3RvcCBvZmZzZXQ9XCIwLjVcIiBzdG9wQ29sb3I9XCIjMTY0NzYxXCIgLz5cclxuICAgICAgICAgIDxzdG9wIG9mZnNldD1cIjFcIiBzdG9wQ29sb3I9XCIjMDAzMDQ5XCIgLz5cclxuICAgICAgICA8L2xpbmVhckdyYWRpZW50PlxyXG4gICAgICA8L2RlZnM+XHJcbiAgICAgIDxlbGxpcHNlIGN4PVwiMTI1XCIgY3k9XCIxNTRcIiByeD1cIjgyXCIgcnk9XCIxMlwiIGZpbGw9XCJ2YXIoLS10ZXh0KVwiIG9wYWNpdHk9XCIwLjA4XCIgLz5cclxuICAgICAge3ZhcmlhbnQgPT09ICdzY2FubmVyJyA/IChcclxuICAgICAgICA8Zz5cclxuICAgICAgICAgIDxwYXRoIGQ9XCJNNjAgNDUgMTU3IDIzIDE5MSA0MyA5MiA2OFpcIiBmaWxsPVwiIzViODI5YlwiIC8+XHJcbiAgICAgICAgICA8cGF0aCBkPVwiTTYwIDQ1IDkyIDY4djgwbC0zMi0yM1pcIiBmaWxsPVwiIzAwMzA0OVwiIC8+XHJcbiAgICAgICAgICA8cGF0aCBkPVwiTTkyIDY4IDE5MSA0M3Y4MGwtOTkgMjVaXCIgZmlsbD17YHVybCgjJHtpZH0tbmF2eSlgfSAvPlxyXG4gICAgICAgICAgPHBhdGggZD1cIm0xMDggNzggNjUtMTd2NDZsLTY1IDE3WlwiIGZpbGw9XCIjZTdlZGY3XCIgLz5cclxuICAgICAgICAgIDxnIHN0cm9rZT1cIiMxNjQ3NjFcIiBzdHJva2VXaWR0aD1cIjVcIiBmaWxsPVwibm9uZVwiPlxyXG4gICAgICAgICAgICA8cGF0aCBkPVwibTExNyA4MyAxNi00djE1bC0xNiA0Wk0xNDYgNzZsMTYtNHYxNWwtMTYgNFpNMTE3IDEwNWwxNi00djEybC0xNiA0WlwiIC8+XHJcbiAgICAgICAgICAgIDxwYXRoIGQ9XCJtMTQ2IDk5IDYtMnYxNGwxMS0zXCIgLz5cclxuICAgICAgICAgIDwvZz5cclxuICAgICAgICAgIDxwYXRoIGQ9XCJtOTggOTIgODgtMjNcIiBzdHJva2U9XCIjZjc3ZjAwXCIgc3Ryb2tlV2lkdGg9XCIzXCIgLz5cclxuICAgICAgICAgIDxlbGxpcHNlIGN4PVwiMTc5XCIgY3k9XCIxMThcIiByeD1cIjRcIiByeT1cIjNcIiBmaWxsPVwiI2ZjYmY0OVwiIC8+XHJcbiAgICAgICAgPC9nPlxyXG4gICAgICApIDogKFxyXG4gICAgICAgIDxnIHRyYW5zZm9ybT1cInJvdGF0ZSgtMTggMTIwIDkwKVwiPlxyXG4gICAgICAgICAgPHJlY3QgeD1cIjY5XCIgeT1cIjgwXCIgd2lkdGg9XCIxMDRcIiBoZWlnaHQ9XCIxOVwiIHJ4PVwiOVwiIGZpbGw9e2B1cmwoIyR7aWR9LW5hdnkpYH0gLz5cclxuICAgICAgICAgIDxyZWN0IHg9XCIzMVwiIHk9XCI0OVwiIHdpZHRoPVwiMzBcIiBoZWlnaHQ9XCI4MFwiIHJ4PVwiMTRcIiBmaWxsPXtgdXJsKCMke2lkfS1vcmFuZ2UpYH0gLz5cclxuICAgICAgICAgIDxyZWN0IHg9XCI1OFwiIHk9XCIzOVwiIHdpZHRoPVwiMjhcIiBoZWlnaHQ9XCIxMDBcIiByeD1cIjEzXCIgZmlsbD17YHVybCgjJHtpZH0tbmF2eSlgfSAvPlxyXG4gICAgICAgICAgPHJlY3QgeD1cIjE2MFwiIHk9XCIzOVwiIHdpZHRoPVwiMjhcIiBoZWlnaHQ9XCIxMDBcIiByeD1cIjEzXCIgZmlsbD17YHVybCgjJHtpZH0tbmF2eSlgfSAvPlxyXG4gICAgICAgICAgPHJlY3QgeD1cIjE4NlwiIHk9XCI0OVwiIHdpZHRoPVwiMzBcIiBoZWlnaHQ9XCI4MFwiIHJ4PVwiMTRcIiBmaWxsPXtgdXJsKCMke2lkfS1vcmFuZ2UpYH0gLz5cclxuICAgICAgICAgIDxnIGZpbGw9XCIjZmZmXCIgb3BhY2l0eT1cIjAuMjhcIj5cclxuICAgICAgICAgICAgPHJlY3QgeD1cIjM3XCIgeT1cIjYwXCIgd2lkdGg9XCI1XCIgaGVpZ2h0PVwiNDhcIiByeD1cIjJcIiAvPlxyXG4gICAgICAgICAgICA8cmVjdCB4PVwiNjRcIiB5PVwiNTBcIiB3aWR0aD1cIjRcIiBoZWlnaHQ9XCI2NlwiIHJ4PVwiMlwiIC8+XHJcbiAgICAgICAgICAgIDxyZWN0IHg9XCIxNjZcIiB5PVwiNTBcIiB3aWR0aD1cIjRcIiBoZWlnaHQ9XCI2NlwiIHJ4PVwiMlwiIC8+XHJcbiAgICAgICAgICAgIDxyZWN0IHg9XCIxOTJcIiB5PVwiNjBcIiB3aWR0aD1cIjVcIiBoZWlnaHQ9XCI0OFwiIHJ4PVwiMlwiIC8+XHJcbiAgICAgICAgICA8L2c+XHJcbiAgICAgICAgPC9nPlxyXG4gICAgICApfVxyXG4gICAgPC9zdmc+XHJcbiAgKVxyXG59XHJcbiJdLCJmaWxlIjoiQzovVXNlcnMvZ2VlemUvRG93bmxvYWRzL0xBTkRJTkctUEFHRS9zcmMvY29tcG9uZW50cy9GaXRuZXNzU2N1bHB0dXJlLmpzeCJ9

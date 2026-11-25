@@ -439,6 +439,13 @@
     padding-block: 12px;
     border-bottom: 1px solid var(--id);
   }
+  .app.member-app .data-table table {
+    min-width: 0;
+  }
+  .app.member-app .data-table tbody tr {
+    padding-block: 0;
+    border-bottom: 0;
+  }
   .member-app td {
     display: grid;
     grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
@@ -451,6 +458,18 @@
     color: var(--muted);
     font-size: 12px;
     font-weight: 700;
+    text-align: left;
+  }
+  .app.member-app .data-table td {
+    min-width: 0;
+    max-width: none;
+    padding: 16px;
+    border-left: 0;
+    white-space: normal;
+  }
+  .app.member-app .data-table td.table-empty {
+    display: block;
+    padding: 24px 16px;
   }
   .member-app td.member-empty {
     display: block;

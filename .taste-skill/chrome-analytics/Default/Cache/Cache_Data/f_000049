@@ -1,0 +1,194 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/admin/AdminDialogParts.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=bdf2c8f1"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx");
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+var _s = $RefreshSig$();
+import __vite__cjsImport3_react from "/node_modules/.vite/deps/react.js?v=bdf2c8f1"; const useState = __vite__cjsImport3_react["useState"];
+import Dialog from "/src/components/Dialog.jsx";
+import FaceCapture from "/src/components/FaceCapture.jsx";
+export function Modal({ title, children, onClose, busy, error, className, invalidField }) {
+  return /* @__PURE__ */ jsxDEV(Dialog, { title, onClose, busy, className, invalidField, children: [
+    error && /* @__PURE__ */ jsxDEV("p", { className: "form-error", role: "alert", children: error }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+      lineNumber: 29,
+      columnNumber: 7
+    }, this),
+    busy && /* @__PURE__ */ jsxDEV("p", { className: "form-help", role: "status", children: "Saving..." }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+      lineNumber: 34,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("fieldset", { className: "modal-fields", disabled: busy, children }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+      lineNumber: 38,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+    lineNumber: 27,
+    columnNumber: 5
+  }, this);
+}
+_c = Modal;
+export function FaceEnrollmentForm({ selfEnrollment, onEnroll, getChallenge, busy }) {
+  _s();
+  const [consent, setConsent] = useState(false);
+  const [idChecked, setIdChecked] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  return /* @__PURE__ */ jsxDEV("div", { className: "mf face-enrollment-form", children: [
+    /* @__PURE__ */ jsxDEV("section", { className: "face-enrollment-terms", "aria-labelledby": "face-terms-title", children: [
+      /* @__PURE__ */ jsxDEV("h3", { id: "face-terms-title", children: "Face verification terms" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+        lineNumber: 53,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("p", { children: "Please read these terms before agreeing to face enrollment:" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+        lineNumber: 54,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("ul", { children: [
+        /* @__PURE__ */ jsxDEV("li", { children: "FitPulse uses your face to verify your identity when you sign in and to check for duplicate enrollments." }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+          lineNumber: 56,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("li", { children: "Three camera frames are sent to the server for each live check and discarded after processing. An encrypted face template is stored for future verification." }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+          lineNumber: 60,
+          columnNumber: 11
+        }, this),
+        /* @__PURE__ */ jsxDEV("li", { children: "Face enrollment is optional. You can withdraw your consent and ask the gym to remove your face template." }, void 0, false, {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+          lineNumber: 64,
+          columnNumber: 11
+        }, this)
+      ] }, void 0, true, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+        lineNumber: 55,
+        columnNumber: 9
+      }, this),
+      !selfEnrollment && /* @__PURE__ */ jsxDEV("p", { children: "Staff must explain these terms and obtain the member's agreement before continuing." }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+        lineNumber: 70,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+      lineNumber: 52,
+      columnNumber: 7
+    }, this),
+    !selfEnrollment && /* @__PURE__ */ jsxDEV("label", { className: "set", children: [
+      /* @__PURE__ */ jsxDEV("input", { type: "checkbox", checked: idChecked, onChange: (event) => setIdChecked(event.target.checked) }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+        lineNumber: 75,
+        columnNumber: 11
+      }, this),
+      /* @__PURE__ */ jsxDEV("span", { children: "I checked the member's photo ID." }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+        lineNumber: 76,
+        columnNumber: 11
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+      lineNumber: 74,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("label", { className: "set", children: [
+      /* @__PURE__ */ jsxDEV("input", { type: "checkbox", checked: consent, onChange: (event) => setConsent(event.target.checked) }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+        lineNumber: 80,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("span", { children: selfEnrollment ? "I have read and agree to the face verification terms." : "The member has agreed to the face verification terms." }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+        lineNumber: 81,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+      lineNumber: 79,
+      columnNumber: 7
+    }, this),
+    selfEnrollment && /* @__PURE__ */ jsxDEV("label", { className: "field", children: [
+      "Current password",
+      /* @__PURE__ */ jsxDEV(
+        "input",
+        {
+          className: "clay-in",
+          type: "password",
+          autoComplete: "current-password",
+          value: currentPassword,
+          onChange: (event) => setCurrentPassword(event.target.value)
+        },
+        void 0,
+        false,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+          lineNumber: 90,
+          columnNumber: 11
+        },
+        this
+      )
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+      lineNumber: 88,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV(
+      FaceCapture,
+      {
+        getChallenge,
+        onCaptured: (capture) => onEnroll({ ...capture, consent, idChecked, currentPassword }),
+        purpose: "enrollment",
+        disabled: busy || !consent || (selfEnrollment ? !currentPassword : !idChecked),
+        actionLabel: "Capture and save"
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+        lineNumber: 99,
+        columnNumber: 7
+      },
+      this
+    )
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx",
+    lineNumber: 51,
+    columnNumber: 5
+  }, this);
+}
+_s(FaceEnrollmentForm, "cOiWMWdaAYpYCwECvyGzE2TdgKo=");
+_c2 = FaceEnrollmentForm;
+var _c, _c2;
+$RefreshReg$(_c, "Modal");
+$RefreshReg$(_c2, "FaceEnrollmentForm");
+if (import.meta.hot && !inWebWorker) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+if (import.meta.hot && !inWebWorker) {
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/admin/AdminDialogParts.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,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QUNMLGNBQWE7QUFBQSxVQUNiLE9BQU9RO0FBQUFBLFVBQ1AsVUFBVSxDQUFDRSxVQUFVRCxtQkFBbUJDLE1BQU1DLE9BQU9FLEtBQUs7QUFBQTtBQUFBLFFBTDVEO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxNQUs4RDtBQUFBLFNBUGhFO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FTQTtBQUFBLElBRUY7QUFBQSxNQUFDO0FBQUE7QUFBQSxRQUNDO0FBQUEsUUFDQSxZQUFZLENBQUNDLFlBQVliLFNBQVMsRUFBRSxHQUFHYSxTQUFTVixTQUFTRSxXQUFXRSxnQkFBZ0IsQ0FBQztBQUFBLFFBQ3JGLFNBQVE7QUFBQSxRQUNSLFVBQVVkLFFBQVEsQ0FBQ1UsWUFBWUosaUJBQWlCLENBQUNRLGtCQUFrQixDQUFDRjtBQUFBQSxRQUNwRSxhQUFZO0FBQUE7QUFBQSxNQUxkO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxJQUtnQztBQUFBLE9BckRsQztBQUFBO0FBQUE7QUFBQTtBQUFBLFNBdURBO0FBRUo7QUFBQ0gsR0EvRGVKLG9CQUFrQjtBQUFBLE1BQWxCQTtBQUFrQixJQUFBRCxJQUFBaUI7QUFBQSxhQUFBakIsSUFBQTtBQUFBLGFBQUFpQixLQUFBIiwibmFtZXMiOlsidXNlU3RhdGUiLCJEaWFsb2ciLCJGYWNlQ2FwdHVyZSIsIk1vZGFsIiwidGl0bGUiLCJjaGlsZHJlbiIsIm9uQ2xvc2UiLCJidXN5IiwiZXJyb3IiLCJjbGFzc05hbWUiLCJpbnZhbGlkRmllbGQiLCJfYyIsIkZhY2VFbnJvbGxtZW50Rm9ybSIsInNlbGZFbnJvbGxtZW50Iiwib25FbnJvbGwiLCJnZXRDaGFsbGVuZ2UiLCJfcyIsImNvbnNlbnQiLCJzZXRDb25zZW50IiwiaWRDaGVja2VkIiwic2V0SWRDaGVja2VkIiwiY3VycmVudFBhc3N3b3JkIiwic2V0Q3VycmVudFBhc3N3b3JkIiwiZXZlbnQiLCJ0YXJnZXQiLCJjaGVja2VkIiwidmFsdWUiLCJjYXB0dXJlIiwiX2MyIl0sImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIkFkbWluRGlhbG9nUGFydHMuanN4Il0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IHVzZVN0YXRlIH0gZnJvbSAncmVhY3QnXHJcbmltcG9ydCBEaWFsb2cgZnJvbSAnLi4vRGlhbG9nJ1xyXG5pbXBvcnQgRmFjZUNhcHR1cmUgZnJvbSAnLi4vRmFjZUNhcHR1cmUnXHJcblxyXG5leHBvcnQgZnVuY3Rpb24gTW9kYWwoeyB0aXRsZSwgY2hpbGRyZW4sIG9uQ2xvc2UsIGJ1c3ksIGVycm9yLCBjbGFzc05hbWUsIGludmFsaWRGaWVsZCB9KSB7XHJcbiAgLy8gRGlhbG9nIGhhbmRsZXMgbW9iaWxlIGZvY3VzIHdpdGhvdXQgYWRkaW5nIGEgc2Vjb25kIGZvcm0gb3Igc3VibWl0IHBhdGguXHJcbiAgcmV0dXJuIChcclxuICAgIDxEaWFsb2cgdGl0bGU9e3RpdGxlfSBvbkNsb3NlPXtvbkNsb3NlfSBidXN5PXtidXN5fSBjbGFzc05hbWU9e2NsYXNzTmFtZX0gaW52YWxpZEZpZWxkPXtpbnZhbGlkRmllbGR9PlxyXG4gICAgICB7ZXJyb3IgJiYgKFxyXG4gICAgICAgIDxwIGNsYXNzTmFtZT1cImZvcm0tZXJyb3JcIiByb2xlPVwiYWxlcnRcIj5cclxuICAgICAgICAgIHtlcnJvcn1cclxuICAgICAgICA8L3A+XHJcbiAgICAgICl9XHJcbiAgICAgIHtidXN5ICYmIChcclxuICAgICAgICA8cCBjbGFzc05hbWU9XCJmb3JtLWhlbHBcIiByb2xlPVwic3RhdHVzXCI+XHJcbiAgICAgICAgICBTYXZpbmcuLi5cclxuICAgICAgICA8L3A+XHJcbiAgICAgICl9XHJcbiAgICAgIDxmaWVsZHNldCBjbGFzc05hbWU9XCJtb2RhbC1maWVsZHNcIiBkaXNhYmxlZD17YnVzeX0+XHJcbiAgICAgICAge2NoaWxkcmVufVxyXG4gICAgICA8L2ZpZWxkc2V0PlxyXG4gICAgPC9EaWFsb2c+XHJcbiAgKVxyXG59XHJcblxyXG5leHBvcnQgZnVuY3Rpb24gRmFjZUVucm9sbG1lbnRGb3JtKHsgc2VsZkVucm9sbG1lbnQsIG9uRW5yb2xsLCBnZXRDaGFsbGVuZ2UsIGJ1c3kgfSkge1xyXG4gIGNvbnN0IFtjb25zZW50LCBzZXRDb25zZW50XSA9IHVzZVN0YXRlKGZhbHNlKVxyXG4gIGNvbnN0IFtpZENoZWNrZWQsIHNldElkQ2hlY2tlZF0gPSB1c2VTdGF0ZShmYWxzZSlcclxuICBjb25zdCBbY3VycmVudFBhc3N3b3JkLCBzZXRDdXJyZW50UGFzc3dvcmRdID0gdXNlU3RhdGUoJycpXHJcblxyXG4gIHJldHVybiAoXHJcbiAgICA8ZGl2IGNsYXNzTmFtZT1cIm1mIGZhY2UtZW5yb2xsbWVudC1mb3JtXCI+XHJcbiAgICAgIDxzZWN0aW9uIGNsYXNzTmFtZT1cImZhY2UtZW5yb2xsbWVudC10ZXJtc1wiIGFyaWEtbGFiZWxsZWRieT1cImZhY2UtdGVybXMtdGl0bGVcIj5cclxuICAgICAgICA8aDMgaWQ9XCJmYWNlLXRlcm1zLXRpdGxlXCI+RmFjZSB2ZXJpZmljYXRpb24gdGVybXM8L2gzPlxyXG4gICAgICAgIDxwPlBsZWFzZSByZWFkIHRoZXNlIHRlcm1zIGJlZm9yZSBhZ3JlZWluZyB0byBmYWNlIGVucm9sbG1lbnQ6PC9wPlxyXG4gICAgICAgIDx1bD5cclxuICAgICAgICAgIDxsaT5cclxuICAgICAgICAgICAgRml0UHVsc2UgdXNlcyB5b3VyIGZhY2UgdG8gdmVyaWZ5IHlvdXIgaWRlbnRpdHkgd2hlbiB5b3Ugc2lnbiBpbiBhbmQgdG8gY2hlY2sgZm9yXHJcbiAgICAgICAgICAgIGR1cGxpY2F0ZSBlbnJvbGxtZW50cy5cclxuICAgICAgICAgIDwvbGk+XHJcbiAgICAgICAgICA8bGk+XHJcbiAgICAgICAgICAgIFRocmVlIGNhbWVyYSBmcmFtZXMgYXJlIHNlbnQgdG8gdGhlIHNlcnZlciBmb3IgZWFjaCBsaXZlIGNoZWNrIGFuZCBkaXNjYXJkZWQgYWZ0ZXJcclxuICAgICAgICAgICAgcHJvY2Vzc2luZy4gQW4gZW5jcnlwdGVkIGZhY2UgdGVtcGxhdGUgaXMgc3RvcmVkIGZvciBmdXR1cmUgdmVyaWZpY2F0aW9uLlxyXG4gICAgICAgICAgPC9saT5cclxuICAgICAgICAgIDxsaT5cclxuICAgICAgICAgICAgRmFjZSBlbnJvbGxtZW50IGlzIG9wdGlvbmFsLiBZb3UgY2FuIHdpdGhkcmF3IHlvdXIgY29uc2VudCBhbmQgYXNrIHRoZSBneW0gdG8gcmVtb3ZlXHJcbiAgICAgICAgICAgIHlvdXIgZmFjZSB0ZW1wbGF0ZS5cclxuICAgICAgICAgIDwvbGk+XHJcbiAgICAgICAgPC91bD5cclxuICAgICAgICB7IXNlbGZFbnJvbGxtZW50ICYmIChcclxuICAgICAgICAgIDxwPlN0YWZmIG11c3QgZXhwbGFpbiB0aGVzZSB0ZXJtcyBhbmQgb2J0YWluIHRoZSBtZW1iZXIncyBhZ3JlZW1lbnQgYmVmb3JlIGNvbnRpbnVpbmcuPC9wPlxyXG4gICAgICAgICl9XHJcbiAgICAgIDwvc2VjdGlvbj5cclxuICAgICAgeyFzZWxmRW5yb2xsbWVudCAmJiAoXHJcbiAgICAgICAgPGxhYmVsIGNsYXNzTmFtZT1cInNldFwiPlxyXG4gICAgICAgICAgPGlucHV0IHR5cGU9XCJjaGVja2JveFwiIGNoZWNrZWQ9e2lkQ2hlY2tlZH0gb25DaGFuZ2U9eyhldmVudCkgPT4gc2V0SWRDaGVja2VkKGV2ZW50LnRhcmdldC5jaGVja2VkKX0gLz5cclxuICAgICAgICAgIDxzcGFuPkkgY2hlY2tlZCB0aGUgbWVtYmVyJ3MgcGhvdG8gSUQuPC9zcGFuPlxyXG4gICAgICAgIDwvbGFiZWw+XHJcbiAgICAgICl9XHJcbiAgICAgIDxsYWJlbCBjbGFzc05hbWU9XCJzZXRcIj5cclxuICAgICAgICA8aW5wdXQgdHlwZT1cImNoZWNrYm94XCIgY2hlY2tlZD17Y29uc2VudH0gb25DaGFuZ2U9eyhldmVudCkgPT4gc2V0Q29uc2VudChldmVudC50YXJnZXQuY2hlY2tlZCl9IC8+XHJcbiAgICAgICAgPHNwYW4+XHJcbiAgICAgICAgICB7c2VsZkVucm9sbG1lbnRcclxuICAgICAgICAgICAgPyAnSSBoYXZlIHJlYWQgYW5kIGFncmVlIHRvIHRoZSBmYWNlIHZlcmlmaWNhdGlvbiB0ZXJtcy4nXHJcbiAgICAgICAgICAgIDogJ1RoZSBtZW1iZXIgaGFzIGFncmVlZCB0byB0aGUgZmFjZSB2ZXJpZmljYXRpb24gdGVybXMuJ31cclxuICAgICAgICA8L3NwYW4+XHJcbiAgICAgIDwvbGFiZWw+XHJcbiAgICAgIHtzZWxmRW5yb2xsbWVudCAmJiAoXHJcbiAgICAgICAgPGxhYmVsIGNsYXNzTmFtZT1cImZpZWxkXCI+XHJcbiAgICAgICAgICBDdXJyZW50IHBhc3N3b3JkXHJcbiAgICAgICAgICA8aW5wdXRcclxuICAgICAgICAgICAgY2xhc3NOYW1lPVwiY2xheS1pblwiXHJcbiAgICAgICAgICAgIHR5cGU9XCJwYXNzd29yZFwiXHJcbiAgICAgICAgICAgIGF1dG9Db21wbGV0ZT1cImN1cnJlbnQtcGFzc3dvcmRcIlxyXG4gICAgICAgICAgICB2YWx1ZT17Y3VycmVudFBhc3N3b3JkfVxyXG4gICAgICAgICAgICBvbkNoYW5nZT17KGV2ZW50KSA9PiBzZXRDdXJyZW50UGFzc3dvcmQoZXZlbnQudGFyZ2V0LnZhbHVlKX1cclxuICAgICAgICAgIC8+XHJcbiAgICAgICAgPC9sYWJlbD5cclxuICAgICAgKX1cclxuICAgICAgPEZhY2VDYXB0dXJlXHJcbiAgICAgICAgZ2V0Q2hhbGxlbmdlPXtnZXRDaGFsbGVuZ2V9XHJcbiAgICAgICAgb25DYXB0dXJlZD17KGNhcHR1cmUpID0+IG9uRW5yb2xsKHsgLi4uY2FwdHVyZSwgY29uc2VudCwgaWRDaGVja2VkLCBjdXJyZW50UGFzc3dvcmQgfSl9XHJcbiAgICAgICAgcHVycG9zZT1cImVucm9sbG1lbnRcIlxyXG4gICAgICAgIGRpc2FibGVkPXtidXN5IHx8ICFjb25zZW50IHx8IChzZWxmRW5yb2xsbWVudCA/ICFjdXJyZW50UGFzc3dvcmQgOiAhaWRDaGVja2VkKX1cclxuICAgICAgICBhY3Rpb25MYWJlbD1cIkNhcHR1cmUgYW5kIHNhdmVcIlxyXG4gICAgICAvPlxyXG4gICAgPC9kaXY+XHJcbiAgKVxyXG59XHJcblxyXG4iXSwiZmlsZSI6IkM6L1VzZXJzL2dlZXplL0Rvd25sb2Fkcy9MQU5ESU5HLVBBR0Uvc3JjL2NvbXBvbmVudHMvYWRtaW4vQWRtaW5EaWFsb2dQYXJ0cy5qc3gifQ==

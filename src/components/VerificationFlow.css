@@ -1,4 +1,13 @@
 /* Scoped to Create Member and facial login; the rest of FitPulse retains its styling. */
+/* Keep the light Create Member form readable inside either dashboard theme. */
+.admin-app .fitpulse-onboarding-dialog {
+  --card: #f5f8ff;
+  --text: #0d2b48;
+  --muted: #5b7292;
+  --bg: #fff;
+  color-scheme: light;
+}
+
 .admin-app .fitpulse-onboarding-dialog,
 #login .fitpulse-face-login-dialog {
   width: min(640px, 100%);
@@ -69,7 +78,7 @@
 /* Front and back remain visible together; switching cameras always needs a click. */
 .fp-id-side-by-side { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .fp-id-side-card { min-width: 0; padding: 10px; border: 1px solid #bfcee2; border-radius: 13px; background: #fff; }
-.fp-id-side-card.is-active { border-color: #db460f; box-shadow: 0 0 0 1px #db460f; }
+.fp-id-side-card.is-active { border-color: #db460f; }
 .fp-id-card-heading { display: flex; flex-wrap: wrap; gap: 5px; justify-content: space-between; align-items: baseline; color: #113452; font-size: 12px; margin-bottom: 8px; }
 .fp-id-card-heading span { font-size: 11px; color: #6b8099; }
 .fp-id-side-card.is-active .fp-id-card-heading span { color: #d74711; }

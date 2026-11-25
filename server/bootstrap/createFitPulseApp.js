@@ -17,7 +17,7 @@ export function createFitPulseApp({ supabaseClient = supabase } = {}) {
   // Retain the original CORS and JSON middleware order and limits.
   app.use(cors({ origin: config.corsOrigins }))
   // Captured images are accepted only on the verification endpoints.
-  app.use(['/api/admin/identity', '/api/auth/face-login'], express.json({ limit: '12mb' }))
+  app.use(['/api/admin/identity', '/api/auth/face-guidance', '/api/auth/face-login'], express.json({ limit: '12mb' }))
   app.use(express.json({ limit: '100kb' }))
 
   const dependencies = createDependencies({
@@ -26,6 +26,7 @@ export function createFitPulseApp({ supabaseClient = supabase } = {}) {
     isProduction: config.isProduction
   })
   registerApiRoutes(app, dependencies, config)
+  app.use('/api', (_req, res) => res.status(404).json({ message: 'API endpoint not found.' }))
   app.use(httpErrorHandler)
 
   function startReminders() {

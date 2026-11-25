@@ -65,16 +65,20 @@ try {
   console.log('PASS: Member credentials render for the administrator.')
 
   for (const [path, role, heading] of [
-    ['pages/AdminStaffPage', 'admin', 'Gym activity'],
+    ['pages/AdminStaffPage', 'admin', 'Gym analytics charts'],
     ['pages/UserPage', 'member', 'Your activity']
   ]) {
     const Component = await load(path)
     const html = render(Component, { user: { role, name: 'Test Member' } }, role)
     assert.ok(html.includes(heading))
-    assert.ok(html.includes('7 days') && html.includes('6 months'))
-    assert.ok(html.includes('aria-pressed='))
-    assert.ok(html.includes('activity-plot'))
-    if (role === 'admin') assert.ok(!html.includes('<span>Memberships</span>'))
+    if (role === 'admin') {
+      assert.ok(html.includes('QR Attendance') && html.includes('Revenue'))
+      assert.ok(!html.includes('<span>Memberships</span>'))
+      assert.ok(!html.includes('Terms and Conditions'))
+    } else {
+      assert.ok(html.includes('7 days') && html.includes('6 months'))
+      assert.ok(html.includes('aria-pressed=') && html.includes('activity-plot'))
+    }
     console.log(`PASS: ${role} dashboard renders its interactive chart and controls.`)
   }
   const AdminReports = await load('components/AdminReports')
@@ -103,7 +107,8 @@ try {
     'Maintenance',
     'View Test Member record',
     'Edit Test Member record',
-    'FP-001'
+    'FP-001',
+    '01/01/2099'
   ])
     assert.ok(reports.includes(label), `Missing: ${label}`)
   console.log('PASS: Reports render category filters, source records, and accessible actions.')

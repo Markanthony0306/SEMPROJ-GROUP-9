@@ -43,6 +43,9 @@ jobs:
           BASE_PATH: ${{ steps.pages.outputs.base_path }}
           VITE_API_URL: ${{ vars.API_URL }}
 
+      - name: Serve the app for direct route visits
+        run: cp dist/index.html dist/404.html
+
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -96,13 +96,14 @@ export class AccountSeedWorkflow {
   }
 
   async run() {
+    const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase() || 'admin@fitpulse.com'
     const adminPassword = process.env.ADMIN_PASSWORD || (this.isProduction ? '' : 'admin123')
     const existingDatabase = await this.repository.load(['accounts'])
     const existingAdmin = existingDatabase.accounts.find(
-      (account) => account.email === 'admin@fitpulse.com'
+      (account) => account.email.toLowerCase() === adminEmail
     )
     const existingAdminAuth = existingAdmin?.authUserId ||
-      await this.findAuthUser('admin@fitpulse.com')
+      await this.findAuthUser(adminEmail)
 
     if (this.isProduction && !existingAdminAuth && !this.passwordPolicy(adminPassword)) {
       throw new Error(
@@ -111,7 +112,7 @@ export class AccountSeedWorkflow {
     }
 
     await this.ensureSeedAccount({
-      email: 'admin@fitpulse.com',
+      email: adminEmail,
       name: 'FitPulse Staff',
       password: adminPassword,
       role: 'admin',

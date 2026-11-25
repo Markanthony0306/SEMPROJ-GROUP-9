@@ -10,35 +10,17 @@ import FitnessSculpture from '../components/FitnessSculpture'
 import ActivityChart from '../components/ActivityChart'
 import Spinner from '../components/Spinner'
 import { downloadPayments } from '../utils/paymentExport'
-import { getMemberQr } from '../utils/memberQr'
 import PasswordChangeForm from '../components/PasswordChangeForm'
 import { membershipState } from '../utils/membership'
 import { RockyPreference, useGorilla } from '../components/gorilla/GorillaAssistant'
+import PrivacyPolicy from '../components/PrivacyPolicy'
 import { MobileActivities, MobileOverview } from '../components/mobile/MobileScreens'
 import { activityRows, useReminderActivity } from '../components/mobile/activity'
 import useIsMobile from '../components/mobile/useIsMobile'
+import { formatDate, formatDateTime } from '../../shared/formatDate.js'
 
-const validDate = (value) => value && !Number.isNaN(new Date(value).getTime())
-const date = (value) =>
-  validDate(value)
-    ? new Date(value).toLocaleDateString('en-PH', {
-      timeZone: 'Asia/Manila',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    })
-    : 'Not set'
-const time = (value) =>
-  validDate(value)
-    ? new Date(value).toLocaleString('en-PH', {
-      timeZone: 'Asia/Manila',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      year: 'numeric'
-    })
-    : 'Date unavailable'
+const date = (value) => formatDate(value, 'Not set')
+const time = (value) => formatDateTime(value, 'Date unavailable')
 const money = (value) =>
   new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(Number(value || 0))
 const latestFirst = (items) => [...items].sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -113,17 +95,6 @@ export default function UserPage({ user, onSignOut }) {
     if (nextSection === 'Notifications') setNotificationsRead(true)
     setSection(nextSection)
   }, [])
-  useEffect(() => {
-    if (!['user', 'member'].includes(currentUser?.role) || !currentUser?.membershipEnd) return
-    getMemberQr(currentUser, token).catch(() => { })
-  }, [
-    currentUser?.id,
-    currentUser?.membershipStart,
-    currentUser?.membershipEnd,
-    currentUser?.role,
-    currentUser?.status,
-    token
-  ])
   useEffect(() => {
     const controller = new AbortController()
     if (!['Dashboard', 'Attendance'].includes(section)) return () => controller.abort()
@@ -226,6 +197,60 @@ export default function UserPage({ user, onSignOut }) {
         <PasswordChangeForm />
       </article>
       <RockyPreference />
+      <PrivacyPolicy />
+    </section>
+  )
+  const membershipDetails = (
+    <section className="grid member-overview">
+      <article className="card clay">
+        <div className="illustrated-heading">
+          <div>
+            <h2>My membership</h2>
+            <p>Your plan, expiry date, and gym access.</p>
+            <span
+              className={`member-status ${expired ? 'is-expired' : status === 'Active' ? 'is-active' : ''}`}
+            >
+              {status}
+            </span>
+          </div>
+          <FitnessSculpture />
+        </div>
+        <dl className="member-details">
+          <div>
+            <dt>Member ID</dt>
+            <dd className="member-id">
+              {currentUser?.memberCode || currentUser?.id || 'Unavailable'}
+            </dd>
+          </div>
+          <div>
+            <dt>Plan</dt>
+            <dd>{currentUser?.plan || 'Not set'}</dd>
+          </div>
+          <div>
+            <dt>Start date</dt>
+            <dd>{date(currentUser?.membershipStart || currentUser?.joined)}</dd>
+          </div>
+          <div>
+            <dt>Expiry date</dt>
+            <dd>{date(currentUser?.membershipEnd)}</dd>
+          </div>
+          <div>
+            <dt>Contact number</dt>
+            <dd>{currentUser?.phone || 'Not added'}</dd>
+          </div>
+        </dl>
+        <p className="member-note">
+          <Icon name="bell" size={18} />
+          {membershipNote}
+        </p>
+        <button
+          className="member-text-button"
+          type="button"
+          onClick={() => setSection('Settings')}
+        >
+          Update profile &rarr;
+        </button>
+      </article>
     </section>
   )
   const views = {
@@ -276,57 +301,7 @@ export default function UserPage({ user, onSignOut }) {
           />
         </section>
         <ActivityChart attendance={attendance} loading={loading} />
-        <section className="grid member-overview">
-          <article className="card clay">
-            <div className="illustrated-heading">
-              <div>
-                <h2>My membership</h2>
-                <p>Your plan, expiry date, and gym access.</p>
-                <span
-                  className={`member-status ${expired ? 'is-expired' : status === 'Active' ? 'is-active' : ''}`}
-                >
-                  {status}
-                </span>
-              </div>
-              <FitnessSculpture />
-            </div>
-            <dl className="member-details">
-              <div>
-                <dt>Member ID</dt>
-                <dd className="member-id">
-                  {currentUser?.memberCode || currentUser?.id || 'Unavailable'}
-                </dd>
-              </div>
-              <div>
-                <dt>Plan</dt>
-                <dd>{currentUser?.plan || 'Not set'}</dd>
-              </div>
-              <div>
-                <dt>Start date</dt>
-                <dd>{date(currentUser?.membershipStart || currentUser?.joined)}</dd>
-              </div>
-              <div>
-                <dt>Expiry date</dt>
-                <dd>{date(currentUser?.membershipEnd)}</dd>
-              </div>
-              <div>
-                <dt>Contact number</dt>
-                <dd>{currentUser?.phone || 'Not added'}</dd>
-              </div>
-            </dl>
-            <p className="member-note">
-              <Icon name="bell" size={18} />
-              {membershipNote}
-            </p>
-            <button
-              className="member-text-button"
-              type="button"
-              onClick={() => setSection('Settings')}
-            >
-              Update profile &rarr;
-            </button>
-          </article>
-        </section>
+        {membershipDetails}
       </>
     ),
     'My QR': (
@@ -416,7 +391,7 @@ export default function UserPage({ user, onSignOut }) {
       ['Days remaining', expiry ?? '—', 'chart'],
       ['Total check-ins', attendance.length, 'qr']
     ]} rows={activity} onActivities={() => selectSection('Activities')} loading={loading} />,
-    Membership: views.Dashboard,
+    Membership: membershipDetails,
     Activities: <MobileActivities rows={activity} loading={loading} select={selectSection} reminderError={reminderActivity.error} />
   } : {}
   return (

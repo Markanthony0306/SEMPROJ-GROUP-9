@@ -1,0 +1,360 @@
+import { createHotContext as __vite__createHotContext } from "/@vite/client";import.meta.hot = __vite__createHotContext("/src/components/gorilla/GorillaArt.jsx");import __vite__cjsImport0_react_jsxDevRuntime from "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=bdf2c8f1"; const jsxDEV = __vite__cjsImport0_react_jsxDevRuntime["jsxDEV"];
+import * as RefreshRuntime from "/@react-refresh";
+const inWebWorker = typeof WorkerGlobalScope !== "undefined" && self instanceof WorkerGlobalScope;
+let prevRefreshReg;
+let prevRefreshSig;
+if (import.meta.hot && !inWebWorker) {
+  if (!window.$RefreshReg$) {
+    throw new Error(
+      "@vitejs/plugin-react can't detect preamble. Something is wrong."
+    );
+  }
+  prevRefreshReg = window.$RefreshReg$;
+  prevRefreshSig = window.$RefreshSig$;
+  window.$RefreshReg$ = RefreshRuntime.getRefreshReg("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx");
+  window.$RefreshSig$ = RefreshRuntime.createSignatureFunctionForTransform;
+}
+const expressions = {
+  wink: {
+    brows: "M43 37q5-4 10-1m13 0q5-3 10 1",
+    eyes: "M65 47q5-4 10 0",
+    mouth: "M52 59q8 8 16-1"
+  },
+  happy: {
+    brows: "M43 36q5-4 10-1m13 0q5-3 10 1",
+    eyes: "M43 47q5-7 10 0m13 0q5-7 10 0",
+    mouth: "M51 57q9 8 18 0-2 11-9 11t-9-11Z"
+  },
+  angry: { brows: "m42 36 13 5m10 0 13-5", eyes: "M44 47h8m15 0h8", mouth: "M53 63q7-7 14 0" },
+  worried: {
+    brows: "M42 40q6-1 11-6m13 0q5 5 11 6",
+    eyes: "M48 46v3m23-3v3",
+    mouth: "M55 62q5-4 10 0"
+  }
+};
+export default function GorillaArt({ mood = "wink" }) {
+  return /* @__PURE__ */ jsxDEV("svg", { viewBox: "0 0 120 114", "aria-hidden": "true", className: "rocky-art", children: [
+    /* @__PURE__ */ jsxDEV(
+      "path",
+      {
+        d: "M86 91c24 11 34-5 25-14-4-4-10-1-10 4",
+        fill: "none",
+        stroke: "#905538",
+        strokeWidth: "7",
+        strokeLinecap: "round"
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 43,
+        columnNumber: 7
+      },
+      this
+    ),
+    /* @__PURE__ */ jsxDEV(
+      "path",
+      {
+        d: "M40 69q20-13 41 0l10 27q-4 11-31 11t-31-11Z",
+        fill: "var(--navy, #003049)",
+        stroke: "#567284",
+        strokeWidth: "2"
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 50,
+        columnNumber: 7
+      },
+      this
+    ),
+    /* @__PURE__ */ jsxDEV("path", { d: "M44 72q15 14 31 0", fill: "none", stroke: "#7995a5", strokeWidth: "2.5" }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+      lineNumber: 56,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV(
+      "path",
+      {
+        d: "M36 84h5l3-4 3 8 3-4h6",
+        fill: "none",
+        stroke: "var(--orange, #f77f00)",
+        strokeWidth: "2.5",
+        strokeLinecap: "round",
+        strokeLinejoin: "round"
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 57,
+        columnNumber: 7
+      },
+      this
+    ),
+    /* @__PURE__ */ jsxDEV("g", { fill: "#a56b45", stroke: "#683923", strokeWidth: "2", children: [
+      /* @__PURE__ */ jsxDEV("circle", { cx: "26", cy: "43", r: "13" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 66,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("circle", { cx: "94", cy: "43", r: "13" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 67,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("path", { d: "M31 44c0-20 10-33 22-34 4-7 14-8 19-5l-4 5c14 5 21 16 21 34 0 21-12 32-29 32S31 65 31 44Z" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 68,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("path", { d: "M33 75q-15 3-15 15 1 8 12 9l7-8q-13-4-4-9Z" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 69,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("path", { d: "M86 74q13 3 14 14 0 10-11 11l-4-9q8-2 1-9Z" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 70,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+      lineNumber: 65,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("g", { fill: "#db946c", children: [
+      /* @__PURE__ */ jsxDEV("circle", { cx: "27", cy: "43", r: "7" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 73,
+        columnNumber: 9
+      }, this),
+      /* @__PURE__ */ jsxDEV("circle", { cx: "93", cy: "43", r: "7" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 74,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+      lineNumber: 72,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV(
+      "path",
+      {
+        d: "M36 46c0-12 6-18 14-18 5 0 9 3 10 6 3-3 6-6 11-6 8 0 13 6 13 18 0 4-1 8-4 11 2 11-8 17-20 17s-22-6-20-17c-2-3-4-7-4-11Z",
+        fill: "#f5c390"
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 76,
+        columnNumber: 7
+      },
+      this
+    ),
+    /* @__PURE__ */ jsxDEV(
+      "path",
+      {
+        d: "M31 24q28 10 57-1l3 11q-30 12-61 1Z",
+        fill: "var(--orange, #f77f00)",
+        stroke: "#a64c0a",
+        strokeWidth: "1.5"
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 80,
+        columnNumber: 7
+      },
+      this
+    ),
+    /* @__PURE__ */ jsxDEV("path", { d: "M33 27q28 10 54-1", fill: "none", stroke: "#ffd08a", strokeWidth: "2" }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+      lineNumber: 86,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV(
+      "path",
+      {
+        d: "M89 28l14-8-1 8 8 4-16 2 8 6-7 2-8-10Z",
+        fill: "var(--orange, #f77f00)",
+        stroke: "#a64c0a",
+        strokeWidth: "1.5",
+        strokeLinejoin: "round"
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 87,
+        columnNumber: 7
+      },
+      this
+    ),
+    /* @__PURE__ */ jsxDEV("path", { d: "M55 52q5-3 10 0l-2 3h-6Z", fill: "#9f583a" }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+      lineNumber: 94,
+      columnNumber: 7
+    }, this),
+    Object.entries(expressions).map(
+      ([name, face]) => /* @__PURE__ */ jsxDEV(
+        "g",
+        {
+          className: "rocky-expression",
+          "data-active": mood === name,
+          fill: "none",
+          stroke: "#512d22",
+          strokeWidth: "2.8",
+          strokeLinecap: "round",
+          strokeLinejoin: "round",
+          children: [
+            /* @__PURE__ */ jsxDEV("path", { d: face.brows }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+              lineNumber: 106,
+              columnNumber: 11
+            }, this),
+            /* @__PURE__ */ jsxDEV("g", { className: "rocky-eyes", children: [
+              /* @__PURE__ */ jsxDEV("path", { d: face.eyes }, void 0, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+                lineNumber: 108,
+                columnNumber: 13
+              }, this),
+              name === "wink" && /* @__PURE__ */ jsxDEV("ellipse", { cx: "48", cy: "47", rx: "3.4", ry: "4.2", fill: "#512d22", stroke: "none" }, void 0, false, {
+                fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+                lineNumber: 110,
+                columnNumber: 11
+              }, this)
+            ] }, void 0, true, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+              lineNumber: 107,
+              columnNumber: 11
+            }, this),
+            /* @__PURE__ */ jsxDEV("path", { d: face.mouth, fill: name === "happy" ? "#512d22" : "none" }, void 0, false, {
+              fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+              lineNumber: 113,
+              columnNumber: 11
+            }, this)
+          ]
+        },
+        name,
+        true,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+          lineNumber: 96,
+          columnNumber: 7
+        },
+        this
+      )
+    ),
+    /* @__PURE__ */ jsxDEV("g", { transform: "rotate(9 75 96)", children: [
+      /* @__PURE__ */ jsxDEV(
+        "rect",
+        {
+          x: "59",
+          y: "79",
+          width: "34",
+          height: "29",
+          rx: "4",
+          fill: "#fff3d9",
+          stroke: "#b67541",
+          strokeWidth: "2"
+        },
+        void 0,
+        false,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+          lineNumber: 117,
+          columnNumber: 9
+        },
+        this
+      ),
+      /* @__PURE__ */ jsxDEV(
+        "path",
+        {
+          d: "M66 88h19m-19 6h16m-16 6h12",
+          fill: "none",
+          stroke: "#997457",
+          strokeWidth: "1.6",
+          strokeLinecap: "round"
+        },
+        void 0,
+        false,
+        {
+          fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+          lineNumber: 127,
+          columnNumber: 9
+        },
+        this
+      ),
+      /* @__PURE__ */ jsxDEV("path", { d: "M68 77h8v5h-8Z", fill: "#f1bc60" }, void 0, false, {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 134,
+        columnNumber: 9
+      }, this)
+    ] }, void 0, true, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+      lineNumber: 116,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV(
+      "path",
+      {
+        d: "m27 94 20-16 4 4-19 17-7 2Z",
+        fill: "#ffcf52",
+        stroke: "#83441f",
+        strokeWidth: "1.5",
+        strokeLinejoin: "round"
+      },
+      void 0,
+      false,
+      {
+        fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+        lineNumber: 136,
+        columnNumber: 7
+      },
+      this
+    ),
+    /* @__PURE__ */ jsxDEV("path", { d: "m46 79 4-3 4 4-4 3Z", fill: "#f38470", stroke: "#83441f", strokeWidth: "1.2" }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+      lineNumber: 143,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("path", { d: "M23 91q6-4 10 0t-1 7q-6 3-9-1Z", fill: "#a56b45", stroke: "#683923", strokeWidth: "1.8" }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+      lineNumber: 144,
+      columnNumber: 7
+    }, this),
+    /* @__PURE__ */ jsxDEV("path", { d: "M89 88q8-3 10 3t-7 7q-5-1-3-10Z", fill: "#a56b45", stroke: "#683923", strokeWidth: "1.8" }, void 0, false, {
+      fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+      lineNumber: 145,
+      columnNumber: 7
+    }, this)
+  ] }, void 0, true, {
+    fileName: "C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx",
+    lineNumber: 42,
+    columnNumber: 5
+  }, this);
+}
+_c = GorillaArt;
+var _c;
+$RefreshReg$(_c, "GorillaArt");
+if (import.meta.hot && !inWebWorker) {
+  window.$RefreshReg$ = prevRefreshReg;
+  window.$RefreshSig$ = prevRefreshSig;
+}
+if (import.meta.hot && !inWebWorker) {
+  RefreshRuntime.__hmr_import(import.meta.url).then((currentExports) => {
+    RefreshRuntime.registerExportsForReactRefresh("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx", currentExports);
+    import.meta.hot.accept((nextExports) => {
+      if (!nextExports) return;
+      const invalidateMessage = RefreshRuntime.validateRefreshBoundaryAndEnqueueUpdate("C:/Users/geeze/Downloads/LANDING-PAGE/src/components/gorilla/GorillaArt.jsx", currentExports, nextExports);
+      if (invalidateMessage) import.meta.hot.invalidate(invalidateMessage);
+    });
+  });
+}
+
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJtYXBwaW5ncyI6IkFBdUJNOzs7Ozs7Ozs7Ozs7Ozs7O0FBdkJOLE1BQU1BLGNBQWM7QUFBQSxFQUNsQkMsTUFBTTtBQUFBLElBQ0pDLE9BQU87QUFBQSxJQUNQQyxNQUFNO0FBQUEsSUFDTkMsT0FBTztBQUFBLEVBQ1Q7QUFBQSxFQUNBQyxPQUFPO0FBQUEsSUFDTEgsT0FBTztBQUFBLElBQ1BDLE1BQU07QUFBQSxJQUNOQyxPQUFPO0FBQUEsRUFDVDtBQUFBLEVBQ0FFLE9BQU8sRUFBRUosT0FBTyx5QkFBeUJDLE1BQU0sbUJBQW1CQyxPQUFPLGtCQUFrQjtBQUFBLEVBQzNGRyxTQUFTO0FBQUEsSUFDUEwsT0FBTztBQUFBLElBQ1BDLE1BQU07QUFBQSxJQUNOQyxPQUFPO0FBQUEsRUFDVDtBQUNGO0FBR0Esd0JBQXdCSSxXQUFXLEVBQUVDLE9BQU8sT0FBTyxHQUFHO0FBQ3BELFNBQ0UsdUJBQUMsU0FBSSxTQUFRLGVBQWMsZUFBWSxRQUFPLFdBQVUsYUFDdEQ7QUFBQTtBQUFBLE1BQUM7QUFBQTtBQUFBLFFBQ0MsR0FBRTtBQUFBLFFBQ0YsTUFBSztBQUFBLFFBQ0wsUUFBTztBQUFBLFFBQ1AsYUFBWTtBQUFBLFFBQ1osZUFBYztBQUFBO0FBQUEsTUFMaEI7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLElBS3VCO0FBQUEsSUFFdkI7QUFBQSxNQUFDO0FBQUE7QUFBQSxRQUNDLEdBQUU7QUFBQSxRQUNGLE1BQUs7QUFBQSxRQUNMLFFBQU87QUFBQSxRQUNQLGFBQVk7QUFBQTtBQUFBLE1BSmQ7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLElBSWlCO0FBQUEsSUFFakIsdUJBQUMsVUFBSyxHQUFFLHFCQUFvQixNQUFLLFFBQU8sUUFBTyxXQUFVLGFBQVksU0FBckU7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQUEwRTtBQUFBLElBQzFFO0FBQUEsTUFBQztBQUFBO0FBQUEsUUFDQyxHQUFFO0FBQUEsUUFDRixNQUFLO0FBQUEsUUFDTCxRQUFPO0FBQUEsUUFDUCxhQUFZO0FBQUEsUUFDWixlQUFjO0FBQUEsUUFDZCxnQkFBZTtBQUFBO0FBQUEsTUFOakI7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLElBTXdCO0FBQUEsSUFFeEIsdUJBQUMsT0FBRSxNQUFLLFdBQVUsUUFBTyxXQUFVLGFBQVksS0FDN0M7QUFBQSw2QkFBQyxZQUFPLElBQUcsTUFBSyxJQUFHLE1BQUssR0FBRSxRQUExQjtBQUFBO0FBQUE7QUFBQTtBQUFBLGFBQThCO0FBQUEsTUFDOUIsdUJBQUMsWUFBTyxJQUFHLE1BQUssSUFBRyxNQUFLLEdBQUUsUUFBMUI7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQUE4QjtBQUFBLE1BQzlCLHVCQUFDLFVBQUssR0FBRSwrRkFBUjtBQUFBO0FBQUE7QUFBQTtBQUFBLGFBQW1HO0FBQUEsTUFDbkcsdUJBQUMsVUFBSyxHQUFFLGdEQUFSO0FBQUE7QUFBQTtBQUFBO0FBQUEsYUFBb0Q7QUFBQSxNQUNwRCx1QkFBQyxVQUFLLEdBQUUsZ0RBQVI7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQUFvRDtBQUFBLFNBTHREO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FNQTtBQUFBLElBQ0EsdUJBQUMsT0FBRSxNQUFLLFdBQ047QUFBQSw2QkFBQyxZQUFPLElBQUcsTUFBSyxJQUFHLE1BQUssR0FBRSxPQUExQjtBQUFBO0FBQUE7QUFBQTtBQUFBLGFBQTZCO0FBQUEsTUFDN0IsdUJBQUMsWUFBTyxJQUFHLE1BQUssSUFBRyxNQUFLLEdBQUUsT0FBMUI7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQUE2QjtBQUFBLFNBRi9CO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FHQTtBQUFBLElBQ0E7QUFBQSxNQUFDO0FBQUE7QUFBQSxRQUNDLEdBQUU7QUFBQSxRQUNGLE1BQUs7QUFBQTtBQUFBLE1BRlA7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLElBRWdCO0FBQUEsSUFFaEI7QUFBQSxNQUFDO0FBQUE7QUFBQSxRQUNDLEdBQUU7QUFBQSxRQUNGLE1BQUs7QUFBQSxRQUNMLFFBQU87QUFBQSxRQUNQLGFBQVk7QUFBQTtBQUFBLE1BSmQ7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLElBSW1CO0FBQUEsSUFFbkIsdUJBQUMsVUFBSyxHQUFFLHFCQUFvQixNQUFLLFFBQU8sUUFBTyxXQUFVLGFBQVksT0FBckU7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQUF3RTtBQUFBLElBQ3hFO0FBQUEsTUFBQztBQUFBO0FBQUEsUUFDQyxHQUFFO0FBQUEsUUFDRixNQUFLO0FBQUEsUUFDTCxRQUFPO0FBQUEsUUFDUCxhQUFZO0FBQUEsUUFDWixnQkFBZTtBQUFBO0FBQUEsTUFMakI7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBLElBS3dCO0FBQUEsSUFFeEIsdUJBQUMsVUFBSyxHQUFFLDRCQUEyQixNQUFLLGFBQXhDO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FBaUQ7QUFBQSxJQUNoREMsT0FBT0MsUUFBUVgsV0FBVyxFQUFFWTtBQUFBQSxNQUFJLENBQUMsQ0FBQ0MsTUFBTUMsSUFBSSxNQUMzQztBQUFBLFFBQUM7QUFBQTtBQUFBLFVBRUMsV0FBVTtBQUFBLFVBQ1YsZUFBYUwsU0FBU0k7QUFBQUEsVUFDdEIsTUFBSztBQUFBLFVBQ0wsUUFBTztBQUFBLFVBQ1AsYUFBWTtBQUFBLFVBQ1osZUFBYztBQUFBLFVBQ2QsZ0JBQWU7QUFBQSxVQUVmO0FBQUEsbUNBQUMsVUFBSyxHQUFHQyxLQUFLWixTQUFkO0FBQUE7QUFBQTtBQUFBO0FBQUEsbUJBQW9CO0FBQUEsWUFDcEIsdUJBQUMsT0FBRSxXQUFVLGNBQ1g7QUFBQSxxQ0FBQyxVQUFLLEdBQUdZLEtBQUtYLFFBQWQ7QUFBQTtBQUFBO0FBQUE7QUFBQSxxQkFBbUI7QUFBQSxjQUNsQlUsU0FBUyxVQUNSLHVCQUFDLGFBQVEsSUFBRyxNQUFLLElBQUcsTUFBSyxJQUFHLE9BQU0sSUFBRyxPQUFNLE1BQUssV0FBVSxRQUFPLFVBQWpFO0FBQUE7QUFBQTtBQUFBO0FBQUEscUJBQXVFO0FBQUEsaUJBSDNFO0FBQUE7QUFBQTtBQUFBO0FBQUEsbUJBS0E7QUFBQSxZQUNBLHVCQUFDLFVBQUssR0FBR0MsS0FBS1YsT0FBTyxNQUFNUyxTQUFTLFVBQVUsWUFBWSxVQUExRDtBQUFBO0FBQUE7QUFBQTtBQUFBLG1CQUFpRTtBQUFBO0FBQUE7QUFBQSxRQWhCNURBO0FBQUFBLFFBRFA7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxNQWtCQTtBQUFBLElBQ0Q7QUFBQSxJQUNELHVCQUFDLE9BQUUsV0FBVSxtQkFDWDtBQUFBO0FBQUEsUUFBQztBQUFBO0FBQUEsVUFDQyxHQUFFO0FBQUEsVUFDRixHQUFFO0FBQUEsVUFDRixPQUFNO0FBQUEsVUFDTixRQUFPO0FBQUEsVUFDUCxJQUFHO0FBQUEsVUFDSCxNQUFLO0FBQUEsVUFDTCxRQUFPO0FBQUEsVUFDUCxhQUFZO0FBQUE7QUFBQSxRQVJkO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxNQVFpQjtBQUFBLE1BRWpCO0FBQUEsUUFBQztBQUFBO0FBQUEsVUFDQyxHQUFFO0FBQUEsVUFDRixNQUFLO0FBQUEsVUFDTCxRQUFPO0FBQUEsVUFDUCxhQUFZO0FBQUEsVUFDWixlQUFjO0FBQUE7QUFBQSxRQUxoQjtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUEsTUFLdUI7QUFBQSxNQUV2Qix1QkFBQyxVQUFLLEdBQUUsa0JBQWlCLE1BQUssYUFBOUI7QUFBQTtBQUFBO0FBQUE7QUFBQSxhQUF1QztBQUFBLFNBbEJ6QztBQUFBO0FBQUE7QUFBQTtBQUFBLFdBbUJBO0FBQUEsSUFDQTtBQUFBLE1BQUM7QUFBQTtBQUFBLFFBQ0MsR0FBRTtBQUFBLFFBQ0YsTUFBSztBQUFBLFFBQ0wsUUFBTztBQUFBLFFBQ1AsYUFBWTtBQUFBLFFBQ1osZ0JBQWU7QUFBQTtBQUFBLE1BTGpCO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQTtBQUFBO0FBQUE7QUFBQSxJQUt3QjtBQUFBLElBRXhCLHVCQUFDLFVBQUssR0FBRSx1QkFBc0IsTUFBSyxXQUFVLFFBQU8sV0FBVSxhQUFZLFNBQTFFO0FBQUE7QUFBQTtBQUFBO0FBQUEsV0FBK0U7QUFBQSxJQUMvRSx1QkFBQyxVQUFLLEdBQUUsa0NBQWlDLE1BQUssV0FBVSxRQUFPLFdBQVUsYUFBWSxTQUFyRjtBQUFBO0FBQUE7QUFBQTtBQUFBLFdBQTBGO0FBQUEsSUFDMUYsdUJBQUMsVUFBSyxHQUFFLG1DQUFrQyxNQUFLLFdBQVUsUUFBTyxXQUFVLGFBQVksU0FBdEY7QUFBQTtBQUFBO0FBQUE7QUFBQSxXQUEyRjtBQUFBLE9Bdkc3RjtBQUFBO0FBQUE7QUFBQTtBQUFBLFNBd0dBO0FBRUo7QUFBQ0UsS0E1R3VCUDtBQUFVLElBQUFPO0FBQUEsYUFBQUEsSUFBQSIsIm5hbWVzIjpbImV4cHJlc3Npb25zIiwid2luayIsImJyb3dzIiwiZXllcyIsIm1vdXRoIiwiaGFwcHkiLCJhbmdyeSIsIndvcnJpZWQiLCJHb3JpbGxhQXJ0IiwibW9vZCIsIk9iamVjdCIsImVudHJpZXMiLCJtYXAiLCJuYW1lIiwiZmFjZSIsIl9jIl0sImlnbm9yZUxpc3QiOltdLCJzb3VyY2VzIjpbIkdvcmlsbGFBcnQuanN4Il0sInNvdXJjZXNDb250ZW50IjpbImNvbnN0IGV4cHJlc3Npb25zID0ge1xuICB3aW5rOiB7XG4gICAgYnJvd3M6ICdNNDMgMzdxNS00IDEwLTFtMTMgMHE1LTMgMTAgMScsXG4gICAgZXllczogJ002NSA0N3E1LTQgMTAgMCcsXG4gICAgbW91dGg6ICdNNTIgNTlxOCA4IDE2LTEnXG4gIH0sXG4gIGhhcHB5OiB7XG4gICAgYnJvd3M6ICdNNDMgMzZxNS00IDEwLTFtMTMgMHE1LTMgMTAgMScsXG4gICAgZXllczogJ000MyA0N3E1LTcgMTAgMG0xMyAwcTUtNyAxMCAwJyxcbiAgICBtb3V0aDogJ001MSA1N3E5IDggMTggMC0yIDExLTkgMTF0LTktMTFaJ1xuICB9LFxuICBhbmdyeTogeyBicm93czogJ200MiAzNiAxMyA1bTEwIDAgMTMtNScsIGV5ZXM6ICdNNDQgNDdoOG0xNSAwaDgnLCBtb3V0aDogJ001MyA2M3E3LTcgMTQgMCcgfSxcbiAgd29ycmllZDoge1xuICAgIGJyb3dzOiAnTTQyIDQwcTYtMSAxMS02bTEzIDBxNSA1IDExIDYnLFxuICAgIGV5ZXM6ICdNNDggNDZ2M20yMy0zdjMnLFxuICAgIG1vdXRoOiAnTTU1IDYycTUtNCAxMCAwJ1xuICB9XG59XG5cbi8vIFRoZSBmYWNlIGlzIGEgc2VwYXJhdGUgbGF5ZXIgc28gdGhlIG91dGZpdCBhbmQgcHJvcHMgc3RheSBpbiBwbGFjZS5cbmV4cG9ydCBkZWZhdWx0IGZ1bmN0aW9uIEdvcmlsbGFBcnQoeyBtb29kID0gJ3dpbmsnIH0pIHtcbiAgcmV0dXJuIChcbiAgICA8c3ZnIHZpZXdCb3g9XCIwIDAgMTIwIDExNFwiIGFyaWEtaGlkZGVuPVwidHJ1ZVwiIGNsYXNzTmFtZT1cInJvY2t5LWFydFwiPlxuICAgICAgPHBhdGhcbiAgICAgICAgZD1cIk04NiA5MWMyNCAxMSAzNC01IDI1LTE0LTQtNC0xMC0xLTEwIDRcIlxuICAgICAgICBmaWxsPVwibm9uZVwiXG4gICAgICAgIHN0cm9rZT1cIiM5MDU1MzhcIlxuICAgICAgICBzdHJva2VXaWR0aD1cIjdcIlxuICAgICAgICBzdHJva2VMaW5lY2FwPVwicm91bmRcIlxuICAgICAgLz5cbiAgICAgIDxwYXRoXG4gICAgICAgIGQ9XCJNNDAgNjlxMjAtMTMgNDEgMGwxMCAyN3EtNCAxMS0zMSAxMXQtMzEtMTFaXCJcbiAgICAgICAgZmlsbD1cInZhcigtLW5hdnksICMwMDMwNDkpXCJcbiAgICAgICAgc3Ryb2tlPVwiIzU2NzI4NFwiXG4gICAgICAgIHN0cm9rZVdpZHRoPVwiMlwiXG4gICAgICAvPlxuICAgICAgPHBhdGggZD1cIk00NCA3MnExNSAxNCAzMSAwXCIgZmlsbD1cIm5vbmVcIiBzdHJva2U9XCIjNzk5NWE1XCIgc3Ryb2tlV2lkdGg9XCIyLjVcIiAvPlxuICAgICAgPHBhdGhcbiAgICAgICAgZD1cIk0zNiA4NGg1bDMtNCAzIDggMy00aDZcIlxuICAgICAgICBmaWxsPVwibm9uZVwiXG4gICAgICAgIHN0cm9rZT1cInZhcigtLW9yYW5nZSwgI2Y3N2YwMClcIlxuICAgICAgICBzdHJva2VXaWR0aD1cIjIuNVwiXG4gICAgICAgIHN0cm9rZUxpbmVjYXA9XCJyb3VuZFwiXG4gICAgICAgIHN0cm9rZUxpbmVqb2luPVwicm91bmRcIlxuICAgICAgLz5cbiAgICAgIDxnIGZpbGw9XCIjYTU2YjQ1XCIgc3Ryb2tlPVwiIzY4MzkyM1wiIHN0cm9rZVdpZHRoPVwiMlwiPlxuICAgICAgICA8Y2lyY2xlIGN4PVwiMjZcIiBjeT1cIjQzXCIgcj1cIjEzXCIgLz5cbiAgICAgICAgPGNpcmNsZSBjeD1cIjk0XCIgY3k9XCI0M1wiIHI9XCIxM1wiIC8+XG4gICAgICAgIDxwYXRoIGQ9XCJNMzEgNDRjMC0yMCAxMC0zMyAyMi0zNCA0LTcgMTQtOCAxOS01bC00IDVjMTQgNSAyMSAxNiAyMSAzNCAwIDIxLTEyIDMyLTI5IDMyUzMxIDY1IDMxIDQ0WlwiIC8+XG4gICAgICAgIDxwYXRoIGQ9XCJNMzMgNzVxLTE1IDMtMTUgMTUgMSA4IDEyIDlsNy04cS0xMy00LTQtOVpcIiAvPlxuICAgICAgICA8cGF0aCBkPVwiTTg2IDc0cTEzIDMgMTQgMTQgMCAxMC0xMSAxMWwtNC05cTgtMiAxLTlaXCIgLz5cbiAgICAgIDwvZz5cbiAgICAgIDxnIGZpbGw9XCIjZGI5NDZjXCI+XG4gICAgICAgIDxjaXJjbGUgY3g9XCIyN1wiIGN5PVwiNDNcIiByPVwiN1wiIC8+XG4gICAgICAgIDxjaXJjbGUgY3g9XCI5M1wiIGN5PVwiNDNcIiByPVwiN1wiIC8+XG4gICAgICA8L2c+XG4gICAgICA8cGF0aFxuICAgICAgICBkPVwiTTM2IDQ2YzAtMTIgNi0xOCAxNC0xOCA1IDAgOSAzIDEwIDYgMy0zIDYtNiAxMS02IDggMCAxMyA2IDEzIDE4IDAgNC0xIDgtNCAxMSAyIDExLTggMTctMjAgMTdzLTIyLTYtMjAtMTdjLTItMy00LTctNC0xMVpcIlxuICAgICAgICBmaWxsPVwiI2Y1YzM5MFwiXG4gICAgICAvPlxuICAgICAgPHBhdGhcbiAgICAgICAgZD1cIk0zMSAyNHEyOCAxMCA1Ny0xbDMgMTFxLTMwIDEyLTYxIDFaXCJcbiAgICAgICAgZmlsbD1cInZhcigtLW9yYW5nZSwgI2Y3N2YwMClcIlxuICAgICAgICBzdHJva2U9XCIjYTY0YzBhXCJcbiAgICAgICAgc3Ryb2tlV2lkdGg9XCIxLjVcIlxuICAgICAgLz5cbiAgICAgIDxwYXRoIGQ9XCJNMzMgMjdxMjggMTAgNTQtMVwiIGZpbGw9XCJub25lXCIgc3Ryb2tlPVwiI2ZmZDA4YVwiIHN0cm9rZVdpZHRoPVwiMlwiIC8+XG4gICAgICA8cGF0aFxuICAgICAgICBkPVwiTTg5IDI4bDE0LTgtMSA4IDggNC0xNiAyIDggNi03IDItOC0xMFpcIlxuICAgICAgICBmaWxsPVwidmFyKC0tb3JhbmdlLCAjZjc3ZjAwKVwiXG4gICAgICAgIHN0cm9rZT1cIiNhNjRjMGFcIlxuICAgICAgICBzdHJva2VXaWR0aD1cIjEuNVwiXG4gICAgICAgIHN0cm9rZUxpbmVqb2luPVwicm91bmRcIlxuICAgICAgLz5cbiAgICAgIDxwYXRoIGQ9XCJNNTUgNTJxNS0zIDEwIDBsLTIgM2gtNlpcIiBmaWxsPVwiIzlmNTgzYVwiIC8+XG4gICAgICB7T2JqZWN0LmVudHJpZXMoZXhwcmVzc2lvbnMpLm1hcCgoW25hbWUsIGZhY2VdKSA9PiAoXG4gICAgICAgIDxnXG4gICAgICAgICAga2V5PXtuYW1lfVxuICAgICAgICAgIGNsYXNzTmFtZT1cInJvY2t5LWV4cHJlc3Npb25cIlxuICAgICAgICAgIGRhdGEtYWN0aXZlPXttb29kID09PSBuYW1lfVxuICAgICAgICAgIGZpbGw9XCJub25lXCJcbiAgICAgICAgICBzdHJva2U9XCIjNTEyZDIyXCJcbiAgICAgICAgICBzdHJva2VXaWR0aD1cIjIuOFwiXG4gICAgICAgICAgc3Ryb2tlTGluZWNhcD1cInJvdW5kXCJcbiAgICAgICAgICBzdHJva2VMaW5lam9pbj1cInJvdW5kXCJcbiAgICAgICAgPlxuICAgICAgICAgIDxwYXRoIGQ9e2ZhY2UuYnJvd3N9IC8+XG4gICAgICAgICAgPGcgY2xhc3NOYW1lPVwicm9ja3ktZXllc1wiPlxuICAgICAgICAgICAgPHBhdGggZD17ZmFjZS5leWVzfSAvPlxuICAgICAgICAgICAge25hbWUgPT09ICd3aW5rJyAmJiAoXG4gICAgICAgICAgICAgIDxlbGxpcHNlIGN4PVwiNDhcIiBjeT1cIjQ3XCIgcng9XCIzLjRcIiByeT1cIjQuMlwiIGZpbGw9XCIjNTEyZDIyXCIgc3Ryb2tlPVwibm9uZVwiIC8+XG4gICAgICAgICAgICApfVxuICAgICAgICAgIDwvZz5cbiAgICAgICAgICA8cGF0aCBkPXtmYWNlLm1vdXRofSBmaWxsPXtuYW1lID09PSAnaGFwcHknID8gJyM1MTJkMjInIDogJ25vbmUnfSAvPlxuICAgICAgICA8L2c+XG4gICAgICApKX1cbiAgICAgIDxnIHRyYW5zZm9ybT1cInJvdGF0ZSg5IDc1IDk2KVwiPlxuICAgICAgICA8cmVjdFxuICAgICAgICAgIHg9XCI1OVwiXG4gICAgICAgICAgeT1cIjc5XCJcbiAgICAgICAgICB3aWR0aD1cIjM0XCJcbiAgICAgICAgICBoZWlnaHQ9XCIyOVwiXG4gICAgICAgICAgcng9XCI0XCJcbiAgICAgICAgICBmaWxsPVwiI2ZmZjNkOVwiXG4gICAgICAgICAgc3Ryb2tlPVwiI2I2NzU0MVwiXG4gICAgICAgICAgc3Ryb2tlV2lkdGg9XCIyXCJcbiAgICAgICAgLz5cbiAgICAgICAgPHBhdGhcbiAgICAgICAgICBkPVwiTTY2IDg4aDE5bS0xOSA2aDE2bS0xNiA2aDEyXCJcbiAgICAgICAgICBmaWxsPVwibm9uZVwiXG4gICAgICAgICAgc3Ryb2tlPVwiIzk5NzQ1N1wiXG4gICAgICAgICAgc3Ryb2tlV2lkdGg9XCIxLjZcIlxuICAgICAgICAgIHN0cm9rZUxpbmVjYXA9XCJyb3VuZFwiXG4gICAgICAgIC8+XG4gICAgICAgIDxwYXRoIGQ9XCJNNjggNzdoOHY1aC04WlwiIGZpbGw9XCIjZjFiYzYwXCIgLz5cbiAgICAgIDwvZz5cbiAgICAgIDxwYXRoXG4gICAgICAgIGQ9XCJtMjcgOTQgMjAtMTYgNCA0LTE5IDE3LTcgMlpcIlxuICAgICAgICBmaWxsPVwiI2ZmY2Y1MlwiXG4gICAgICAgIHN0cm9rZT1cIiM4MzQ0MWZcIlxuICAgICAgICBzdHJva2VXaWR0aD1cIjEuNVwiXG4gICAgICAgIHN0cm9rZUxpbmVqb2luPVwicm91bmRcIlxuICAgICAgLz5cbiAgICAgIDxwYXRoIGQ9XCJtNDYgNzkgNC0zIDQgNC00IDNaXCIgZmlsbD1cIiNmMzg0NzBcIiBzdHJva2U9XCIjODM0NDFmXCIgc3Ryb2tlV2lkdGg9XCIxLjJcIiAvPlxuICAgICAgPHBhdGggZD1cIk0yMyA5MXE2LTQgMTAgMHQtMSA3cS02IDMtOS0xWlwiIGZpbGw9XCIjYTU2YjQ1XCIgc3Ryb2tlPVwiIzY4MzkyM1wiIHN0cm9rZVdpZHRoPVwiMS44XCIgLz5cbiAgICAgIDxwYXRoIGQ9XCJNODkgODhxOC0zIDEwIDN0LTcgN3EtNS0xLTMtMTBaXCIgZmlsbD1cIiNhNTZiNDVcIiBzdHJva2U9XCIjNjgzOTIzXCIgc3Ryb2tlV2lkdGg9XCIxLjhcIiAvPlxuICAgIDwvc3ZnPlxuICApXG59XG4iXSwiZmlsZSI6IkM6L1VzZXJzL2dlZXplL0Rvd25sb2Fkcy9MQU5ESU5HLVBBR0Uvc3JjL2NvbXBvbmVudHMvZ29yaWxsYS9Hb3JpbGxhQXJ0LmpzeCJ9

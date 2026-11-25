@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:3001/api')
 
 // Resolve EventSource against the same API host as the authenticated ticket request.
 export const apiUrl = (path) => `${API_URL.replace(/\/$/, '')}${path}`
@@ -32,6 +32,7 @@ export async function apiResponse(path, options = {}) {
     error.code = payload.code
     error.field = payload.field
     error.remainingAttempts = payload.remainingAttempts
+    error.retryAfterSeconds = payload.retryAfterSeconds
     error.rejectedAttempts = payload.rejectedAttempts
     throw error
   }
@@ -40,5 +41,10 @@ export async function apiResponse(path, options = {}) {
 
 export async function apiRequest(path, options = {}) {
   const response = await apiResponse(path, options)
-  return response.json().catch(() => ({}))
+  if (response.status === 204) return {}
+  try {
+    return await response.json()
+  } catch (cause) {
+    throw new Error('FitPulse received an invalid API response. Check the server address and try again.', { cause })
+  }
 }

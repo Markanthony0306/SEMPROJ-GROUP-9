@@ -110,10 +110,16 @@ export class ReportRepository {
         error.message
       )
 
+      if (['PGRST202', '42883'].includes(error.code)) {
+        throw new ReportRepositoryError(
+          'Report clearing is unavailable. Apply the migration supabase/migrations/004_clear_report_records.sql.',
+          503
+        )
+      }
       // Do not return a false success response.
       throw new ReportRepositoryError(
         'Unable to clear report records. No successful deletion was confirmed.',
-        500
+        503
       )
     }
 
