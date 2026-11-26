@@ -117,6 +117,8 @@ export function memberRegistrationRoutes({
           authUserId,
           memberCode: persisted.member_code,
           name: input.name,
+          ...(input.firstName ? { firstName: input.firstName } : {}),
+          ...(input.lastName ? { lastName: input.lastName } : {}),
           email: input.email,
           phone: input.phone || '',
           role: 'user',

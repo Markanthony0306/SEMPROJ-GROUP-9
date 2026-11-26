@@ -1003,3 +1003,43 @@ html:has(#login) {
     display: none;
   }
 }
+
+#login .login-not-found {
+  width: min(100%, 30rem);
+  margin: auto;
+}
+
+#login .member-terms-scroll {
+  max-height: min(30vh, 16rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 1rem 1rem 1rem 1.75rem;
+  line-height: 1.55;
+}
+
+#login .member-terms-scroll ol {
+  margin: 0;
+  padding-inline-start: 1rem;
+}
+
+#login .member-terms-scroll li + li {
+  margin-top: 0.85rem;
+}
+
+#login .member-terms-scroll h3,
+#login .member-terms-scroll p {
+  margin: 0;
+}
+
+#login .member-terms-accept {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-block: 0.9rem;
+}
+
+#login .member-terms-accept input {
+  accent-color: var(--orange);
+  flex: 0 0 auto;
+  margin-top: 0.2rem;
+}

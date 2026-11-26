@@ -1,13 +1,14 @@
-import { useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useTheme } from '../components/brand/useTheme'
 import Dialog from '../components/Dialog'
 import Spinner from '../components/Spinner'
-import FacialLoginChallenge from '../components/FacialLoginChallenge'
+import HeartRateLoader from '../components/HeartRateLoader'
 import { apiRequest } from '../utils/api'
 import { gorillaEvents } from '../../shared/gorillaEvents'
 import './Login.css'
 
-const FAILED_LOGIN_LIMIT = 5
+const FacialLoginChallenge = lazy(() => import('../components/FacialLoginChallenge'))
+const MemberTerms = lazy(() => import('../components/MemberTerms'))
 // Login uses the same alert wording inside its existing accessible dialog.
 const loginLockAlert = gorillaEvents.loginLocked()
 
@@ -163,9 +164,9 @@ export default function Login({ onLogin }) {
   const [showPassword, setShowPassword] = useState(false)
   const [capsLock, setCapsLock] = useState(false)
   const [pending, setPending] = useState(false)
-  const [failedAttempts, setFailedAttempts] = useState(0)
+  const [lockedAccount, setLockedAccount] = useState(null)
   const [showLockAlert, setShowLockAlert] = useState(false)
-  const loginLocked = failedAttempts >= FAILED_LOGIN_LIMIT
+  const loginLocked = lockedAccount?.email === email.trim().toLowerCase()
   const [shaking, setShaking] = useState(false)
   const [errors, setErrors] = useState({ email: '', password: '', general: '' })
   const [resetOpen, setResetOpen] = useState(false)
@@ -173,11 +174,21 @@ export default function Login({ onLogin }) {
   const [resetPending, setResetPending] = useState(false)
   const [resetError, setResetError] = useState('')
   const [toast, setToast] = useState('')
+  const [termsTicket, setTermsTicket] = useState('')
   const [faceChallenge, setFaceChallenge] = useState('')
   const { dark, toggle: toggleTheme } = useTheme()
   const emailRef = useRef(null)
   const passwordRef = useRef(null)
   const submissionLock = useRef(false)
+
+  useEffect(() => {
+    if (!lockedAccount) return undefined
+    const timer = window.setTimeout(
+      () => setLockedAccount(null),
+      Math.max(1, lockedAccount.retryAfterSeconds) * 1000
+    )
+    return () => window.clearTimeout(timer)
+  }, [lockedAccount])
 
   const clearErrors = () => setErrors({ email: '', password: '', general: '' })
   const finishLogin = (session) => {
@@ -215,26 +226,27 @@ export default function Login({ onLogin }) {
         method: 'POST',
         body: JSON.stringify({ email: normalizedEmail, password: submittedPassword })
       })
-      if (session.requiresFace === true && session.challenge) {
+      if (session.requiresTerms === true && session.termsTicket) {
+        setTermsTicket(session.termsTicket)
+      } else if (session.requiresFace === true && session.challenge) {
         // No application session is issued until all face checks succeed.
         setFaceChallenge(session.challenge)
       } else if (session.token && session.user) finishLogin(session)
       else throw new Error('Unable to start sign-in. Please try again.')
-      setFailedAttempts(0)
       setPassword('')
       setShaking(false)
     } catch (error) {
       setShowPassword(false)
-      if (error.code === 'INVALID_CREDENTIALS') {
-        const nextAttempts = failedAttempts + 1
-        setFailedAttempts(nextAttempts)
-        if (nextAttempts >= FAILED_LOGIN_LIMIT) {
-          setPassword('')
-          setShaking(false)
-          setErrors({ email: '', password: '', general: loginLockAlert.message })
-          setShowLockAlert(true)
-          return
-        }
+      if (error.code === 'LOGIN_LOCKED') {
+        setLockedAccount({
+          email: normalizedEmail,
+          retryAfterSeconds: Math.max(1, Number(error.retryAfterSeconds) || 900)
+        })
+        setPassword('')
+        setShaking(false)
+        setErrors({ email: '', password: '', general: error.message || loginLockAlert.message })
+        setShowLockAlert(true)
+        return
       }
       setErrors({
         email: '',
@@ -431,19 +443,32 @@ export default function Login({ onLogin }) {
               <p className="lfoot">Need an account? Ask your gym admin to create one for you.</p>
         </section>
       </div>
-      {faceChallenge && (
-        <FacialLoginChallenge
-          challenge={faceChallenge}
-          onCancel={() => { setFaceChallenge(''); setPassword('') }}
-          onVerified={session => { setFaceChallenge(''); finishLogin(session); setFailedAttempts(0); setPassword('') }}
-        />
-      )}
+      <Suspense fallback={<HeartRateLoader message="Opening secure sign-in" />}>
+        {termsTicket && (
+          <MemberTerms
+            ticket={termsTicket}
+            onCancel={() => setTermsTicket('')}
+            onAccepted={(result) => {
+              setTermsTicket('')
+              if (result.session) finishLogin(result.session)
+              else setFaceChallenge(result.challenge)
+            }}
+          />
+        )}
+        {faceChallenge && (
+          <FacialLoginChallenge
+            challenge={faceChallenge}
+            onCancel={() => { setFaceChallenge(''); setPassword('') }}
+            onVerified={(session) => { setFaceChallenge(''); finishLogin(session); setPassword('') }}
+          />
+        )}
+      </Suspense>
       {showLockAlert && (
         <Dialog title={loginLockAlert.title} onClose={() => setShowLockAlert(false)} alert>
           <p className="modal-copy">{loginLockAlert.message}</p>
           <div className="ma">
-            <button className="btn" type="button" onClick={() => window.location.reload()} data-autofocus>
-              Refresh page
+            <button className="btn" type="button" onClick={() => setShowLockAlert(false)} data-autofocus>
+              Close
             </button>
           </div>
         </Dialog>

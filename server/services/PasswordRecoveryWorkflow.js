@@ -26,10 +26,9 @@ export class PasswordRecoveryWorkflow {
 
     if (!profile || profile.status !== 'active') return response
 
-    const { error } = await this.repository.sendResetLink(
-      profile.email,
-      `${this.clientUrl}/reset-password`
-    )
+    const resetUrl = new URL(this.clientUrl)
+    resetUrl.searchParams.set('route', 'reset-password')
+    const { error } = await this.repository.sendResetLink(profile.email, resetUrl.toString())
     if (error) throw error
     return response
   }

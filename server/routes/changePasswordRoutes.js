@@ -23,7 +23,7 @@ export function registerChangePasswordRoutes(app, { authenticate, rateLimit, pas
         })
         return res.json({
           message: 'Password updated.',
-          session: createSession(account)
+          session: createSession(account, req.user.termsVersion)
         })
       } catch (error) {
         if (error instanceof ChangePasswordError) {

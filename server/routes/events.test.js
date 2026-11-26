@@ -8,6 +8,7 @@ import { createFitPulseEvents } from '../services/fitPulseEvents.js'
 import { gorillaEvents } from '../../shared/gorillaEvents.js'
 import { registerEquipmentRoutes } from './equipmentRoutes.js'
 import { EQUIPMENT_CATEGORIES } from '../../shared/equipmentCategories.js'
+import { MEMBER_TERMS_VERSION } from '../../shared/memberTerms.js'
 
 // Use the actual session and SSE middleware with synthetic accounts and no database writes.
 test('stream tickets are scoped and alerts are isolated by role and account', async () => {
@@ -36,7 +37,7 @@ test('stream tickets are scoped and alerts are isolated by role and account', as
   const request = new AbortController()
 
   async function mint(account) {
-    const { token } = createSession(account)
+    const { token } = createSession(account, ['user', 'member'].includes(account.role) ? MEMBER_TERMS_VERSION : undefined)
     const response = await fetch(`${stream}/ticket`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },

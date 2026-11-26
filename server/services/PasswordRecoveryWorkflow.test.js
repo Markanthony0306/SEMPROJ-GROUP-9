@@ -71,7 +71,7 @@ test('forgot-password sends the same Supabase reset link for active profiles', a
   assert.deepEqual(await workflow.forgotPassword({ email: ' Member@Example.com ' }), generic)
   assert.deepEqual(calls, [
     ['findProfileByEmail', 'member@example.com'],
-    ['sendResetLink', 'member@example.com', 'http://localhost:5173/reset-password']
+    ['sendResetLink', 'member@example.com', 'http://localhost:5173/?route=reset-password']
   ])
 })
 

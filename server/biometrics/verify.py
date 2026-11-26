@@ -76,6 +76,143 @@ def normalize(text):
     return re.sub(r"[^A-Z0-9 ]+", " ", "".join(c for c in text.upper() if not unicodedata.combining(c))).strip()
 
 
+def normalize_phrase(text):
+    """Normalize OCR spacing before exact ID-label comparisons."""
+    return re.sub(r"\s+", " ", normalize(text)).strip()
+
+
+def ocr_contains_name_token(expected, recognized):
+    """Match an entered name token despite a single OCR character error."""
+    words = recognized.split()
+    if expected in words or expected in "".join(words):
+        return True
+    if len(expected) < 5:
+        return False
+    for word in words:
+        if abs(len(expected) - len(word)) > 1:
+            continue
+        left = right = errors = 0
+        while left < len(expected) and right < len(word):
+            if expected[left] == word[right]:
+                left += 1
+                right += 1
+                continue
+            errors += 1
+            if errors > 1:
+                break
+            if len(expected) > len(word):
+                left += 1
+            elif len(word) > len(expected):
+                right += 1
+            else:
+                left += 1
+                right += 1
+        if errors <= 1 and (len(expected) - left) + (len(word) - right) <= 1:
+            return True
+    return False
+
+
+def ocr_matches_member_name(first_name, last_name, recognized):
+    """Require the leading given name and every last-name token.
+
+    OCR often drops a middle/additional given name even when the ID is readable.
+    The first-name field may contain several given names, so only its leading
+    token is required; compound last names remain fully checked.
+    """
+    first_name_tokens = [x for x in normalize(first_name).split() if len(x) > 1]
+    last_name_tokens = [x for x in normalize(last_name).split() if len(x) > 1]
+    return bool(first_name_tokens and last_name_tokens) and \
+        ocr_contains_name_token(first_name_tokens[0], recognized) and \
+        all(ocr_contains_name_token(token, recognized) for token in last_name_tokens)
+
+
+def read_id_text(gray):
+    """Read ID text with several Tesseract layouts and contrast variants."""
+    clahe = cv2.createCLAHE(clipLimit=2, tileGridSize=(8, 8)).apply(gray)
+    _, otsu = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    adaptive = cv2.adaptiveThreshold(
+        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 9
+    )
+    passes = (
+        (gray, 11),
+        (clahe, 11),
+        (gray, 6),
+        (clahe, 6),
+        (otsu, 6),
+        (adaptive, 6),
+    )
+    recognized = []
+    seen = set()
+    for image, page_mode in passes:
+        text = pytesseract.image_to_string(image, config=f"--oem 3 --psm {page_mode}")
+        normalized = normalize_phrase(text)
+        if normalized and normalized not in seen:
+            seen.add(normalized)
+            recognized.append(normalized)
+    return " ".join(recognized)
+
+
+def crop_philid_card(gray):
+    """Crop a visible landscape ID card so PhilID field coordinates are stable."""
+    height, width = gray.shape
+    work = cv2.resize(gray, (480, max(160, round(480 * height / width))))
+    edges = cv2.Canny(cv2.GaussianBlur(work, (5, 5), 0), 45, 125)
+    contours, _ = cv2.findContours(edges, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    area = float(work.shape[0] * work.shape[1])
+    candidates = []
+    for contour in sorted(contours, key=cv2.contourArea, reverse=True)[:24]:
+        perimeter = cv2.arcLength(contour, True)
+        if perimeter < 1:
+            continue
+        polygon = cv2.approxPolyDP(contour, 0.03 * perimeter, True)
+        if len(polygon) != 4 or not cv2.isContourConvex(polygon):
+            continue
+        x, y, card_width, card_height = cv2.boundingRect(polygon)
+        fraction = cv2.contourArea(polygon) / area
+        aspect = max(card_width, card_height) / max(1, min(card_width, card_height))
+        if 1.25 <= aspect <= 2.4 and 0.10 <= fraction < 0.94:
+            candidates.append((fraction, x, y, card_width, card_height))
+
+    if not candidates:
+        return gray
+
+    _, x, y, card_width, card_height = max(candidates)
+    scale_x = width / work.shape[1]
+    scale_y = height / work.shape[0]
+    left = max(0, int(x * scale_x))
+    top = max(0, int(y * scale_y))
+    right = min(width, int((x + card_width) * scale_x))
+    bottom = min(height, int((y + card_height) * scale_y))
+    crop = gray[top:bottom, left:right]
+    return crop if crop.size else gray
+
+
+def read_philid_name_text(gray):
+    """Read PhilID's separated given-name and last-name value rows directly."""
+    card = crop_philid_card(gray)
+    height, width = card.shape
+    name_rows = (
+        # Relative to the standard landscape PhilID front layout.
+        ("last", 0.285, 0.33, 0.43, 0.38),
+        ("given", 0.28, 0.45, 0.52, 0.51),
+    )
+    recognized = []
+    for _, left, top, right, bottom in name_rows:
+        row = card[int(top * height):int(bottom * height), int(left * width):int(right * width)]
+        if row.size == 0:
+            continue
+        enlarged = cv2.resize(row, None, fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+        for page_mode in (7, 8, 13):
+            text = pytesseract.image_to_string(
+                enlarged,
+                config=f"--oem 3 --psm {page_mode} -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+            )
+            normalized = normalize_phrase(text)
+            if normalized:
+                recognized.append(normalized)
+    return " ".join(recognized)
+
+
 def read_image(value):
     if not isinstance(value, str):
         raise ValueError("A captured photo is required.")
@@ -138,6 +275,9 @@ def make_detector():
 def document_guidance(req):
     """Conservative frame-by-frame visual advice, not proof of ID authenticity."""
     img = read_image(req.get("image"))
+    terms = TYPE_TERMS.get(req.get("idType"))
+    if not terms:
+        return {"ok": True, "code": "ID_TYPE_REQUIRED", "message": "Select an ID type before scanning.", "ready": False}
     h, w = img.shape[:2]
     work = cv2.resize(img, (480, max(160, round(480 * h / w))))
     gray = cv2.cvtColor(work, cv2.COLOR_BGR2GRAY)
@@ -167,15 +307,39 @@ def document_guidance(req):
         aspect = max(bw, bh) / max(1, min(bw, bh))
         if 1.25 <= aspect <= 2.4 and .04 < fraction < .94:
             candidates.append((fraction, x, y, bw, bh))
-    if candidates:
-        fraction, x, y, bw, bh = max(candidates)
-        if fraction < .23:
-            return {"ok": True, "code": "CLOSER", "message": "Move the ID closer to the camera.", "ready": False}
-        if fraction > .78 or x < 6 or y < 6 or x + bw > work.shape[1] - 6 or y + bh > work.shape[0] - 6:
-            return {"ok": True, "code": "FRAME", "message": "Move back slightly. Keep all four corners visible.", "ready": False}
-        center_offset = abs(x + bw / 2 - work.shape[1] / 2) / work.shape[1]
-        if center_offset > .18:
-            return {"ok": True, "code": "CENTER", "message": "Center the ID inside the outline.", "ready": False}
+    # Fail closed: a clear, still camera frame is not evidence that an ID is
+    # present. Previously this path fell through to POSITION_OK when no card
+    # outline was found, which could auto-capture an empty room/background.
+    if not candidates:
+        return {"ok": True, "code": "NO_DOCUMENT", "message": "Show the ID inside the frame; no document is detected.", "ready": False}
+    fraction, x, y, bw, bh = max(candidates)
+    if fraction < .23:
+        return {"ok": True, "code": "CLOSER", "message": "Move the ID closer to the camera.", "ready": False}
+    if fraction > .78 or x < 6 or y < 6 or x + bw > work.shape[1] - 6 or y + bh > work.shape[0] - 6:
+        return {"ok": True, "code": "FRAME", "message": "Move back slightly. Keep all four corners visible.", "ready": False}
+    center_offset = abs(x + bw / 2 - work.shape[1] / 2) / work.shape[1]
+    if center_offset > .18:
+        return {"ok": True, "code": "CENTER", "message": "Center the ID inside the outline.", "ready": False}
+    # A room object can have card-like proportions. Require OCR to see the
+    # selected ID type on the framed object before permitting auto-capture.
+    card = gray[y + max(1, int(bh * .06)):y + int(bh * .94), x + max(1, int(bw * .04)):x + int(bw * .96)]
+    if card.size == 0:
+        return {"ok": True, "code": "NO_DOCUMENT", "message": "Show the ID inside the frame; no document is detected.", "ready": False}
+    enlarged = cv2.resize(card, None, fx=3, fy=3, interpolation=cv2.INTER_CUBIC)
+    text = pytesseract.image_to_string(enlarged, config="--psm 11")
+    normalized = normalize_phrase(text)
+    if req.get("side") == "back":
+        readable_chars = len(re.sub(r"[^A-Z0-9]", "", normalized))
+        if readable_chars < 12:
+            return {"ok": True, "code": "ID_TEXT_NOT_FOUND", "message": "Show the ID's text or barcode clearly and hold it steady.", "ready": False}
+    else:
+        if not any(normalize_phrase(term) in normalized for term in terms):
+            return {"ok": True, "code": "ID_TEXT_NOT_FOUND", "message": "The selected ID type is not readable yet. Center the ID and hold it steady.", "ready": False}
+        last_name = req.get("lastName") if req.get("lastName") is not None else req.get("surname")
+        if not normalize(req.get("firstName")).strip() or not normalize(last_name).strip():
+            return {"ok": True, "code": "NAME_REQUIRED", "message": "Enter both the member's first name and last name before scanning.", "ready": False}
+        if not ocr_matches_member_name(req.get("firstName"), last_name, normalized):
+            return {"ok": True, "code": "NAME_NOT_FOUND", "message": "The first name or last name is not readable yet. Center the ID and hold it steady.", "ready": False}
     return {"ok": True, "code": "POSITION_OK", "message": "Position looks good. Hold still before capturing.", "ready": True}
 
 
@@ -301,21 +465,34 @@ def verify_id(req, detector, recognizer):
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     zoom = max(1.0, min(2.0, 1600.0 / max(gray.shape)))
     gray = cv2.resize(gray, None, fx=zoom, fy=zoom)
-    clahe = cv2.createCLAHE(clipLimit=2, tileGridSize=(8, 8)).apply(gray)
-    text = " ".join([pytesseract.image_to_string(image, config="--psm 11") for image in (gray, clahe)])
-    normalized = normalize(text)
+    normalized = read_id_text(gray)
     kind = req.get("idType")
     terms = TYPE_TERMS.get(kind)
     if not terms:
         return fail("ID_TYPE_UNSUPPORTED", "Choose a supported ID type.")
-    if not any(normalize(term) in normalized for term in terms):
+    if not any(normalize_phrase(term) in normalized for term in terms):
         return fail("ID_TYPE_MISMATCH", "The captured ID does not match the chosen ID type, or its label is unreadable.")
-    name_tokens = [x for x in normalize(req.get("name")).split() if len(x) > 1]
-    if len(name_tokens) < 2:
-        return fail("NAME_REQUIRED", "Enter the member's full name before verification.")
-    # Require first and last names, tolerate OCR line separation and middle-name omissions.
-    compact = normalized.replace(" ", "")
-    if not all(t in normalized.split() or t in compact for t in (name_tokens[0], name_tokens[-1])):
+    last_name = req.get("lastName") if req.get("lastName") is not None else req.get("surname")
+    first_name_tokens = [x for x in normalize(req.get("firstName")).split() if len(x) > 1]
+    last_name_tokens = [x for x in normalize(last_name).split() if len(x) > 1]
+    if req.get("firstName") is not None or req.get("lastName") is not None or req.get("surname") is not None:
+        if not first_name_tokens or not last_name_tokens:
+            return fail("NAME_REQUIRED", "Enter both the member's first name and last name before verification.")
+        first_name = req.get("firstName")
+    else:
+        name_tokens = [x for x in normalize(req.get("name")).split() if len(x) > 1]
+        if len(name_tokens) < 2:
+            return fail("NAME_REQUIRED", "Enter the member's full name before verification.")
+        # Older clients send a single full-name field; ignore middle names.
+        first_name = name_tokens[0]
+        last_name = name_tokens[-1]
+    # Check the leading given name and every last-name token, tolerating OCR
+    # line breaks, one-character errors, and omitted additional given names.
+    if not ocr_matches_member_name(first_name, last_name, normalized) and kind == "philid":
+        # The PhilID's decorative background can hide its surname in whole-card
+        # OCR. Use its printed value rows as a supplemental local OCR source.
+        normalized = " ".join((normalized, read_philid_name_text(gray)))
+    if not ocr_matches_member_name(first_name, last_name, normalized):
         return fail("ID_DETAILS_MISMATCH", "Make sure ID details matches with the entered details")
     embedding, _ = descriptor(img, detector, recognizer, "id")
     return {"ok": True, "embedding": embedding, "idType": kind}

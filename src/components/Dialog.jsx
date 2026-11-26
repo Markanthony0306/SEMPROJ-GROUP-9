@@ -21,7 +21,9 @@ export default function Dialog({
   className = '',
   alert = false,
   sheet = false,
-  invalidField
+  invalidField,
+  dismissOnBackdrop = true,
+  dismissOnEscape = true
 }) {
   const mobileDashboard = useContext(DashboardSheetContext)
   const bottomSheet = mobileDashboard || sheet
@@ -52,9 +54,9 @@ export default function Dialog({
       aria-busy={busy}
       onCancel={(event) => {
         event.preventDefault()
-        if (!busy) onClose()
+        if (!busy && dismissOnEscape) onClose()
       }}
-      onMouseDown={(event) => !busy && event.target === event.currentTarget && onClose()}
+      onMouseDown={(event) => !busy && dismissOnBackdrop && event.target === event.currentTarget && onClose()}
       onInvalidCapture={bottomSheet ? (event) => {
         const field = event.target
         if (field.form?.querySelector('input:invalid, select:invalid, textarea:invalid') === field)

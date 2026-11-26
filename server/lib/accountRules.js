@@ -1,5 +1,6 @@
 import { Membership } from '../models/Membership.js'
 import { isRetiredPlan } from '../../shared/membershipPlans.js'
+import { composeMemberName, normalizeNamePart } from '../../shared/memberName.js'
 
 export const availablePlan =(plan, name) =>
   plan.is_active && !isRetiredPlan(plan.plan_name) &&
@@ -17,15 +18,28 @@ function addMembershipDays(date, durationDays = 30) {
   return Membership.addDays(date, durationDays)
 }
 function validAccountInput(body) {
-  const name = typeof body.name === 'string' ? body.name.trim() : ''
+  // Accept surname from older clients, but keep lastName as the canonical field.
+  const submittedLastName = body.lastName ?? body.surname
+  const hasSplitName = body.firstName !== undefined || body.lastName !== undefined || body.surname !== undefined
+  const firstName = normalizeNamePart(body.firstName)
+  const lastName = normalizeNamePart(submittedLastName)
+  const name = hasSplitName
+    ? composeMemberName(firstName, lastName)
+    : normalizeNamePart(body.name)
   const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
   const plan = typeof body.plan === 'string' ? body.plan.trim() : ''
   // Field names let the registration sheet focus the control the server rejected.
-  if (!name || name.length > 100) return { error: 'Please enter a name of up to 100 characters.', field: 'name' }
+  if (hasSplitName && !firstName) return { error: 'Please enter a first name.', field: 'firstName' }
+  if (hasSplitName && !lastName) return { error: 'Please enter a last name.', field: 'lastName' }
+  if (!name || name.length > 100) return {
+    error: hasSplitName ? 'First name and last name must total 100 characters or fewer.' : 'Please enter a name of up to 100 characters.',
+    field: hasSplitName ? 'lastName' : 'name'
+  }
   if (!emailPattern.test(email)) return { error: 'Please enter a valid email address.', field: 'email' }
   if (!plan || plan.length > 100) return { error: 'Choose a valid membership plan.', field: 'plan' }
   return {
     name,
+    ...(hasSplitName ? { firstName, lastName } : {}),
     email,
     phone: typeof body.phone === 'string' ? body.phone.trim() : '',
     plan

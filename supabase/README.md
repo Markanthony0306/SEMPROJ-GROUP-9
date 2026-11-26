@@ -17,6 +17,8 @@ Apply `migrations/005_admin_notifications.sql` after migration 001 to enable pri
 
 Apply `migrations/029_rocky_notifications.sql` to persist Rocky's inbox and enable member expiry alerts. The admin analytics dashboard reads attendance, membership, revenue, and payment-method totals from the existing tables; it does not need another SQL migration.
 
+Apply `migrations/030_member_name_parts.sql` and then `migrations/031_member_last_name.sql` after 029 to store `first_name` and `last_name` while keeping `users.name` as the combined display value. Migration 031 upgrades the earlier `surname` column/RPC name and should be applied before deploying the app version that sends `lastName`.
+
 FitPulse hands the one-time password to the administrator when a member is created. **Forgot password** uses Supabase Auth recovery and requires the frontend reset URL in the project's redirect allow list.
 
 Migration 009 retires Unlimited Monthly for new memberships. Historical subscriptions and payments keep their original plan.

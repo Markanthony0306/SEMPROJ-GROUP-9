@@ -42,6 +42,7 @@ test('app composition retains original route order and methods', () => {
   const expected = [
     ['/api/auth/register', 'post'],
     ['/api/auth/login', 'post'],
+    ['/api/auth/member-terms', 'post'],
     ['/api/auth/forgot-password', 'post'],
     ['/api/auth/reset-password/session', 'post'],
     ['/api/auth/reset-password', 'post'],

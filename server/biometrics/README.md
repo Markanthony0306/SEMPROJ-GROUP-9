@@ -7,8 +7,10 @@ This implementation is **local and API-key-free**, using Tesseract OCR, OpenCV Z
 From the existing project root (`C:\Users\Admin\SEMPROJ-GROUP-9`):
 
 ```powershell
-py -3 -m pip install --upgrade opencv-contrib-python numpy pytesseract
+py -3 -m pip install --upgrade -r .\server\biometrics\requirements.txt
 ```
+
+This installs the supported OpenCV version and PyMuPDF for PDF uploads.
 
 Install Tesseract OCR from the [UB Mannheim Windows builds](https://github.com/UB-Mannheim/tesseract/wiki) if it is not already installed. Ensure `tesseract.exe` is available on your PATH; alternatively set `FITPULSE_TESSERACT_EXE` to its complete filename in the backend environment (for example `C:\Program Files\Tesseract-OCR\tesseract.exe`).
 
@@ -28,7 +30,7 @@ Test the installation:
 py -3 -c "import cv2, numpy, pytesseract; print(cv2.__version__); print(pytesseract.get_tesseract_version())"
 ```
 
-If the app server starts with a different Python environment, set `FITPULSE_BIOMETRIC_PYTHON` to the executable path and restart your backend. The worker launches with `python` by default; on Windows, `python` must resolve to the installation that has these packages.
+On Windows, the verification worker uses `py -3` by default. On other platforms it uses `python`. If the app server should use a different Python environment, set `FITPULSE_BIOMETRIC_PYTHON` to that interpreter's executable path and restart the backend.
 
 ## Supabase migration
 

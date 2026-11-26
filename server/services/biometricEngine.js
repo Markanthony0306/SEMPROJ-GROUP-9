@@ -15,7 +15,16 @@ export class BiometricError extends Error {
 /** Raw images and biometric templates are never written to files or application logs. */
 export function verifyBiometric(payload) {
   return new Promise((resolve, reject) => {
-    const worker = spawn(process.env.FITPULSE_BIOMETRIC_PYTHON || 'python', [script], { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+    const configuredPython = process.env.FITPULSE_BIOMETRIC_PYTHON
+    // On Windows, `python` may resolve to a different installation than `py -3`.
+    // The project setup uses the Python launcher, so follow it unless an explicit
+    // interpreter path has been configured.
+    const command = configuredPython || (process.platform === 'win32' ? 'py' : 'python')
+    const args = [
+      ...(!configuredPython && process.platform === 'win32' ? ['-3'] : []),
+      script
+    ]
+    const worker = spawn(command, args, { stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
     let output = ''
     const timer = setTimeout(() => worker.kill(), 45_000)
     worker.on('error', () => reject(new BiometricError('Biometric Python service is unavailable.', 'BIOMETRIC_UNAVAILABLE', 503)))

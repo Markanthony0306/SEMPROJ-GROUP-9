@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import express from 'express'
 import { identityVerificationRoutes } from './identityVerification.js'
 import { issueProof } from '../services/identityProof.js'
+import { MEMBER_TERMS_VERSION } from '../../shared/memberTerms.js'
 
 const secret = 'test-only-secret-with-good-entropy'
 const actorId = 'admin-test'
@@ -65,7 +66,7 @@ test('ID and facial scans issue verified enrollment proof tied to member details
 
 test('member face-login challenge is required for a session, not a caller-supplied flag', async () => {
   const { app, called } = setup()
-  const challenge = issueProof({ purpose: 'face_login', memberId, authVersion: 0 }, secret)
+  const challenge = issueProof({ purpose: 'face_login', memberId, authVersion: 0, termsVersion: MEMBER_TERMS_VERSION }, secret)
   const noFrames = await post(app, '/auth/face-login', { challenge, frames: {} })
   assert.equal(noFrames.status, 400)
   assert.equal(called.length, 0)
@@ -79,7 +80,7 @@ test('member face-login challenge is required for a session, not a caller-suppli
 
 test('face login refuses accounts without an enrolled template', async () => {
   const { app, called } = setup({ faceTemplate: null })
-  const challenge = issueProof({ purpose: 'face_login', memberId, authVersion: 0 }, secret)
+  const challenge = issueProof({ purpose: 'face_login', memberId, authVersion: 0, termsVersion: MEMBER_TERMS_VERSION }, secret)
   const result = await post(app, '/auth/face-login', { challenge, frames, motion })
   assert.equal(result.status, 503)
   assert.equal(called.length, 0)
@@ -115,7 +116,7 @@ test('live preview requires authenticated admin and only supplies transient guid
 
 test('facial login rejects static three-photo submission without motion evidence', async () => {
   const { app, called } = setup()
-  const challenge = issueProof({ purpose: 'face_login', memberId, authVersion: 0 }, secret)
+  const challenge = issueProof({ purpose: 'face_login', memberId, authVersion: 0, termsVersion: MEMBER_TERMS_VERSION }, secret)
   const response = await post(app, '/auth/face-login', { challenge, frames })
   assert.equal(response.status, 400)
   assert.equal(response.data.code, 'MOTION_REQUIRED')
@@ -127,7 +128,7 @@ test('face preview requires signed login challenge before calling the model', as
   const blocked = await post(app, '/auth/face-guidance', { image, challenge: 'fake' })
   assert.equal(blocked.status, 403)
   assert.equal(called.length, 0)
-  const challenge = issueProof({ purpose: 'face_login', memberId, authVersion: 0 }, secret)
+  const challenge = issueProof({ purpose: 'face_login', memberId, authVersion: 0, termsVersion: MEMBER_TERMS_VERSION }, secret)
   const result = await post(app, '/auth/face-guidance', { image, challenge })
   assert.equal(result.status, 200)
   assert.equal(called[0].task, 'face-guidance')

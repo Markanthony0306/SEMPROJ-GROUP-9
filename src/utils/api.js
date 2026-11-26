@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:3001/api')
 
 // Resolve EventSource against the same API host as the authenticated ticket request.
 export const apiUrl = (path) => `${API_URL.replace(/\/$/, '')}${path}`
@@ -32,6 +32,7 @@ export async function apiResponse(path, options = {}) {
     error.code = payload.code
     error.field = payload.field
     error.remainingAttempts = payload.remainingAttempts
+    error.retryAfterSeconds = payload.retryAfterSeconds ?? (Number(response.headers.get('Retry-After')) || undefined)
     error.rejectedAttempts = payload.rejectedAttempts
     throw error
   }

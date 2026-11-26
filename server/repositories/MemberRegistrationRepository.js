@@ -29,10 +29,13 @@ export class MemberRegistrationRepository {
     enrollment
   }) {
     // 1. Convert application values into SQL function parameters.
+    const useNamePartsRpc = Boolean(enrollment && input.firstName && input.lastName)
     const payload = {
       p_actor_id: actorId,
       p_auth_user_id: authUserId,
-      p_name: input.name,
+      ...(useNamePartsRpc
+        ? { p_first_name: input.firstName, p_last_name: input.lastName }
+        : { p_name: input.name }),
       p_email: input.email,
       p_phone: input.phone || null,
       p_plan_id: planRecord.plan_id,
@@ -47,7 +50,9 @@ export class MemberRegistrationRepository {
 
     // 2. Execute the atomic PostgreSQL registration function.
     const { data, error } = await this.supabase.rpc(
-      enrollment ? 'register_fitpulse_member_with_face_atomic' : 'register_fitpulse_member_atomic',
+      useNamePartsRpc
+        ? 'register_fitpulse_member_with_name_parts_atomic'
+        : enrollment ? 'register_fitpulse_member_with_face_atomic' : 'register_fitpulse_member_atomic',
       payload
     )
 

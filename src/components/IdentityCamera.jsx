@@ -88,9 +88,12 @@ export default function IdentityCamera({ instruction, facingMode = 'user', onCap
   const guideTicket = guide?.ticket
   const guideChallenge = guide?.challenge
   const guideToken = guide?.token
+  const guideIdType = guide?.idType
+  const guideFirstName = guide?.firstName
+  const guideLastName = guide?.lastName ?? guide?.surname
   const oppositeYaw = guide?.oppositeYaw
 
-  useEffect(() => { captureSent.current = false }, [guideType, guideStage, guideTicket, guideChallenge, deviceId])
+  useEffect(() => { captureSent.current = false }, [guideType, guideStage, guideTicket, guideChallenge, guideIdType, guideFirstName, guideLastName, deviceId])
 
   useEffect(() => {
     motion.current = { neutral: null, turned: null, count: 0, yaw: null, lastSignature: null, steady: 0 }
@@ -122,7 +125,7 @@ export default function IdentityCamera({ instruction, facingMode = 'user', onCap
         const result = await apiRequest(endpoint, {
           ...(guideToken ? { token: guideToken } : {}),
           method: 'POST',
-          body: JSON.stringify({ image: photo, ...(guideTicket ? { ticket: guideTicket } : {}), ...(guideChallenge ? { challenge: guideChallenge } : {}) })
+          body: JSON.stringify({ image: photo, ...(guideTicket ? { ticket: guideTicket } : {}), ...(guideChallenge ? { challenge: guideChallenge } : {}), ...(guideIdType ? { idType: guideIdType } : {}), ...(guideType === 'id' && side ? { side } : {}), ...(guideFirstName ? { firstName: guideFirstName } : {}), ...(guideLastName ? { lastName: guideLastName } : {}) })
         })
         if (!active) return
         const state = motion.current
@@ -133,7 +136,7 @@ export default function IdentityCamera({ instruction, facingMode = 'user', onCap
           state.steady = result.ready && delta < 7.5 ? state.steady + 1 : 0
           const stable = state.steady >= 2
           setLiveReady(stable)
-          setLiveMessage(!result.ready ? result.message : stable ? 'All checks passed. Capturing automatically…' : 'Hold still… Checking focus and movement.')
+          setLiveMessage(!result.ready ? result.message || result.error || 'Show the selected ID clearly inside the frame.' : stable ? 'ID detected and checks passed. Capturing automatically…' : 'Hold still… Checking focus and movement.')
           if (stable) captureAutomatically()
         } else if (!result.found || !Number.isFinite(result.yaw)) {
           state.count = 0
@@ -179,7 +182,7 @@ export default function IdentityCamera({ instruction, facingMode = 'user', onCap
     void poll()
     const interval = setInterval(poll, 1150)
     return () => { active = false; clearInterval(interval) }
-  }, [ready, disabled, guideType, guideStage, guideTicket, guideChallenge, guideToken, oppositeYaw])
+  }, [ready, disabled, guideType, guideStage, guideTicket, guideChallenge, guideToken, guideIdType, guideFirstName, guideLastName, side, oppositeYaw])
 
   const capture = () => {
     if (!ready || disabled || captureSent.current || !video.current || (guideType && !liveReady)) return

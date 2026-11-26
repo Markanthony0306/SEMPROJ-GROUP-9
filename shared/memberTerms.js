@@ -1,0 +1,1 @@
+export const MEMBER_TERMS_VERSION = '2026-11-24'

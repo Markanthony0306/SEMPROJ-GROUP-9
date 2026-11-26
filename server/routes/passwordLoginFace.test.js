@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import express from 'express'
 import { passwordLoginHandler } from './passwordLogin.js'
 import { readProof } from '../services/identityProof.js'
+import { MEMBER_TERMS_VERSION } from '../../shared/memberTerms.js'
 
 const secret = 'face-login-test-key'
 const fakeAccount = {
@@ -11,7 +12,7 @@ const fakeAccount = {
 }
 function fakeSupabase({ template = true } = {}) {
   return { from(table) {
-    if (table === 'users') return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { id: 'member-123', auth_user_id: 'auth-1', role_id: 'role-member', status: 'active' } }) }) }) }
+    if (table === 'users') return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { id: 'member-123', auth_user_id: 'auth-1', role_id: 'role-member', status: 'active', member_terms_version: MEMBER_TERMS_VERSION } }) }) }) }
     if (table === 'roles') return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role_name: 'member' } }) }) }) }
     if (table === 'fitpulse_face_templates') return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: template ? { user_id: fakeAccount.id } : null }) }) }) }
     if (table === 'fitpulse_identity_policy') return { select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { enforced_from: '2026-11-19T00:00:00Z' } }) }) }) }

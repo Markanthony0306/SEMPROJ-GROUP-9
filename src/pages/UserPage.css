@@ -463,3 +463,26 @@
     transition: none;
   }
 }
+
+.member-app .privacy-policy-dialog {
+  max-height: min(86vh, 48rem);
+}
+
+.member-app .privacy-policy-copy {
+  display: grid;
+  gap: 0.5rem;
+  max-height: min(55vh, 30rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0.75rem;
+}
+
+.member-app .privacy-policy-copy h3,
+.member-app .privacy-policy-copy p {
+  margin: 0;
+}
+
+.member-app .privacy-policy-copy h3 {
+  margin-top: 0.5rem;
+  font-size: 1rem;
+}

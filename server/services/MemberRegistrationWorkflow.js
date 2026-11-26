@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { composeMemberName } from '../../shared/memberName.js'
 
 
 const CONFIRMED_SQL_REJECTIONS = new Set([
@@ -110,6 +111,9 @@ export class MemberRegistrationWorkflow {
       method,
       enrollment
     } = prepared
+    const registrationInput = input.firstName && input.lastName
+      ? { ...input, name: composeMemberName(input.firstName, input.lastName) }
+      : input
 
     // STEP 1: Generate the temporary password.
     const temporaryPassword = this.generateTemporaryPassword()
@@ -119,14 +123,14 @@ export class MemberRegistrationWorkflow {
     // STEP 2: Create the Supabase Auth account.
     try {
       const { data, error } = await this.authAdmin.createUser({
-        email: input.email,
+        email: registrationInput.email,
         password: temporaryPassword,
         email_confirm: true,
-        user_metadata: { name: input.name }
+        user_metadata: { name: registrationInput.name }
       })
 
       if (error || !data?.user?.id) {
-        logAuthCreationDiagnostic(error ? 'auth_api_rejected' : 'auth_user_id_missing', error, input.email)
+        logAuthCreationDiagnostic(error ? 'auth_api_rejected' : 'auth_user_id_missing', error, registrationInput.email)
         throw new MemberRegistrationWorkflowError(
           'AUTH_CREATION_UNCONFIRMED',
           'Unable to confirm that the member login was created. Check Supabase Auth before retrying.',
@@ -141,7 +145,7 @@ export class MemberRegistrationWorkflow {
         throw error
       }
 
-      logAuthCreationDiagnostic('auth_api_exception', error, input.email)
+      logAuthCreationDiagnostic('auth_api_exception', error, registrationInput.email)
       throw new MemberRegistrationWorkflowError(
         'AUTH_CREATION_UNCONFIRMED',
         'Unable to confirm that the member login was created. Check Supabase Auth before retrying.',
@@ -154,7 +158,7 @@ export class MemberRegistrationWorkflow {
       const persisted = await this.repository.register({
         actorId,
         authUserId,
-        input,
+        input: registrationInput,
         planRecord,
         recordPayment,
         method,

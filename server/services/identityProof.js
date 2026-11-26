@@ -45,7 +45,16 @@ export function readProof(token, purpose, secret) {
 }
 export function normalizeIdentity(value) { return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ') }
 export function assertSameMember(proof, input) {
-  if (normalizeIdentity(proof.name) !== normalizeIdentity(input.name) || normalizeIdentity(proof.email) !== normalizeIdentity(input.email))
+  const proofLastName = proof.lastName ?? proof.surname
+  const inputLastName = input.lastName ?? input.surname
+  const proofHasNameParts = proof.firstName !== undefined || proofLastName !== undefined
+  const inputHasNameParts = input.firstName !== undefined || inputLastName !== undefined
+  const namesMatch = proofHasNameParts || inputHasNameParts
+    ? proofHasNameParts && inputHasNameParts &&
+      normalizeIdentity(proof.firstName) === normalizeIdentity(input.firstName) &&
+      normalizeIdentity(proofLastName) === normalizeIdentity(inputLastName)
+    : normalizeIdentity(proof.name) === normalizeIdentity(input.name)
+  if (!namesMatch || normalizeIdentity(proof.email) !== normalizeIdentity(input.email))
     throw new BiometricError('Make sure ID details matches with the entered details', 'ID_DETAILS_MISMATCH', 422)
 }
 export function validEmbedding(input) {

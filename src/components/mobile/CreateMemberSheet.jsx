@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Modal } from '../admin/AdminDialogParts'
 import IdentityCamera from '../IdentityCamera'
 import { apiRequest } from '../../utils/api'
+import { composeMemberName, normalizeNamePart } from '../../../shared/memberName.js'
 import '../VerificationFlow.css'
 
 const ID_TYPES = [
@@ -33,7 +34,7 @@ function Progress({ current }) {
   )
 }
 
-const EMPTY_DETAILS = { name: '', email: '', phone: '', plan: '' }
+const EMPTY_DETAILS = { firstName: '', lastName: '', email: '', phone: '', plan: '' }
 const MAX_UPLOAD_BYTES = 4_000_000
 
 function readIdentityFile(file, format) {
@@ -76,6 +77,7 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
   const busy = pending || localPending
   const requiresBackSide = idType && idType !== 'passport'
   const uploadReady = Boolean(idPdf || (idFront && (!requiresBackSide || idBack)))
+  const memberFullName = composeMemberName(details.firstName, details.lastName)
 
   function moveTo(next) {
     setLocalError('')
@@ -111,11 +113,21 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
 
   function submitDetails(event) {
     event.preventDefault()
+    if (memberFullName.length > 100) {
+      setLocalError('First name and last name must total 100 characters or fewer.')
+      return
+    }
     if (!consent || !idType || !method) {
       setLocalError('Select a payment method and ID type, and obtain member consent.')
       return
     }
-    setDetails(current => ({ ...current, name: current.name.trim(), email: current.email.trim().toLowerCase(), phone: current.phone.trim() }))
+    setDetails(current => ({
+      ...current,
+      firstName: normalizeNamePart(current.firstName),
+      lastName: normalizeNamePart(current.lastName),
+      email: current.email.trim().toLowerCase(),
+      phone: current.phone.trim()
+    }))
     resetIdScan()
   }
 
@@ -192,7 +204,8 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
         token,
         method: 'POST',
         body: JSON.stringify({
-          name: details.name,
+          firstName: details.firstName,
+          lastName: details.lastName,
           email: details.email,
           idType,
           consent,
@@ -268,6 +281,8 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
       error={localError || error}
       invalidField={fieldError}
       onClose={onClose}
+      dismissOnBackdrop={false}
+      dismissOnEscape={false}
     >
       <p className="fp-verification-subtitle">Step {stepNumber} of 4 · {subtitle}</p>
       <Progress current={active} />
@@ -276,14 +291,17 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
         <form className="fp-verification-content" onSubmit={submitDetails}>
           <h3>Member details</h3>
           <div className="fp-verification-form-grid">
-            <label className="field"><span className="fp-field-label">Full name <span className="fp-required">*</span></span>
-              <input className="clay-in" name="name" value={details.name} onChange={e => setDetails(d => ({ ...d, name: e.target.value }))} maxLength={100} required placeholder="Juan Dela Cruz" />
+            <label className="field"><span className="fp-field-label">First name <span className="fp-required">*</span></span>
+              <input className="clay-in" name="firstName" autoComplete="given-name" value={details.firstName} onChange={e => setDetails(d => ({ ...d, firstName: e.target.value }))} maxLength={80} required placeholder="First name" />
+            </label>
+            <label className="field"><span className="fp-field-label">Last Name <span className="fp-required">*</span></span>
+              <input className="clay-in" name="lastName" autoComplete="family-name" value={details.lastName} onChange={e => setDetails(d => ({ ...d, lastName: e.target.value }))} maxLength={80} required placeholder="Last Name" />
             </label>
             <label className="field"><span className="fp-field-label">Contact number <span className="fp-optional">(optional)</span></span>
-              <input className="clay-in" name="phone" type="tel" value={details.phone} onChange={e => setDetails(d => ({ ...d, phone: e.target.value }))} placeholder="09XX XXX XXXX" />
+              <input className="clay-in" name="phone" type="tel" autoComplete="tel" value={details.phone} onChange={e => setDetails(d => ({ ...d, phone: e.target.value }))} placeholder="09XX XXX XXXX" />
             </label>
             <label className="field"><span className="fp-field-label">Email <span className="fp-required">*</span></span>
-              <input className="clay-in" name="email" type="email" value={details.email} onChange={e => setDetails(d => ({ ...d, email: e.target.value }))} required placeholder="juan123@gmail.com" />
+              <input className="clay-in" name="email" type="email" autoComplete="email" value={details.email} onChange={e => setDetails(d => ({ ...d, email: e.target.value }))} required placeholder="Email" />
             </label>
             <label className="field"><span className="fp-field-label">Plan <span className="fp-required">*</span></span>
               <select className="clay-in" name="plan" value={details.plan} onChange={e => setDetails(d => ({ ...d, plan: e.target.value }))} required>
@@ -292,6 +310,7 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
               </select>
             </label>
           </div>
+          <p className="fp-verification-hint">Enter all given names in First name and the complete Last Name. If OCR misses an additional given name, it still checks the first given name and Last Name.</p>
           <p className="fp-verification-hint">Student plans require a valid school ID before selection.</p>
 
           <h3>Payment</h3>
@@ -318,9 +337,9 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
             The ID and webcam images are processed for verification and are not saved by the verification worker. A facial template is stored with the member account for sign-in.
           </details>
           <div className="fp-verification-footer">
-            <p>Fill all required fields and accept consent to continue.</p>
+            <p>{memberFullName.length > 100 ? 'First name and last name must total 100 characters or fewer.' : 'Fill all required fields and accept consent to continue.'}</p>
             <button className="btn ghost" type="button" onClick={onClose}>Cancel</button>
-            <button className="btn" type="submit" disabled={!consent || !idType || !details.name.trim() || !details.email.trim() || !details.plan}>Continue</button>
+            <button className="btn" type="submit" disabled={!consent || !idType || !details.firstName.trim() || !details.lastName.trim() || memberFullName.length > 100 || !details.email.trim() || !details.plan}>Continue</button>
           </div>
         </form>
       )}
@@ -371,7 +390,7 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
               overlay="id"
               side={idSide}
               disabled={busy}
-              guide={{ type: 'id', token }}
+              guide={{ type: 'id', token, idType, firstName: details.firstName, lastName: details.lastName }}
               instruction={idSide === 'front' ? 'Show the FRONT of your ID and hold still; the camera captures it automatically.' : 'Show the BACK of your ID and hold still for automatic capture.'}
               onCapture={idSide === 'front' ? captureFront : captureBack}
             />
@@ -379,7 +398,7 @@ export default function CreateMemberSheet({ plans, planOptionLabel, pending, err
           {idInputMode === 'camera' && idSide === 'done' && <p className="fp-verification-hint" role="status">{idFront ? 'Front captured. ' : ''}{requiresBackSide && !idBack ? 'Choose Scan back of ID when ready; the camera will not open automatically.' : 'Both required sides are ready. Select Verify ID and continue.'}</p>}
           {idInputMode === 'upload' && <p className="fp-verification-hint" role="status">Uploaded IDs undergo the same name, ID-type, and portrait verification. Uploading an ID does not bypass the live face check, and the step will not continue until you select Verify ID and continue.</p>}
           <div className="fp-verification-footer">
-            <p>{idInputMode === 'camera' ? 'Auto-capture begins when the live quality and hold-still checks pass. Starting the back scan remains manual.' : uploadReady ? 'Required upload(s) are present. Select Verify ID and continue to validate the document before moving to the next step.' : requiresBackSide ? 'Upload the front and back images, or upload one PDF, before continuing.' : 'Upload the ID image, or upload one PDF, before continuing.'}</p>
+            <p>{idInputMode === 'camera' ? 'Auto-capture begins only after an ID is detected and the quality and hold-still checks pass. Starting the back scan remains manual.' : uploadReady ? 'Required upload(s) are present. Select Verify ID and continue to validate the document before moving to the next step.' : requiresBackSide ? 'Upload the front and back images, or upload one PDF, before continuing.' : 'Upload the ID image, or upload one PDF, before continuing.'}</p>
             <button className="btn ghost" type="button" disabled={busy} onClick={goBack}>Back</button>
             <button className="btn" type="button" disabled={busy} onClick={() => { if (validateIdInputs()) verifyId(idFront, idBack, idPdf) }}>
               {busy ? 'Checking ID…' : 'Verify ID and continue'}

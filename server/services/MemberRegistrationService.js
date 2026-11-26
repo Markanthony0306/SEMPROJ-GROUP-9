@@ -1,4 +1,6 @@
 
+import { composeMemberName } from '../../shared/memberName.js'
+
 export class MemberRegistrationError extends Error {
   constructor(message, status = 400, field) {
     super(message)
@@ -22,11 +24,14 @@ export class MemberRegistrationService {
 
   prepare({ body = {}, database }) {
     // 1. Validate basic member information.
-    const input = this.validAccountInput(body)
+    const validatedInput = this.validAccountInput(body)
 
-    if (input.error) {
-      throw new MemberRegistrationError(input.error, 400, input.field)
+    if (validatedInput.error) {
+      throw new MemberRegistrationError(validatedInput.error, 400, validatedInput.field)
     }
+    const input = validatedInput.firstName && validatedInput.lastName
+      ? { ...validatedInput, name: composeMemberName(validatedInput.firstName, validatedInput.lastName) }
+      : validatedInput
 
     // 2. Check whether payment recording is requested.
     const method = this.paymentMethod(body)
